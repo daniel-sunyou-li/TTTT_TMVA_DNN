@@ -4,7 +4,8 @@
 varList = {}
 
 # inputDir = '/isilon/hadoop/store/user/mhadley/TTTT/LJMet94X_1lepTT_022719_step2_saraBDay/nominal/'
-inputDir = '/mnt/hadoop/store/user/jblee/TTTT/LJMet94X_1lepTT_013019_step2/nominal/'
+# inputDir = '/mnt/hadoop/store/user/jblee/TTTT/LJMet94X_1lepTT_013019_step2/nominal/'
+inputDir = '/mnt/hadoop/store/user/dali/TTTT/FWLJMET102X_1lep2017_4t_081019_step2hadds/nominal/' # 2017 single lepton TTTT
 
 bkg = [
 # 'TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_Mtt0to700_hadd.root',
@@ -13,7 +14,8 @@ bkg = [
 # 'TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_Mtt0to700_hadd.root',
 # 'TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_Mtt1000toInf_hadd.root',
 # 'TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_Mtt700to1000_hadd.root',
-'TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_Mtt0to700_hadd.root',
+'TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_Mtt0to700_1_hadd.root',
+'TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_Mtt0to700_2_hadd.root',
 'TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_Mtt1000toInf_hadd.root',
 'TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_Mtt700to1000_hadd.root',
 # 'TT_Mtt-1000toInf_TuneCP5_PSweights_13TeV-powheg-pythia8_hadd.root',
@@ -37,23 +39,23 @@ varList['BigComb'] = [
 # ['deltaEta_maxBB','max[#Delta#eta(b,b)]',''],
 # ['aveCSVpt','p_{T} weighted CSVv2',''],
 # ['aveBBdr','ave[#DeltaR(b,b)]',''],
-['FW_momentum_0','0^{th} FW moment','GeV'],
-['FW_momentum_1','1^{st} FW moment','GeV'],
-['FW_momentum_2','2^{nd} FW moment','GeV'],
+#['FW_momentum_0','0^{th} FW moment','GeV'],
+#['FW_momentum_1','1^{st} FW moment','GeV'],
+#['FW_momentum_2','2^{nd} FW moment','GeV'],
 # ['FW_momentum_3','3^{rd} FW moment','GeV'],
 # ['FW_momentum_4','4^{th} FW moment','GeV'],
 # ['FW_momentum_5','5^{th} FW moment','GeV'],
 # ['FW_momentum_6','6^{th} FW moment','GeV'],
 # ['mass_maxJJJpt','M(jjj) with max[p_{T}(jjj)]','GeV'],
-# ['BJetLeadPt','p_{T}(b_{1})','GeV'],
+['BJetLeadPt','p_{T}(b_{1})','GeV'],
 # ['deltaR_minBB','min[#DeltaR(b,b)]',''],
 # ['minDR_lepBJet','min[#DeltaR(l,b)]',''],
 ['MT_lepMet','M_{T}(lep,E_{T}^{miss})','GeV'],
 ['AK4HT','H_{T}','GeV'],
 # ['hemiout','Hemiout','GeV'],
-['theJetLeadPt','p_{T}(j_{1})','GeV'],
+#['theJetLeadPt','p_{T}(j_{1})','GeV'],
 # ['corr_met_singleLepCalc','E_{T}^{miss}','GeV'],
-['leptonPt_singleLepCalc','p_{T}(lep)','GeV'],
+['leptonPt_MultiLepCalc','p_{T}(lep)','GeV'],
 # ['mass_lepJets0','M(l,j_{1})','GeV'], 
 # ['mass_lepJets1','M(l,j_{2})','GeV'],
 # ['mass_lepJets2','M(l,j_{3})','GeV'],
@@ -77,7 +79,7 @@ varList['BigComb'] = [
 # ['csvJet4','DeepCSV(4thPtJet)',''],
 # ['thirdcsvb_bb','DeepCSV(3rdDeepCSVJet)',''],
 # ['fourthcsvb_bb','DeepCSV(4thDeepCSVJet)',''],
-# ['NJets_JetSubCalc','AK4 jet multiplicity',''],
+['NJets_JetSubCalc','AK4 jet multiplicity',''],
 # ['HT_2m','HTwoTwoPtBjets','GeV'],
 # ['Sphericity','Sphericity','Sphericity'],
 # ['Aplanarity','Aplanarity','Aplanarity'],
@@ -87,7 +89,7 @@ varList['BigComb'] = [
 # ['mass_maxBBpt','M(b,b) with max[p_{T}(b,b)]','GeV'],
 # ['MT2bbl','MT2bbl','GeV'],
 # ['deltaR_lepJets0','#DeltaR(l,j_{1})',''],
-# ['deltaR_lepJets1','#DeltaR(l,j_{2})',''],
+['deltaR_lepJets','#DeltaR(l,j)',''],
 # ['deltaR_lepJets2','#DeltaR(l,j_{3})',''],
 # ['mass_lepBB_minBBdr','M(l,bb) with min[#DeltaR(b,b)]','GeV'],
 # ['corr_met','E_{T}^{miss}','GeV'],

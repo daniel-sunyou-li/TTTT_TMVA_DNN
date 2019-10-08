@@ -22,13 +22,14 @@ TMVA.Tools.Instance()
 TMVA.PyMethodBase.PyInitialize()
 
 # weight calculation equation
-weightStrC = "pileupWeight*lepIdSF*EGammaGsfSF*MCWeight_singleLepCalc/abs(MCWeight_singleLepCalc)"
+weightStrC = "pileupWeight*lepIdSF*EGammaGsfSF*MCWeight_MultiLepCalc/abs(MCWeight_MultiLepCalc)"
 weightStrS = weightStrC # weight equation for Signal
 weightStrB = weightStrC # weight equation for Background
 
 # cut calculation equation
-cutStrC = "(NJets_JetSubCalc >= 5 && NJetsCSV_JetSubCalc >= 2) && ((leptonPt_singleLepCalc > 35 && isElectron) || (leptonPt_singleLepCalc > 30 && isMuon))"
-cutStrS = cutStrC + " && ( isTraining == 2 )"
+cutStrC = "(NJets_JetSubCalc >= 5 && NJetsCSV_JetSubCalc >= 2) && ((leptonPt_MultiLepCalc > 35 && isElectron) || (leptonPt_MultiLepCalc > 30 && isMuon))"
+cutStrS = cutStrC
+# cutStrS = cutStrC + 'eventNumBranch%3' ## edit this
 cutStrB = cutStrC
 
 # default command line arguments
