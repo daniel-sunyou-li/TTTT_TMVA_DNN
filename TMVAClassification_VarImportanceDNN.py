@@ -104,7 +104,7 @@ def main(): # runs the program
                    "inputtrees=",
                    "outputfile=",
                    "verbose",
-		   "seed=",
+            		   "seed=",
                    "help",
                    "usage"]
     opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
@@ -166,6 +166,80 @@ def main(): # runs the program
   print("Outputfile: " + myArgs[outfname_index,3])
 
   checkRootVer() # check that ROOT version is correct 
+ 
+######################################################
+######################################################
+######                                          ######
+######                  T M V A                 ######
+######                                          ######
+######################################################
+######################################################
+  
+  # Declare some containers
+  bkg_list = []
+  bkg_trees_list = []
+  hist_list = []
+  weightsList = []
+  signalWeight = 1
+  
+  # Setting up TMVA
+  
+  print( 'str_xbitset is : ' + str_xbitset )
+    
+   
+  inputDir = varsList.inputDir # get current input directory path
+  iFileSig = TFile.Open(inputDir + myArgs[infname_index,3])
+  #print("Input directory path: " + inputDir + myArgs[infname_index,3])
+  sigChain = iFileSig.Get("ljmet") 
+   
+  bkgList = varsList.bkg
+   
+  # Set up TMVA
+  ROOT.TMVA.Tools.Instance()
+  ROOT.TMVA.PyMethodBase.PyInitialize()
+
+  #fClassifier = TMVA.Factory( 'VariableImportance',outputfile,
+  #     '!V:!ROC:!ModelPersistence:!Silent:Color:!DrawProgressBar:AnalysisType=Classification' )
+
+  fClassifier = TMVA.Factory( 'VariableImportance',outputfile,
+        'V:!ROC:!Silent:Color:DrawProgressBar:Transformations=I;:AnalysisType=Classification' )
+
+  fClassifier.SetVerbose(bool( myArgs[verbose_index,3] ) )
+
+  loader = TMVA.DataLoader('dataset/'+str_xbitset)
+
+  index = len(varList) - 1
+  
+  for var in varList:
+    if (str_xbitset[index] == '1'):
+      loader.AddVariable(var[0], var[1], var[2], 'F')
+      #print('Testing variable: ' + str(var[0]))
+    index = index - 1 
+ 
+  loader.AddSignalTree(sigChain)
+
+  for i in range(len(varsList.bkg)):
+    bkg_list.append(TFile.Open(inputDir + bkgList[i]))
+    #print( inputDir + varsList.bkg[i] )
+    bkg_trees_list.append(bkg_list[i].Get("ljmet"))
+    bkg_trees_list[i].GetEntry(0)
+  
+    if bkg_trees_list[i].GetEntries() == 0:
+      continue
+    loader.AddBackgroundTree( bkg_trees_list[i], 1 )
+
+  # set signal and background weights 
+  loader.SetSignalWeightExpression( weightStrS )
+  loader.SetBackgroundWeightExpression( weightStrB )
+  
+  # set cut thresholds for signal and background
+  mycutSig = TCut( cutStrS )
+  mycutBkg = TCut( cutStrB )
+
+  loader.PrepareTrainingAndTestTree(
+    mycutSig, mycutBkg,
+    "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V"
+  )
 
 #####################################################
 #####################################################
@@ -202,94 +276,31 @@ def main(): # runs the program
 ######################################################
   
   # Declare some containers
-  bkg_list = []
-  bkg_trees_list = []
-  hist_list = []
-  weightsList = []
-  signalWeight = 1
-  
-  # Setting up TMVA
-  
-  print( 'str_xbitset is : ' + str_xbitset )
-  loader = TMVA.DataLoader(str_xbitset)
-  
-  index = len(varList) - 1
-
-  for var in varList:
-    if (str_xbitset[index] == '1'):
-      loader.AddVariable(var[0], var[1], var[2], 'F')
-      #print('Testing variable: ' + str(var[0]))
-    index = index - 1
-  
-  (TMVA.gConfig().GetIONames()).fWeightFileDir = "weights/" + outf_key
-   
-  inputDir = varsList.inputDir # get current input directory path
-  iFileSig = TFile.Open(inputDir + myArgs[infname_index,3])
-  #print("Input directory path: " + inputDir + myArgs[infname_index,3])
-  sigChain = iFileSig.Get("ljmet") 
- 
-  loader.AddSignalTree(sigChain)
-  
-  bkgList = varsList.bkg
-  
-  for i in range(len(varsList.bkg)):
-    bkg_list.append(TFile.Open(inputDir + bkgList[i]))
-    #print( inputDir + varsList.bkg[i] )
-    bkg_trees_list.append(bkg_list[i].Get("ljmet"))
-    bkg_trees_list[i].GetEntry(0)
-  
-    if bkg_trees_list[i].GetEntries() == 0:
-      continue
-    loader.AddBackgroundTree( bkg_trees_list[i], 1 )
-   
-  # Set up TMVA
-  ROOT.TMVA.Tools.Instance()
-  ROOT.TMVA.PyMethodBase.PyInitialize()
-
-  fClassifier = TMVA.Factory( 'VariableImportance', outputfile,
-       '!V:!ROC:!ModelPersistence:!Silent:Color:!DrawProgressBar:AnalysisType=Classification' )
-
-  fClassifier.SetVerbose(bool( myArgs[verbose_index,3] ) )
-
-
-  
-  # set signal and background weights 
-  loader.SetSignalWeightExpression( weightStrS )
-  loader.SetBackgroundWeightExpression( weightStrB )
-  
-  # set cut thresholds for signal and background
-  mycutSig = TCut( cutStrS )
-  mycutBkg = TCut( cutStrB )
-
-  loader.PrepareTrainingAndTestTree(
-    mycutSig, mycutBkg,
-    "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V"
-  )
-
-  kerasSetting = 'H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=10:BatchSize=1028' # the trained model has to be specified in this string
+  kerasSetting = 'H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=5:BatchSize=1028' # the trained model has to be specified in this string
   
   # run the classifier
-  fClassifier.BookMethod(loader,
+  fClassifier.BookMethod(
+    loader,
     TMVA.Types.kPyKeras,
     'PyKeras',
-    kerasSetting)
-  print('Training all methods...')
+    kerasSetting) 
+
+  (TMVA.gConfig().GetIONames()).fWeightFileDir = str_xbitset + "/weights/" + outf_key
+  print("New weight file directory:",(TMVA.gConfig().GetIONames()).fWeightFileDir)
+  
   fClassifier.TrainAllMethods()
-  print('Testing all methods...')
   fClassifier.TestAllMethods()
-  print('Evaluating all methods...')
   fClassifier.EvaluateAllMethods()
   
-  SROC = fClassifier.GetROCIntegral(str_xbitset, "PyKeras")
-  print("ROC-integral: " + str_xbitset + " " + SROC)
-  print("Seed: " + str_xbitset + " DONE")
+  SROC = fClassifier.GetROCIntegral("dataset/"+str_xbitset, "PyKeras")
+  print("ROC-integral: ",str_xbitset,SROC)
+  print("Seed: ",str_xbitset," DONE")
   fClassifier.DeleteAllMethods()
   fClassifier.fMethodsMap.clear()
   
   outputfile.Close()
 
-  print("===================================")
-  print("===================================")
+  print("==================================)
 
 
 main()

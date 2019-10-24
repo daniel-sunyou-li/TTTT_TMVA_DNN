@@ -20,32 +20,31 @@ binary_str = '1' * len(varList)
 for index in range(0, seed):
   SeedN = random.randint(0,int(binary_str,2)) # upper limit is decimal equivalent to binary of all 1s of length len(varList)
   outf_key = 'Seed_' + str(SeedN)
-  fileName = method + '_' + 'BigComb' + '_' + str(len(varsList.varList['BigComb'])) + 'vars_mDepth' + mDepth + '_' + outf_key
+  fileName = method + '_' + 'BigComb' + '_' + str(len(varList)) + 'vars_mDepth' + mDepth + '_' + outf_key
   dict = {
     'RUNDIR':runDir,
-    'FILENAME':filename,
     'METHOD':method,
     'vListKey':'BigComb',
-    'mDepth':mDepth,
     'nTrees':nTrees,
-    'SeedN':SeedN
+    'mDepth':mDepth,
+    'SeedN':SeedN,
+    'FILENAME':fileName
     }
-  jdfName = condorDir + '/%(FILENAME)s.job'%dict
+  jdfName = condorDir + '%(FILENAME)s.job'%dict
   print(jdfName)
   jdf = open(jdfName, 'w')
   jdf.write(
-  """universe = vanilla
-  Executable = %(RUNDIR)s/doCondorVariableImportance.sh
-  Should_Transfer_Files = YES
-  WhenToTransferOutput = ON_EXIT
-  request_memory = 3072
-  Output = %(FILENAME)s.out
-  Error = %(FILENAME)s.err
-  Log = %(FILENAME)s.log
-  Notification = Never
-  Arguments = %(RUNDIR)s %(FILENAME)s %(METHOD)s %(vListKey)s %(nTrees)s %(mDepth)s %(SeedN)s
-  Queue 1"""%dict)
-  )
+"""universe = vanilla
+Executable = %(RUNDIR)s/doCondorVariableImportance.sh
+Should_Transfer_Files = YES
+WhenToTransferOutput = ON_EXIT
+request_memory = 3072
+Output = %(FILENAME)s.out
+Error = %(FILENAME)s.err
+Log = %(FILENAME)s.log
+Notification = Never
+Arguments = %(RUNDIR)s %(METHOD)s %(vListKey)s %(SeedN)s %(nTrees)s %(mDepth)s
+Queue 1"""%dict)
   jdf.close()
   os.chdir('%s/'%(condorDir))
   os.system('condor_submit %(FILENAME)s.job'%dict)
@@ -58,53 +57,35 @@ for index in range(0, seed):
     if(SeedN & (1 << num)):
       SubSeedN = SeedN & ~(1<<num)
       outf_key = 'Seed_' + str(SeedN) + '_Subseed_' + str(SubSeedN)
-      fileName = method + '_' + 'BigComb' + '_' + str(len(varList['BigComb'])) + 'vars_mDepth' + mDepth + '_' + note
+      fileName = method + '_' + 'BigComb' + '_' + str(len(varList)) + 'vars_mDepth' + mDepth + '_' + outf_key
       dict_sub = {
         'RUNDIR':runDir,
-        'FILENAME':fileName,
         'METHOD':method,
         'vListKey':'BigComb',
-        'mDepth':mDepth,
         'nTrees':nTrees,
+        'mDepth':mDepth,
+        'SeedN':SeedN,
+        'FILENAME':fileName,
         'SubSeedN':SubSeedN
       }
-      jdfName = condorDir + '/%(FILENAME)s.job'%dict
+      jdfName = condorDir + '%(FILENAME)s.job'%dict_sub
       print(jdfName)
       jdf = open(jdfName,'w')
       jdf.write(
-      """universe = vanilla
-      Executable = %(RUNDIR)s/doCondorVariableImportance.sh
-      Should_Transfer_Files = YES
-      WhenToTransferOutput = ON_EXIT
-      request_memory = 3072
-      Output = %(FILENAME)s.out
-      Error = %(FILENAME)s.err
-      Log = %(FILENAME)s.log
-      Notification = Never
-      Arguments = %(RUNDIR)s %(FILENAME)s %(METHOD)s %(vListKey)s %(nTrees)s %(mDepth)s %(SubSeedN)s
-      Queue 1"""%dict)     
-      )
+"""universe = vanilla
+Executable = %(RUNDIR)s/doCondorVariableImportance.sh
+Should_Transfer_Files = YES
+WhenToTransferOutput = ON_EXIT
+request_memory = 3072
+Output = %(FILENAME)s.out
+Error = %(FILENAME)s.err
+Log = %(FILENAME)s.log
+Notification = Never
+Arguments = %(RUNDIR)s %(METHOD)s %(vListKey)s %(SubSeedN)s %(nTrees)s %(mDepth)s
+Queue 1"""%dict_sub)
       jdf.close()
       os.chdir('%s/'%(condorDir))
-      os.system('condor_submit %(FILENAME)s.job'%dict)
+      os.system('condor_submit %(FILENAME)s.job'%dict_sub)
       os.system('sleep 0.5')
       os.chdir('%s'%(runDir))
-      print(count,'jobs submitted.')
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+      print(count,'jobs submitted.') 
