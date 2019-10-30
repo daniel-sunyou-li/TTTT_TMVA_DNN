@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os, sys
 import varsList
 import random
@@ -35,7 +37,7 @@ for index in range(0, seed):
   jdf = open(jdfName, 'w')
   jdf.write(
 """universe = vanilla
-Executable = %(RUNDIR)s/doCondorVariableImportance.sh
+Executable = %(RUNDIR)s/doCondorVariableImportanceWrapper.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 request_memory = 3072
@@ -73,7 +75,7 @@ Queue 1"""%dict)
       jdf = open(jdfName,'w')
       jdf.write(
 """universe = vanilla
-Executable = %(RUNDIR)s/doCondorVariableImportance.sh
+Executable = %(RUNDIR)s/doCondorVariableImportanceWrapper.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 request_memory = 3072

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os, sys
 from os.path import isfile
 import time
@@ -153,7 +155,7 @@ def main(): # runs the program
   outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
   verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
  
-  str_xbitset = '{:06b}'.format(long(myArgs[SeedN_index,3]))
+  str_xbitset = '{:011b}'.format(long(myArgs[SeedN_index,3]))
 
   varList = varsList.varList[myArgs[varListKey_index,3]]
   nVars = str(str_xbitset.count('1')) + 'vars'
@@ -276,7 +278,7 @@ def main(): # runs the program
 ######################################################
   
   # Declare some containers
-  kerasSetting = 'H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=5:BatchSize=1028' # the trained model has to be specified in this string
+  kerasSetting = 'H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=10:BatchSize=1028' # the trained model has to be specified in this string
   
   # run the classifier
   fClassifier.BookMethod(
@@ -300,7 +302,7 @@ def main(): # runs the program
   
   outputfile.Close()
 
-  print("==================================)
+  print("==================================")
 
 
 main()

@@ -3,15 +3,14 @@ import glob, os, sys
 import math
 import varsList
 
-outPath.os.getcwd()
-outFile = os.listdir(outpath + '/condor_log/')
+outPath = os.getcwd()
+outFile = os.listdir(outPath + '/condor_log/')
 
 numVars = 11
 nTrees = "100"
 method = "Keras"
 mDepth = "2"
-runDir = os.getcwd()
-condorDir = runDir + "/condor_log/"
+condorDir = outPath + "/condor_log/"
 os.system("mkdir -p " + condorDir)
 
 varListKeys = ["BigComb"]
@@ -52,11 +51,13 @@ for seed in seedDict:
       
 # Submit the condor jobs
 
+os.chdir(outPath)
+
 for seed in seedResubmit:
   outf_key = "Seed_" + str(seed)
   fileName = method + "_" + "BigComb" + "_" + str(len(varList)) + "vars_mDepth" + mDepth + "_" + outf_key
   dict = {
-    "RUNDIR":runDir,
+    "RUNDIR":outPath,
     "METHOD":method,
     "vListKey":"BigComb",
     "nTrees":nTrees,
@@ -70,7 +71,7 @@ for seed in seedResubmit:
   jdf = open(jdfName, "w")
   jdf.write(
 """universe = vanilla
-Executable = %(RUNDIR)s/doCondorVariableImportance.sh
+Executable = %(RUNDIR)s/doCondorVariableImportanceWrapper.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 request_memory = 3072
@@ -85,14 +86,14 @@ Queue 1"""%dict
   os.chdir("%s/"%(condorDir))
   os.system("condor_submit %(FILENAME)s.job"%dict)
   os.system("sleep 0.5")
-  os.chdir("%s"%(runDir))
+  os.chdir("%s"%(outPath))
 
 for seed in subseedResubmit:
   for subseed in subseedResubmit[seed]:
-    outf_key = "Seed_" + str(seed) + "_Subsed_" + str(subseed)
+    outf_key = "Seed_" + str(seed) + "_Subseed_" + str(subseed)
     fileName = method + "_" + "BigComb" + "_" + str(len(varList)) + "vars_mDepth" + mDepth + "_" + outf_key
     dict_sub = {
-      "RUNDIR":runDir,
+      "RUNDIR":outPath,
       "METHOD":method,
       "vListKey":"BigComb",
       "nTrees":nTrees,
@@ -107,7 +108,7 @@ for seed in subseedResubmit:
     jdf = open(jdfName,"w")
     jdf.write(
 """universe = vanilla
-Executable = %(RUNDIR)s/doCondorVariableImportance.sh
+Executable = %(RUNDIR)s/doCondorVariableImportanceWrapper.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 request_memory = 3072
@@ -122,4 +123,4 @@ Queue 1"""%dict_sub
     os.chdir("%s/"%(condorDir))
     os.system("condor_submit %(FILENAME)s.job"%dict_sub)
     os.system("sleep 0.5")
-    os.chdir("%s"%(runDir))
+    os.chdir("%s"%(outPath))

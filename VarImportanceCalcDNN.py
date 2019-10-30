@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 import glob, os, math
 import varsList
+import datetime
 
 outPath = os.getcwd()
-outFile = os.listdir(outpath+'/condor_log/')
+outFile = os.listdir(outPath+'/condor_log/')
 
-numVars = 6
+numVars = 11
+bit_str = "00000000010"
+
+varImportance_file = open(outPath+'/dataset/'+bit_str+'/VarImportanceCalculation.txt','w')
+
+varImportance_file.write("Bit string: {}, Date: {}".format(bit_str,datetime.datetime.today().strftime('%Y-%m-%d')))
 
 seedList = []
 for Files in outFile:
@@ -25,22 +31,29 @@ for index in range(0,numVars):
   
 for seeds in seedDict:
   l_seed = long(seeds)
-  print("Seed:",seeds)
+  varImportance_file.write("\nSeed: {}, Subseeds: ".format(seeds))
   for line in open("Keras_BigComb_" + str(numVars) + "vars_mDepth2_Seed_" + seeds + ".out").readlines():
     if "ROC-integral" in line:
-      SROC = float(line[:-1].split(' ')[-1])
+      SROC = float(line[:-1].split(' ')[-1][:-1])
   for subseedout in seedDict[seeds]:
     subseed = subseedout.split("_Subseed_")[1].split(".out")[0]
     l_subseed = long(subseed)
+    varImportance_file.write("{} ".format(subseed))
     varIndx = math.log(l_seed - l_subseed)/0.693147
-    for line in open("Keras_BigComb_" + str(numVars) + "vars_mDepth2_Seed_" + seeds + "_Subseed_" + subseeds + ".out").readlines():
+    for line in open("Keras_BigComb_" + str(numVars) + "vars_mDepth2_Seed_" + seeds + "_Subseed_" + subseed + ".out").readlines():
       if "ROC-integral" in line:
-        SSROC = float(line[:-1].split(" ")[-1])
+        SSROC = float(line[:-1].split(" ")[-1][:-1])
         importances[int(varIndx)] += SROC - SSROC
         
 normalization = 0;
 for index in range(0,numVars):
   normalization += importances[index]
   
+varImportance_file.write("\nImportance calculation:")
+varImportance_file.write("\nNormalization: {}".format(normalization))
+varImportance_file.write("\nVariable,Importance:")
+
 for index in range(0,numVars):
-  print("Importance:",100*importances[index]/normalization,"\t\tvariable:",varsList.varList["BigComb"][index][0])
+  varImportance_file.write("\n{},{}".format(varsList.varList["BigComb"][index][0],100*importances[index]/normalization))
+
+print("Finished variable importance calculation for {}".format(bit_str))
