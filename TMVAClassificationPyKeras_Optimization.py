@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import numpy as np
 import os, sys
 from subprocess import call
@@ -10,13 +12,15 @@ from ROOT import gSystem, gApplication, gROOT
 import varsList
 
 from keras.models import Sequential
-from keras.layers.core import Dense
+from keras.layers.core import Dense, Dropout
 from keras.optimizers import Adam
+from keras import backend
+
+sys.path.insert(0, "/home/dli50/.local/lib/python2.7/site-packages")
 
 from skopt import gp_minimize
 from skopt.space import Real, Integer
 from skopt.utils import use_named_args
-from skopt.plots import plot_convergence, plot_evaluations, plot_objective
 
 os.system('bash')
 os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh')
@@ -42,10 +46,17 @@ cutStrB = cutStrC
 DEFAULT_METHODS		  = "Keras"      # how was the .root file trained
 DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
 DEFAULT_INFNAME		  = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
-DEFAULT_TREESIG		  = "TreeS"
-DEFAULT_TREEBKG		  = "TreeB"
 DEFAULT_MASS		    = "180"
 DEFAULT_VARLISTKEY	= "BigComb"
+
+myArgs = np.array([ # Stores the command line arguments
+  ['-m','--methods','methods',        DEFAULT_METHODS],     #0  Reference Indices
+  ['-k','--mass','mass',              DEFAULT_MASS],        #2
+  ['-l','--varListKey','varListKey',  DEFAULT_VARLISTKEY],  #3
+  ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #4
+  ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #5
+  ['-v','--verbose','verbose',        True],                #8
+])
 
 ######################################################
 ######################################################
@@ -102,6 +113,28 @@ def printMethods_(methods): # prints a list of the methods being used
 ######################################################
 ######################################################
 
+try: # retrieve command line options
+  shortopts   = "m:i:k:l:o:vh?" # possible command line options
+  longopts    = ["methods=", 
+                 "inputfile=",
+                 "mass=",
+                 "varListKey=",
+                 "outputfile=",
+                 "verbose",
+                 "help",
+                 "usage"]
+  opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
+  
+except getopt.GetoptError: # output error if command line argument invalid
+  print("ERROR: unknown options in argument %s" %sys.argv[1:])
+  usage()
+  sys.exit(1)
+
+varListKey_index = np.where(myArgs[:,2] == 'varListKey')[0][0]
+varList = varsList.varList[myArgs[varListKey_index,3]]
+nVars = str(len(varList)) + 'vars'
+var_length = len(varList)
+
 ### Define some static model parameters
 
 PATIENCE =    5
@@ -115,7 +148,7 @@ MODEL_NAME =  "dummy_opt_model.h5"
 ### Hyper parameter survey range
 
 HIDDEN =      [1,3]
-NODES =       [var_length,10*var_length]
+NODES =       [var_length,var_length*10]
 BATCH_POW =   [7,10] # used as 2 ^ BATCH_POW
 LRATE =       [1e-4,1e-2]
 
@@ -172,25 +205,6 @@ def build_custom_model(hidden, nodes, lrate, dropout):
 def objective(**X):
   print('New configuration: {}'.format(X))
   
-  # Initialize some containers
-  bkg_list = []
-  bkg_trees_list = []
-  hist_list = []
-  weightsList = []
-  
-  # Initialize some variables after reading in arguments
-  varListKey_index = np.where(myArgs[:,2] == 'varListKey')[0][0]
-  method_index = np.where(myArgs[:,2] == 'methods')[0][0]
-  infname_index = np.where(myArgs[:,2] == 'infname')[0][0]
-  outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
-  verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
-
-  varList = varsList.varList[myArgs[varListKey_index,3]]
-  nVars = str(len(varList)) + 'vars'
-  var_length = len(varList)
-  outf_key = str(myArgs[method_index,3] +  '_' + myArgs[varListKey_index,3] + '_' + nVars
-  myArgs[outfname_index,3] = 'dataset/optimization/weight/TMVA_' + outf_key + '.root'
-  
   model = build_custom_model(
     hidden =  X["hidden_layers"],
     nodes =   X["initial_nodes"],
@@ -198,19 +212,47 @@ def objective(**X):
     dropout = DROPOUT
   )
   model.save( MODEL_NAME )
-  model.summary()
+  model.summary() 
   
-  outputfile =    TFile( myArgs[method_index,3], "RECREATE" )
+  for opt, arg in opts:
+    if opt in myArgs[:,0]:
+      index = np.where(myArgs[:,0] == opt)[0][0] # np.where returns a tuple of arrays
+      myArgs[index,3] = arg # override the variables with the command line argument
+    elif opt in myArgs[:,1]:
+      index = np.where(myArgs[:,1] == opt)[0][0] 
+      myArgs[index,3] = arg
+    if opt in ('-t', '--inputtrees'): # handles assigning tree signal and background
+      index_sig = np.where(myArgs[:,2] == 'treeNameSig')[0][0]
+      index_bkg = np.where(myArgs[:,2] == 'treeNameBkg')[0][0]
+      myArgs[index_sig,3], myArgs[index_bkg,3] == treeSplit_(arg) # override signal, background tree
+ 
+  # Initialize some variables after reading in arguments
+  method_index = np.where(myArgs[:,2] == 'methods')[0][0]
+  infname_index = np.where(myArgs[:,2] == 'infname')[0][0]
+  outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
+  verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
+
+  outf_key = str(myArgs[method_index,3] + '_' + myArgs[varListKey_index,3] + '_' + nVars)
+  myArgs[outfname_index,3] = 'dataset/optimization/weights/TMVA_' + outf_key + '.root'
+
+  # Initialize some containers
+  bkg_list = []
+  bkg_trees_list = []
+  hist_list = []
+  weightsList = []
+
+  outputfile =    TFile( myArgs[outfname_index,3], "RECREATE" )
   inputDir =      varsList.inputDir
   iFileSig =      TFile.Open( inputDir + myArgs[infname_index,3] )
   sigChain =      iFileSig.Get( "ljmet" )
   
-  factory = TMVA.factory(
+  factory = TMVA.Factory(
     'TMVAClassification', outputfile,
     '!V:!Silent:Color:DrawProgressBar:Transformations=I;:AnalysisType=Classification'
   )
+
   factory.SetVerbose(bool( myArgs[verbose_index,3] ) )
-  (TMVA.gConfig().GetIONames()).fWeightFileDir = 'optimization/weight/' + outf_key
+  (TMVA.gConfig().GetIONames()).fWeightFileDir = 'optimization/weights/' + outf_key
   
   loader = TMVA.DataLoader( "dataset" )
   
@@ -241,15 +283,14 @@ def objective(**X):
     "nTrain_Signal=" + str(NSIG) +\
     ":nTrain_Background=" + str(NBKG) +\
     ":SplitMode=Random:NormMode=NumEvents:!V"
-  )
-  
+  ) 
   BATCH_SIZE = int(2 ** X["batch_power"])
   
   kerasSetting = 'H:!V:VarTransform=G:FilenameModel=' + MODEL_NAME +\
                  ':SaveBestOnly=true' +\
                  ':NumEpochs=' + str(EPOCHS) +\
                  ':BatchSize=' + str(BATCH_SIZE) +\
-                 ':TriesEarlyStopping' + str(PATIENCE)
+                 ':TriesEarlyStopping=' + str(PATIENCE)
   
   factory.BookMethod(
     loader,
@@ -260,64 +301,19 @@ def objective(**X):
   
   factory.TrainAllMethods()
   factory.TestAllMethods()
-  factory.EvalauteAllMethods()
+  factory.EvaluateAllMethods()
   
   ROC = factory.GetROCIntegral( "dataset/optimization/", "PyKeras" )
-  
-  outputfile.Close()
+
   del model
   backend.clear_session()
   backend.reset_uids()
   
-  return (1.0 / ROC) # since the optimizer tries to minimize this function and we want a larger ROC value
+  return (1.0 - ROC) # since the optimizer tries to minimize this function and we want a larger ROC value
 
 def main():
   checkRootVer() # check the ROOT version
-  
-  try: # retrieve command line options
-    shortopts   = "m:i:n:d:k:l:t:o:vh?" # possible command line options
-    longopts    = ["methods=", 
-                   "inputfile=",
-                   "mass=",
-                   "varListKey=",
-                   "inputtrees=",
-                   "outputfile=",
-                   "verbose",
-                   "help",
-                   "usage"]
-    opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
-  
-  except getopt.GetoptError: # output error if command line argument invalid
-    print("ERROR: unknown options in argument %s" %sys.argv[1:])
-    usage()
-    sys.exit(1)
-  
-  myArgs = np.array([ # Stores the command line arguments
-    ['-m','--methods','methods',        DEFAULT_METHODS],     #0  Reference Indices
-    ['-k','--mass','mass',              DEFAULT_MASS],        #2
-    ['-l','--varListKey','varListKey',  DEFAULT_VARLISTKEY],  #3
-    ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #4
-    ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #5
-    ['-v','--verbose','verbose',        True],                #8
-    ['','','treeNameSig',               DEFAULT_TREESIG],     #9  No command line option
-    ['','','treeNameBkg',               DEFAULT_TREEBKG]      #10  No command line option]
-  ])
-  
-  for opt, arg in opts:
-    if opt in myArgs[:,0]:
-      index = np.where(myArgs[:,0] == opt)[0][0] # np.where returns a tuple of arrays
-      myArgs[index,3] = arg # override the variables with the command line argument
-    elif opt in myArgs[:,1]:
-      index = np.where(myArgs[:,1] == opt)[0][0] 
-      myArgs[index,3] = arg
-    if opt in ('-t', '--inputtrees'): # handles assigning tree signal and background
-      index_sig = np.where(myArgs[:,2] == 'treeNameSig')[0][0]
-      index_bkg = np.where(myArgs[:,2] == 'treeNameBkg')[0][0]
-      myArgs[index_sig,3], myArgs[index_bkg,3] == treeSplit_(arg) # override signal, background tree
-    if opt in ("-?", "-h", "--help", "--usage"): # provides command line help
-      usage()
-      sys.exit(0)
-  
+ 
   start_time = time.time()
   res_gp = gp_minimize(
     func = objective,
@@ -326,6 +322,8 @@ def main():
     n_random_starts = NSTARTS,
     verbose = True
   )
+  
+  outputfile.Close()
   
   print('Finished optimization in: {} s'.format(time.time()-start_time))
 
