@@ -4,7 +4,7 @@ import numpy as np
 import os, sys
 from subprocess import call
 from os.path import isfile
-import time
+import time, datetime
 import getopt
 import ROOT
 from ROOT import TMVA, TFile, TTree, TCut, TRandom3
@@ -24,39 +24,6 @@ from skopt.utils import use_named_args
 
 os.system('bash')
 os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh')
-
-START_TIME = time.time()
-
-TMVA.Tools.Instance()
-TMVA.PyMethodBase.PyInitialize()
-
-# weight calculation equation
-weightStrC = "pileupWeight*lepIdSF*EGammaGsfSF*MCWeight_MultiLepCalc/abs(MCWeight_MultiLepCalc)"
-weightStrS = weightStrC # weight equation for Signal
-weightStrB = weightStrC # weight equation for Background
-
-# cut calculation equation
-cutStrC = "(NJets_JetSubCalc >= 5 && NJetsCSV_JetSubCalc >= 2) && " +\
-          "((leptonPt_MultiLepCalc > 35 && isElectron) || (leptonPt_MultiLepCalc > 30 && isMuon))"
-cutStrS = cutStrC
-# cutStrS = cutStrC + 'eventNumBranch%3' ## edit this
-cutStrB = cutStrC
-
-# default command line arguments
-DEFAULT_METHODS		  = "Keras"      # how was the .root file trained
-DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
-DEFAULT_INFNAME		  = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
-DEFAULT_MASS		    = "180"
-DEFAULT_VARLISTKEY	= "BigComb"
-
-myArgs = np.array([ # Stores the command line arguments
-  ['-m','--methods','methods',        DEFAULT_METHODS],     #0  Reference Indices
-  ['-k','--mass','mass',              DEFAULT_MASS],        #2
-  ['-l','--varListKey','varListKey',  DEFAULT_VARLISTKEY],  #3
-  ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #4
-  ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #5
-  ['-v','--verbose','verbose',        True],                #8
-])
 
 ######################################################
 ######################################################
@@ -87,6 +54,7 @@ def checkRootVer():
       print "*** or use another ROOT version (e.g., ROOT 5.19)."
       sys.exit(1)
   
+  
 def treeSplit_(arg): # takes in the tree argument and splits into signal and background
   arg.strip()
   trees = arg.rsplit( ' ' )
@@ -104,15 +72,47 @@ def printMethods_(methods): # prints a list of the methods being used
   for m in mlist:
     if m.strip() != '':
       print('=== - <%s>'%m.strip())
+# Start Program
 
-######################################################
-######################################################
-######                                          ######
-######       O P T I M I M I Z A T I O N        ######
-######                                          ######
-######################################################
-######################################################
+START_TIME = time.time()
 
+TMVA.Tools.Instance()
+TMVA.PyMethodBase.PyInitialize()
+
+# Data Preparation
+NSIG =        10000
+NSIG_TEST =   100000
+NBKG =        20000
+NBKG_TEST =   200000
+
+# weight calculation equation
+weightStrC = "pileupWeight*lepIdSF*EGammaGsfSF*MCWeight_MultiLepCalc/abs(MCWeight_MultiLepCalc)"
+weightStrS = weightStrC # weight equation for Signal
+weightStrB = weightStrC # weight equation for Background
+
+# cut calculation equation
+cutStrC = "(NJets_JetSubCalc >= 5 && NJetsCSV_JetSubCalc >= 2) && " +\
+          "((leptonPt_MultiLepCalc > 35 && isElectron) || (leptonPt_MultiLepCalc > 30 && isMuon))"
+cutStrS = cutStrC
+# cutStrS = cutStrC + 'eventNumBranch%3' ## edit this
+cutStrB = cutStrC
+
+# default command line arguments
+DEFAULT_METHODS		  = "Keras"      # how was the .root file trained
+DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
+DEFAULT_INFNAME		  = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
+DEFAULT_MASS		    = "180"
+DEFAULT_VARLISTKEY	= "BigComb"
+
+myArgs = np.array([ # Stores the command line arguments
+  ['-m','--methods','methods',        DEFAULT_METHODS],     #0  Reference Indices
+  ['-k','--mass','mass',              DEFAULT_MASS],        #2
+  ['-l','--varListKey','varListKey',  DEFAULT_VARLISTKEY],  #3
+  ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #4
+  ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #5
+  ['-v','--verbose','verbose',        True],                #8
+])
+ 
 try: # retrieve command line options
   shortopts   = "m:i:k:l:o:vh?" # possible command line options
   longopts    = ["methods=", 
@@ -129,21 +129,101 @@ except getopt.GetoptError: # output error if command line argument invalid
   print("ERROR: unknown options in argument %s" %sys.argv[1:])
   usage()
   sys.exit(1)
-
+for opt, arg in opts:
+  if opt in myArgs[:,0]:
+    index = np.where(myArgs[:,0] == opt)[0][0] # np.where returns a tuple of arrays
+    myArgs[index,3] = arg # override the variables with the command line argument
+  elif opt in myArgs[:,1]:
+    index = np.where(myArgs[:,1] == opt)[0][0] 
+    myArgs[index,3] = arg
+  if opt in ('-t', '--inputtrees'): # handles assigning tree signal and background
+    index_sig = np.where(myArgs[:,2] == 'treeNameSig')[0][0]
+    index_bkg = np.where(myArgs[:,2] == 'treeNameBkg')[0][0]
+    myArgs[index_sig,3], myArgs[index_bkg,3] == treeSplit_(arg) # override signal, background tree
+ 
+# Initialize some variables after reading in arguments
+method_index = np.where(myArgs[:,2] == 'methods')[0][0]
+infname_index = np.where(myArgs[:,2] == 'infname')[0][0]
+outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
+verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
 varListKey_index = np.where(myArgs[:,2] == 'varListKey')[0][0]
+
 varList = varsList.varList[myArgs[varListKey_index,3]]
 nVars = str(len(varList)) + 'vars'
 var_length = len(varList)
+
+outf_key = str(myArgs[method_index,3] + '_' + myArgs[varListKey_index,3] + '_' + nVars)
+myArgs[outfname_index,3] = 'dataset/weights/TMVAOpt_' + outf_key + '.root'
+
+# Create directory for hyper parameter optimization for # of input variables if it doesn't exit
+if not os.path.exists('dataset/optimize_' + outf_key):
+  os.mkdir('dataset/optimize_' + outf_key)
+  os.mkdir('dataset/optimize_' + outf_key + '/weights/')
+
+# Initialize some containers
+bkg_list = []
+bkg_trees_list = []
+hist_list = []
+weightsList = []
+
+outputfile =    TFile( myArgs[outfname_index,3], "RECREATE" )
+print("Output file:",myArgs[outfname_index,3])
+inputDir =      varsList.inputDir
+iFileSig =      TFile.Open( inputDir + myArgs[infname_index,3] )
+print("Input file",inputDir + myArgs[infname_index,3])
+sigChain =      iFileSig.Get( "ljmet" )
+
+loader = TMVA.DataLoader( "dataset/optimize_" + outf_key )
+
+for var in varList:
+  if var[0] == 'NJets_singleLepCalc': loader.AddVariable(var[0],var[1],var[2],'I')
+  else: loader.AddVariable(var[0],var[1],var[2],'F')
+    
+loader.AddSignalTree(sigChain)
+  
+for i in range(len(varsList.bkg)):
+  bkg_list.append(TFile.Open( inputDir + varsList.bkg[i] ))
+  print( inputDir + varsList.bkg[i] )
+  bkg_trees_list.append( bkg_list[i].Get('ljmet') )
+  bkg_trees_list[i].GetEntry(0)
+    
+  if bkg_trees_list[i].GetEntries() == 0:
+    continue
+  loader.AddBackgroundTree( bkg_trees_list[i], 1 )
+    
+loader.SetSignalWeightExpression( weightStrS )
+loader.SetBackgroundWeightExpression( weightStrB )
+  
+mycutSig = TCut( cutStrS )
+mycutBkg = TCut( cutStrB )
+ 
+loader.PrepareTrainingAndTestTree( 
+  mycutSig, mycutBkg, 
+  "nTrain_Signal=" + str(NSIG) +\
+  ":nTrain_Background=" + str(NBKG) +\
+  ":nTest_Signal=" + str(NSIG_TEST) +\
+  ":nTest_Background=" + str(NBKG_TEST) +\
+  ":SplitMode=Random:NormMode=NumEvents:!V"
+)
+
+######################################################
+######################################################
+######                                          ######
+######         O P T I M I Z A T I O N          ######
+######                                          ######
+######################################################
+######################################################
 
 ### Define some static model parameters
 
 PATIENCE =    5
 EPOCHS =      10
-NSIG =        10000
-NBKG =        20000
 DROPOUT =     True
 NODE_DROP =   False
 MODEL_NAME =  "dummy_opt_model.h5"
+TAG_NUM =     str(datetime.datetime.now().hour)
+TAG =         datetime.datetime.today().strftime('%m-%d') + '(' + TAG_NUM + ')'
+LOG_FILE =    open('dataset/optimize_' + outf_key + '/optimize_log_' + TAG + '.txt','w')
 
 ### Hyper parameter survey range
 
@@ -153,8 +233,8 @@ BATCH_POW =   [7,10] # used as 2 ^ BATCH_POW
 LRATE =       [1e-4,1e-2]
 
 ### Optimization parameters
-NCALLS =      20
-NSTARTS =     10
+NCALLS =      2
+NSTARTS =     1
 
 space = [
   Integer(HIDDEN[0],      HIDDEN[1],      name = "hidden_layers"),
@@ -212,81 +292,19 @@ def objective(**X):
     dropout = DROPOUT
   )
   model.save( MODEL_NAME )
-  model.summary() 
-  
-  for opt, arg in opts:
-    if opt in myArgs[:,0]:
-      index = np.where(myArgs[:,0] == opt)[0][0] # np.where returns a tuple of arrays
-      myArgs[index,3] = arg # override the variables with the command line argument
-    elif opt in myArgs[:,1]:
-      index = np.where(myArgs[:,1] == opt)[0][0] 
-      myArgs[index,3] = arg
-    if opt in ('-t', '--inputtrees'): # handles assigning tree signal and background
-      index_sig = np.where(myArgs[:,2] == 'treeNameSig')[0][0]
-      index_bkg = np.where(myArgs[:,2] == 'treeNameBkg')[0][0]
-      myArgs[index_sig,3], myArgs[index_bkg,3] == treeSplit_(arg) # override signal, background tree
+  model.summary()  
  
-  # Initialize some variables after reading in arguments
-  method_index = np.where(myArgs[:,2] == 'methods')[0][0]
-  infname_index = np.where(myArgs[:,2] == 'infname')[0][0]
-  outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
-  verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
-
-  outf_key = str(myArgs[method_index,3] + '_' + myArgs[varListKey_index,3] + '_' + nVars)
-  myArgs[outfname_index,3] = 'dataset/optimization/weights/TMVA_' + outf_key + '.root'
-
-  # Initialize some containers
-  bkg_list = []
-  bkg_trees_list = []
-  hist_list = []
-  weightsList = []
-
-  outputfile =    TFile( myArgs[outfname_index,3], "RECREATE" )
-  inputDir =      varsList.inputDir
-  iFileSig =      TFile.Open( inputDir + myArgs[infname_index,3] )
-  sigChain =      iFileSig.Get( "ljmet" )
-  
+  BATCH_SIZE = int(2 ** X["batch_power"])
+ 
   factory = TMVA.Factory(
-    'TMVAClassification', outputfile,
-    '!V:!Silent:Color:DrawProgressBar:Transformations=I;:AnalysisType=Classification'
+    'DNNOptimizer',
+    '!V:!ROC:!Silent:Color:!DrawProgressBar:Transformations=I;:AnalysisType=Classification'
   )
 
-  factory.SetVerbose(bool( myArgs[verbose_index,3] ) )
-  (TMVA.gConfig().GetIONames()).fWeightFileDir = 'optimization/weights/' + outf_key
-  
-  loader = TMVA.DataLoader( "dataset" )
-  
-  for var in varList:
-    if var[0] == 'NJets_singleLepCalc': loader.AddVariable(var[0],var[1],var[2],'I')
-    else: loader.AddVariable(var[0],var[1],var[2],'F')
-    
-  loader.AddSignalTree(sigChain)
-  
-  for i in range(len(varsList.bkg)):
-    bkg_list.append(TFile.Open( inputDir + varsList.bkg[i] ))
-    print( inputDir + varsList.bkg[i] )
-    bkg_trees_list.append( bkg_list[i].Get('ljmet') )
-    bkg_trees_list[i].GetEntry(0)
-    
-    if bkg_trees_list[i].GetEntries() == 0:
-      continue
-    loader.AddBackgroundTree( bkg_trees_list[i], 1 )
-    
-  loader.SetSignalWeightExpression( weightStrS )
-  loader.SetBackgroundWeightExpression( weightStrB )
-  
-  mycutSig = TCut( cutStrS )
-  mycutBkg = TCut( cutStrB )
-  
-  loader.PrepareTrainingAndTestTree( 
-    mycutSig, mycutBkg, 
-    "nTrain_Signal=" + str(NSIG) +\
-    ":nTrain_Background=" + str(NBKG) +\
-    ":SplitMode=Random:NormMode=NumEvents:!V"
-  ) 
-  BATCH_SIZE = int(2 ** X["batch_power"])
-  
-  kerasSetting = 'H:!V:VarTransform=G:FilenameModel=' + MODEL_NAME +\
+  factory.SetVerbose(bool( myArgs[verbose_index,3] ))
+  (TMVA.gConfig().GetIONames()).fWeightFileDir = '/weights'
+
+  kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + MODEL_NAME +\
                  ':SaveBestOnly=true' +\
                  ':NumEpochs=' + str(EPOCHS) +\
                  ':BatchSize=' + str(BATCH_SIZE) +\
@@ -303,11 +321,26 @@ def objective(**X):
   factory.TestAllMethods()
   factory.EvaluateAllMethods()
   
-  ROC = factory.GetROCIntegral( "dataset/optimization/", "PyKeras" )
+  print("Evaluating ROC Integral")
+  ROC = factory.GetROCIntegral( 'dataset/optimize_' + outf_key, 'PyKeras' )
 
   del model
   backend.clear_session()
   backend.reset_uids()
+  factory.DeleteAllMethods()
+  factory.fMethodsMap.clear()
+  outputfile.Close()
+  command = "rm -rf dataset/optimize_" + outf_key + "/weights/*"
+  os.system(command)
+
+  LOG_FILE.write('{:7}, {:7}, {:7}, {:7}, {:7}\n'.format(
+    str(X["hidden_layers"]),
+    str(X["initial_nodes"]),
+    str(np.around(X["learning_rate"],5)),
+    str(BATCH_SIZE),
+    str(np.around(ROC,5))
+    )
+  )
   
   return (1.0 - ROC) # since the optimizer tries to minimize this function and we want a larger ROC value
 
@@ -315,6 +348,15 @@ def main():
   checkRootVer() # check the ROOT version
  
   start_time = time.time()
+  LOG_FILE.write('{:7}, {:7}, {:7}, {:7}, {:7}\n'.format(
+      'Hidden',
+      'Nodes',
+      'Rate',
+      'Batch',
+      'ROC'
+    )
+  )
+  
   res_gp = gp_minimize(
     func = objective,
     dimensions = space,
@@ -322,9 +364,28 @@ def main():
     n_random_starts = NSTARTS,
     verbose = True
   )
-  
-  outputfile.Close()
-  
+  LOG_FILE.close()
+
+  print("Writing optimized parameter log to: dataset/optimize/")
+  result_file = open('dataset/optimize_' + outf_key + '/params_' + TAG  + '.txt','w')
+  result_file.write('TTTT TMVA DNN Hyper Parameter Optimization Parameters \n')
+  result_file.write('Static Parameters:\n')
+  result_file.write(' Patience: {}'.format(PATIENCE))
+  result_file.write(' Epochs: {}'.format(EPOCHS))
+  result_file.write(' Signal, Background: {},{}'.format(NSIG,NBKG))
+  result_file.write(' Dropout: {}'.format(DROPOUT))
+  result_file.write(' Node Drop: {}'.format(NODE_DROP))
+  result_file.write('Parameter Space:\n')
+  result_file.write(' Hidden Layers: [{},{}]\n'.format(HIDDEN[0],HIDDEN[1]))
+  result_file.write(' Initial Nodes: [{},{}]\n'.format(NODES[0],NODES[1]))
+  result_file.write(' Batch Power: [{},{}]\n'.format(BATCH_POW[0],BATCH_POW[1]))
+  result_file.write(' Learning Rate: [{},{}]\n'.format(LRATE[0],LRATE[1]))
+  result_file.write('Optimized Parameters:\n')
+  result_file.write(' Hidden Layers: {}\n'.format(res_gp.x[0]))
+  result_file.write(' Initial Nodes: {}\n'.format(res_gp.x[1]))
+  result_file.write(' Batch Power: {}\n'.format(res_gp.x[2]))
+  result_file.write(' Learning Rate: {}\n'.format(res_gp.x[3]))
+  result_file.close()
   print('Finished optimization in: {} s'.format(time.time()-start_time))
 
 main()
