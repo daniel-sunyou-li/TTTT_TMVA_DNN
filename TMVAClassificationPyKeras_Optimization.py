@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 import numpy as np
-import os, sys
+import os, sys, shutil
 from subprocess import call
 from os.path import isfile
 import time, datetime
 import getopt
 import ROOT
-from ROOT import TMVA, TFile, TTree, TCut, TRandom3
-from ROOT import gSystem, gApplication, gROOT
+from ROOT import TMVA, TFile, TTree, TCut, TRandom3, gSystem, gApplication, gROOT
+#import tmva as TMVA
 import varsList
 
 from keras.models import Sequential
@@ -22,8 +22,13 @@ from skopt import gp_minimize
 from skopt.space import Real, Integer
 from skopt.utils import use_named_args
 
+#print('Root version: {}'.format(gROOT.GetVersion()))
+
 os.system('bash')
 os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh')
+  
+TMVA.Tools.Instance()
+TMVA.PyMethodBase.PyInitialize()
 
 ######################################################
 ######################################################
@@ -76,10 +81,6 @@ def printMethods_(methods): # prints a list of the methods being used
 
 START_TIME = time.time()
 
-TMVA.Tools.Instance()
-TMVA.PyMethodBase.PyInitialize()
-
-# Data Preparation
 NSIG =        10000
 NSIG_TEST =   100000
 NBKG =        20000
@@ -158,7 +159,7 @@ myArgs[outfname_index,3] = 'dataset/weights/TMVAOpt_' + outf_key + '.root'
 # Create directory for hyper parameter optimization for # of input variables if it doesn't exit
 if not os.path.exists('dataset/optimize_' + outf_key):
   os.mkdir('dataset/optimize_' + outf_key)
-  os.mkdir('dataset/optimize_' + outf_key + '/weights/')
+  os.mkdir('dataset/optimize_' + outf_key + '/weights')
 
 # Initialize some containers
 bkg_list = []
@@ -166,7 +167,6 @@ bkg_trees_list = []
 hist_list = []
 weightsList = []
 
-outputfile =    TFile( myArgs[outfname_index,3], "RECREATE" )
 print("Output file:",myArgs[outfname_index,3])
 inputDir =      varsList.inputDir
 iFileSig =      TFile.Open( inputDir + myArgs[infname_index,3] )
@@ -285,6 +285,8 @@ def build_custom_model(hidden, nodes, lrate, dropout):
 def objective(**X):
   print('New configuration: {}'.format(X))
   
+  outputfile =    TFile( myArgs[outfname_index,3], "RECREATE" )
+  
   model = build_custom_model(
     hidden =  X["hidden_layers"],
     nodes =   X["initial_nodes"],
@@ -295,9 +297,9 @@ def objective(**X):
   model.summary()  
  
   BATCH_SIZE = int(2 ** X["batch_power"])
- 
+  factory_name = 'DNNOptimizer'  
   factory = TMVA.Factory(
-    'DNNOptimizer',
+    factory_name, outputfile,
     '!V:!ROC:!Silent:Color:!DrawProgressBar:Transformations=I;:AnalysisType=Classification'
   )
 
@@ -317,22 +319,44 @@ def objective(**X):
     kerasSetting
   )
   
+  print("Training all methods...")
   factory.TrainAllMethods()
+  print("Testing all methods...")
   factory.TestAllMethods()
+  print("Evaluating all methods...")
   factory.EvaluateAllMethods()
   
   print("Evaluating ROC Integral")
   ROC = factory.GetROCIntegral( 'dataset/optimize_' + outf_key, 'PyKeras' )
 
+  # Reset the session
   del model
   backend.clear_session()
   backend.reset_uids()
+  #TMVA.MethodBase.Delete()
   factory.DeleteAllMethods()
   factory.fMethodsMap.clear()
+  
+  #TMVA.Results.Delete('dataset/weights/TMVAOpt_'+outf_key+'.root')
   outputfile.Close()
-  command = "rm -rf dataset/optimize_" + outf_key + "/weights/*"
-  os.system(command)
-
+  print("Results stored in {}".format(outputfile.GetName()))
+  
+  folder = 'dataset/optimize_' + outf_key + '/weights'
+  for filename in os.listdir(folder):
+    file_path = os.path.join(folder, filename)
+    try:
+      if os.path.isfile(file_path) or os.path.islink(file_path):
+        os.unlink(file_path)
+        print("Removing",file_path)
+      elif os.path.isdir(file_path):
+        shutil.rmtree(file_path)
+        print("Removing",file_path)
+    except Exception as e:
+      print('Failed to delete %s. Reason: %s' %(file_path, e))
+  #file_path = 'dataset/weights/TMVAOpt_' + outf_key + '.root'
+  #os.system('rm ' + file_path) 
+  
+  # Record the optimization iteration
   LOG_FILE.write('{:7}, {:7}, {:7}, {:7}, {:7}\n'.format(
     str(X["hidden_layers"]),
     str(X["initial_nodes"]),
@@ -356,7 +380,6 @@ def main():
       'ROC'
     )
   )
-  
   res_gp = gp_minimize(
     func = objective,
     dimensions = space,
