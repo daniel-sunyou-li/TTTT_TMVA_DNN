@@ -8,19 +8,21 @@ import time, datetime
 import getopt
 import ROOT
 from ROOT import TMVA, TFile, TTree, TCut, TRandom3, gSystem, gApplication, gROOT
-#import tmva as TMVA
+import varsList
 
-os.system('bash')
 os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh')
+
+TMVA.Tools.Instance()
+TMVA.PyMethodBase.PyInitialize()
 
 # Define some variables defaults
 MODEL_NAME =        "dummy_opt_model.h5"
-EPOCHS =            10
+EPOCHS =            20
 BATCH_SIZE =        1028
 PATIENCE =          5
 outf_key =          "PyKeras"
-INPUTFILE =         "input.root"
-TEMPFILE =          "dataset/optimize/temp.txt"
+INPUTFILE =         varsList.inputDir + "TTTT_TuneCP5_PSweights_13TeV-powheg-pythia8_hadd.root"
+TEMPFILE =          "dataset/temp_file.txt"
 
 ######################################################
 ######################################################
@@ -31,8 +33,8 @@ TEMPFILE =          "dataset/optimize/temp.txt"
 ######################################################
 
 try: # retrieve command line options
-  shortopts   = "m:e:b:p:i:o" # possible command line options
-  opts, args = getopt.getopt( sys.argv[1:], shortops ) # associates command line inputs to variables
+  shortopts   = "e:b:p:o" # possible command line options
+  opts, args = getopt.getopt( sys.argv[1:], shortopts ) # associates command line inputs to variables
   
 except getopt.GetoptError: # output error if command line argument invalid
   print("ERROR: unknown options in argument %s" %sys.argv[1:])
@@ -40,13 +42,8 @@ except getopt.GetoptError: # output error if command line argument invalid
   sys.exit(1)
   
 for opt, arg in opts:
-    if opt in ('m'): MODEL_NAME = str(arg)
-    elif opt in ('e'): EPOCHS = int(arg)
-    elif opt in ('b'): BATCH_SIZE = int(arg)
-    elif opt in ('p'): PATIENCE = int(arg)
-    elif opt in ('i'): INPUTFILE = str(arg)
+    if opt in ('b'): BATCH_SIZE = int(arg)
     elif opt in ('o'): outf_key = str(arg)
-    elif opt in ('t'): TEMPFILE = str(arg)
 
 ######################################################
 ######################################################
@@ -79,7 +76,7 @@ hist_list = []
 weightsList = []
 
 print("Output file: dataset/weights/TMVAOpt_" + outf_key + ".root")
-outputfile =    TFile( OUTPUTFILE, "RECREATE" )
+outputfile =    TFile( "dataset/weights/TMVAOpt_" + outf_key + ".root", "RECREATE" )
 
 print("Input file",INPUTFILE)
 iFileSig =      TFile.Open( INPUTFILE )
@@ -87,15 +84,15 @@ sigChain =      iFileSig.Get( "ljmet" )
 
 loader = TMVA.DataLoader( "dataset/optimize_" + outf_key )
 
-for var in varList:
+for var in varsList.varList["BigComb"]:
   if var[0] == 'NJets_singleLepCalc': loader.AddVariable(var[0],var[1],var[2],'I')
   else: loader.AddVariable(var[0],var[1],var[2],'F')
   
 loader.AddSignalTree(sigChain)
   
 for i in range(len(varsList.bkg)):
-  bkg_list.append(TFile.Open( inputDir + varsList.bkg[i] ))
-  print( inputDir + varsList.bkg[i] )
+  bkg_list.append(TFile.Open( varsList.inputDir + varsList.bkg[i] ))
+  print( varsList.inputDir + varsList.bkg[i] )
   bkg_trees_list.append( bkg_list[i].Get('ljmet') )
   bkg_trees_list[i].GetEntry(0)
     
@@ -120,11 +117,10 @@ loader.PrepareTrainingAndTestTree(
   
 factory_name = 'DNNOptimizer'  
 factory = TMVA.Factory(
-  factory_name, outputfile,
+  factory_name,
   '!V:!ROC:!Silent:Color:!DrawProgressBar:Transformations=I;:AnalysisType=Classification'
 )
 
-factory.SetVerbose(bool( myArgs[verbose_index,3] ))
 (TMVA.gConfig().GetIONames()).fWeightFileDir = '/weights'
 
 kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + MODEL_NAME +\
@@ -159,7 +155,7 @@ tempfile = open(TEMPFILE,'w')
 tempfile.write(str(ROC))
 tempfile.close()
   
-  
+print("Finished optimization round.")  
   
   
   

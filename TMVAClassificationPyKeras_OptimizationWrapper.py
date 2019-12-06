@@ -114,20 +114,23 @@ def build_custom_model(hidden, nodes, lrate, dropout):
 ######################################################
 ######################################################
 
+DEFAULT_METHODS       = "Keras"
+DEFAULT_OUTFNAME      = "dataset/weights/TMVA.root"
+DEFAULT_INFNAME       = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
+DEFAULT_VARLISTKEY    = "BigComb"
+
 myArgs = np.array([ # Stores the command line arguments
   ['-m','--methods','methods',        DEFAULT_METHODS],     #0  Reference Indices
-  ['-k','--mass','mass',              DEFAULT_MASS],        #2
-  ['-l','--varListKey','varListKey',  DEFAULT_VARLISTKEY],  #3
-  ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #4
-  ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #5
-  ['-v','--verbose','verbose',        True],                #8
+  ['-l','--varListKey','varListKey',  DEFAULT_VARLISTKEY],  #1
+  ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #2
+  ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #3
+  ['-v','--verbose','verbose',        True],                #4
 ])    
 
 try: # retrieve command line options
   shortopts   = "m:i:k:l:o:vh?" # possible command line options
   longopts    = ["methods=", 
                  "inputfile=",
-                 "mass=",
                  "varListKey=",
                  "outputfile=",
                  "verbose",
@@ -182,8 +185,8 @@ if not os.path.exists('dataset/optimize_' + outf_key):
 
 ### Define some static model parameters
 
+EPOCHS =      20
 PATIENCE =    5
-EPOCHS =      10
 DROPOUT =     True
 NODE_DROP =   False
 MODEL_NAME =  "dummy_opt_model.h5"
@@ -199,8 +202,8 @@ BATCH_POW =   [7,10] # used as 2 ^ BATCH_POW
 LRATE =       [1e-4,1e-2]
 
 ### Optimization parameters
-NCALLS =      2
-NSTARTS =     1
+NCALLS =      30
+NSTARTS =     10
 
 space = [
   Integer(HIDDEN[0],      HIDDEN[1],      name = "hidden_layers"),
@@ -231,9 +234,13 @@ def objective(**X):
  
   BATCH_SIZE = int(2 ** X["batch_power"])
   
-  TEMP_NAME = 'dataset/optimize_' + outf_key + '/temp_file.txt'
-  os.system("python TMVAOptimization.py -m {} -e {} -b {} -p {} -i {} -o {} -t {}".format(MODEL_NAME, EPOCHS, BATCH_SIZE, PATIENCE,
-    INPUTFILE, outf_key, TEMPFILE))   
+  TEMP_NAME = 'dataset/temp_file.txt'
+  os.system("python TMVAOptimization.py -o {} -b {}".format(outf_key, BATCH_SIZE))   
+  
+  while not os.path.exists(TEMP_NAME):    # wait until temp_file.txt is created after training
+    time.sleep(1)
+    if os.path.exists(TEMP_NAME): continue
+
   ROC = float(open(TEMP_NAME, 'r').read())
   os.system("rm {}".format(TEMP_NAME))
     
@@ -281,7 +288,6 @@ def main():
   result_file.write('Static Parameters:\n')
   result_file.write(' Patience: {}'.format(PATIENCE))
   result_file.write(' Epochs: {}'.format(EPOCHS))
-  result_file.write(' Signal, Background: {},{}'.format(NSIG,NBKG))
   result_file.write(' Dropout: {}'.format(DROPOUT))
   result_file.write(' Node Drop: {}'.format(NODE_DROP))
   result_file.write('Parameter Space:\n')
