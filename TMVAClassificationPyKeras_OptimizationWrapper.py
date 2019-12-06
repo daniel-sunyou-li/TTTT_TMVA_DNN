@@ -26,7 +26,7 @@ from keras import backend
 sys.path.insert(0, "/home/dli50/.local/lib/python2.7/site-packages")
 
 from skopt import gp_minimize
-from skopt.space import Real, Integer
+from skopt.space import Real, Integer, Categorical
 from skopt.utils import use_named_args
 
 os.system('bash')
@@ -46,7 +46,6 @@ def usage(): # conveys what command line arguments can be used for main()
   print("  -m | --methods    : gives methods to be run (default: all methods)")
   print("  -i | --inputfile  : name of input ROOT file (default: '%s')" % DEFAULT_INFNAME)
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
-  print("  -k | --mass : mass of the signal (default: '%s')" %DEFAULT_MASS)
   print("  -l | --varListKey : BDT input variable list (default: '%s')" %DEFAULT_VARLISTKEY)
   print("  -v | --verbose")
   print("  -? | --usage      : print this help message")
@@ -68,32 +67,33 @@ def printMethods_(methods): # prints a list of the methods being used
     if m.strip() != '':
       print('=== - <%s>'%m.strip())
       
-def build_custom_model(hidden, nodes, lrate, dropout):
+def build_custom_model(hidden, nodes, lrate, regulator, pattern, activation):
   model = Sequential()
   model.add(Dense(
       nodes,
       input_dim = var_length,
       kernel_initializer = 'glorot_normal',
-      activation = 'softplus'
+      activation = activation
     )
   )
   partition = int( nodes / hidden )
   for i in range(hidden):
-    if dropout == True: model.add(Dropout(0.5))
-    if NODE_DROP == True:
+    if regulator in ['normalization','both']: model.add(BatchNormalization())
+    if pattern == 'dynamic':
       model.add(Dense(
           nodes - ( partition * i),
           kernel_initializer = 'glorot_normal',
-          activation = 'softplus'
+          activation = activation
         )
       )
     else:
       model.add(Dense(
           nodes,
           kernel_initializer = 'glorot_normal',
-          activation = 'softplus'
+          activation = activation
         )
-      )  
+      )
+	if regulator in ['dropout','both']: model.add(model.add(Dropout(0.5)))
   model.add(Dense(
       2, # signal or background classification
       activation = 'sigmoid'
@@ -187,8 +187,6 @@ if not os.path.exists('dataset/optimize_' + outf_key):
 
 EPOCHS =      20
 PATIENCE =    5
-DROPOUT =     True
-NODE_DROP =   False
 MODEL_NAME =  "dummy_opt_model.h5"
 TAG_NUM =     str(datetime.datetime.now().hour)
 TAG =         datetime.datetime.today().strftime('%m-%d') + '(' + TAG_NUM + ')'
@@ -198,19 +196,26 @@ LOG_FILE =    open('dataset/optimize_' + outf_key + '/optimize_log_' + TAG + '.t
 
 HIDDEN =      [1,5]
 NODES =       [var_length,var_length*10]
-BATCH_POW =   [7,10] # used as 2 ^ BATCH_POW
+PATTERN =     ['static', 'dynamic']
+BATCH_POW =   [7,11] # used as 2 ^ BATCH_POW
 LRATE =       [1e-4,1e-2]
+REGULATOR =   ['none', 'dropout', 'normalization', 'both']
+ACTIVATION =  ['relu','softplus']
 
 ### Optimization parameters
 NCALLS =      30
-NSTARTS =     10
+NSTARTS =     15
 
 space = [
-  Integer(HIDDEN[0],      HIDDEN[1],      name = "hidden_layers"),
-  Integer(NODES[0],       NODES[1],       name = "initial_nodes"),
-  Integer(BATCH_POW[0],   BATCH_POW[1],   name = "batch_power"),
-  Real(LRATE[0],          LRATE[1],       name = "learning_rate")
+  Integer(HIDDEN[0],       HIDDEN[1],      name = "hidden_layers"),
+  Integer(NODES[0],        NODES[1],       name = "initial_nodes"),
+  Integer(BATCH_POW[0],    BATCH_POW[1],   name = "batch_power"),
+  Real(LRATE[0],           LRATE[1],       name = "learning_rate"),
+  Categorical(PATTERN,                     name = "node_pattern"),
+  Categorical(REGULATOR,                   name = "regulator"),
+  Categorical(ACTIVATION,                  name = "activation_function")
 ]
+
 ######################################################
 ######################################################
 ######                                          ######
@@ -224,10 +229,12 @@ def objective(**X):
   print('New configuration: {}'.format(X))
   
   model = build_custom_model(
-    hidden =  X["hidden_layers"],
-    nodes =   X["initial_nodes"],
-    lrate =   X["learning_rate"],
-    dropout = DROPOUT
+    hidden =        X["hidden_layers"],
+    nodes =         X["initial_nodes"],
+    lrate =         X["learning_rate"],
+    regulator =     X["regulator"],
+    pattern =       X["node_pattern"],
+    activation =    X["activation_function"]
   )
   model.save( MODEL_NAME )
   model.summary()  
@@ -250,11 +257,14 @@ def objective(**X):
   backend.reset_uids()
   
   # Record the optimization iteration
-  LOG_FILE.write('{:7}, {:7}, {:7}, {:7}, {:7}\n'.format(
+  LOG_FILE.write('{:7}, {:7}, {:7}, {:7}, {:9}, {:14}, {:10}, {:7}\n'.format(
     str(X["hidden_layers"]),
     str(X["initial_nodes"]),
     str(np.around(X["learning_rate"],5)),
     str(BATCH_SIZE),
+    str(X["node_pattern"]),
+    str(X["regulator"]),
+    str(X["activation_function"]),
     str(np.around(ROC,5))
     )
   )
@@ -265,11 +275,14 @@ def main():
   checkRootVer() # check the ROOT version
  
   start_time = time.time()
-  LOG_FILE.write('{:7}, {:7}, {:7}, {:7}, {:7}\n'.format(
+  LOG_FILE.write('{:7}, {:7}, {:7}, {:7}, {:9}, {:14}, {:10}, {:7}\n'.format(
       'Hidden',
       'Nodes',
       'Rate',
       'Batch',
+      'Pattern',
+      'Regulator',
+      'Activation',
       'ROC'
     )
   )
@@ -288,19 +301,22 @@ def main():
   result_file.write('Static Parameters:\n')
   result_file.write(' Patience: {}'.format(PATIENCE))
   result_file.write(' Epochs: {}'.format(EPOCHS))
-  result_file.write(' Dropout: {}'.format(DROPOUT))
-  result_file.write(' Node Drop: {}'.format(NODE_DROP))
   result_file.write('Parameter Space:\n')
   result_file.write(' Hidden Layers: [{},{}]\n'.format(HIDDEN[0],HIDDEN[1]))
   result_file.write(' Initial Nodes: [{},{}]\n'.format(NODES[0],NODES[1]))
   result_file.write(' Batch Power: [{},{}]\n'.format(BATCH_POW[0],BATCH_POW[1]))
   result_file.write(' Learning Rate: [{},{}]\n'.format(LRATE[0],LRATE[1]))
+  result_file.write(' Pattern: {}\n'.format(PATTERN))
+  result_file.write(' Activation: {}\n'.format(ACTIVATION))
+  result_file.write(' Regulator: {}\n'.format(REGULATOR))
   result_file.write('Optimized Parameters:\n')
   result_file.write(' Hidden Layers: {}\n'.format(res_gp.x[0]))
   result_file.write(' Initial Nodes: {}\n'.format(res_gp.x[1]))
   result_file.write(' Batch Power: {}\n'.format(res_gp.x[2]))
   result_file.write(' Learning Rate: {}\n'.format(res_gp.x[3]))
-  result_file.close()
+  result_file.write(' Node Pattern: {}\n'.format(res_gp.x[4]))
+  result_file.write(' Regulator: {}\n'.format(res_gp.x[5]))
+  result_file.close(' Activation Function: {}\n'.format(res_gp[6])
   print('Finished optimization in: {} s'.format(time.time()-start_time))
 
 
