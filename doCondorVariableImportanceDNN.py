@@ -9,8 +9,11 @@ from ROOT import TMVA, TFile, TTree, TCut
 from ROOT import gSystem, gApplication, gROOT
 import varsList
 
-ROOT.TMVA.PyMethodBase.PyInitialize()
-ROOT.TMVA.Tools.Instance()
+os.system("bash")
+os.system("source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh")
+
+TMVA.Tools.Instance()
+TMVA.PyMethodBase.PyInitialize()
 
 # some parameters
 inputDir = varsList.inputDir
@@ -20,9 +23,9 @@ weightStrC = "pileupWeight*lepIdSF*EGammaGsfSF*MCWeight_MultiLepCalc/abs(MCWeigh
 weightStrS = weightStrC # weight equation for Signal
 weightStrB = weightStrC # weight equation for Background
 
-cutStrC = TCut("(NJets_JetSubCalc >= 5 && NJetsCSV_JetSubCalc >= 2) && ((leptonPt_MultiLepCalc > 35 && isElectron) || (leptonPt_MultiLepCalc > 30 && isMuon))")
-cutStrS = cutStrC # cut expression for Signal
-cutStrB = cutStrC # cut expression for Background
+cutStrC = "(NJets_JetSubCalc >= 5 && NJetsCSV_JetSubCalc >= 2) && ((leptonPt_MultiLepCalc > 35 && isElectron) || (leptonPt_MultiLepCalc > 30 && isMuon))"
+cutStrS = TCut(cutStrC) # cut expression for Signal
+cutStrB = TCut(cutStrC) # cut expression for Background
 
 # load the signal and a background file into a ROOT.TMVA.DataLoader object and apply the weights and cuts
 loader = TMVA.DataLoader("dataset")
@@ -49,8 +52,8 @@ loader.SetBackgroundWeightExpression( weightStrB )
 
 # set cuts using DataLoader.PrepareTrainingAndTestTree
 loader.PrepareTrainingAndTestTree(
-  SigCut = cutStrS, BkgCut = cutStrB,
-  nTrain_Signal = 0, nTrain_Background = 0, SplitMode = "Random", NormMode = "NumEvents", V = False
+  cutStrS, cutStrB,
+  "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V"
 )
 
 # set the pointer to the correct TH2 (histogram)--very important 
@@ -61,7 +64,7 @@ sig_th2 = loader.GetCorrelationMatrix("Signal")
 # bkg_th2 = loader.GetCorrelationMatrix("Background")
 
 # define parameters for creating numpy array for the correlation matrix and generating seeds
-n_bins = sig_th2.GetNbinX()
+n_bins = sig_th2.GetNbinsX()
 
 sig_corr = np.zeros((n_bins,n_bins))
 # bkg_corr = np.zeros((n_bins,n_bins))
@@ -69,11 +72,6 @@ for x in range(n_bins):
   for y in range(n_bins):
     sig_corr[x,y] = sig_th2.GetBinContent(x+1,y+1)
     # bkg_corr[x,y] = bkg_th2.GetBinContent(x+1,y+1)
-
-print("Input variables:")
-print(varNames)
-print("Correlation Coefficient Matrix")
-print(sig_corr)
 
 max_int = int("1"*n_bins,2)
 corr_cut = 80 # set this

@@ -130,7 +130,7 @@ def main(): # runs the program
   outf_key = str(myArgs[method_index,3] +  '_' + myArgs[varListKey_index,3] + '_' + str(nVars) + 'vars')
   myArgs[outfname_index,3] = 'dataset/weights/TMVA_' + outf_key + '.root'   
 
-  print("Seed is:",seed,"Bit string is:",str_xbitset,"Number of variables:",nVars)
+  print("Seed: {}".format(str_xbitset))
 
   outputfile = TFile( myArgs[outfname_index,3], 'RECREATE' ) 
 
@@ -249,15 +249,14 @@ def main(): # runs the program
     kerasSetting) 
 
   (TMVA.gConfig().GetIONames()).fWeightFileDir = str_xbitset + "/weights/" + outf_key
-  print("New weight file directory:",(TMVA.gConfig().GetIONames()).fWeightFileDir)
+  print("New weight file directory: {}".format((TMVA.gConfig().GetIONames()).fWeightFileDir))
   
   fClassifier.TrainAllMethods()
   fClassifier.TestAllMethods()
   fClassifier.EvaluateAllMethods()
   
   SROC = fClassifier.GetROCIntegral("dataset/"+ str_xbitset, "PyKeras")
-  print("ROC-integral: ",seed,SROC)
-  print("Seed: ",seed," DONE")
+  print("ROC-integral: {}".format(SROC))
   fClassifier.DeleteAllMethods()
   fClassifier.fMethodsMap.clear()
   
