@@ -101,7 +101,7 @@ os.system('mkdir -p ' + condorDir)
 method = "Keras"
 
 varList = varsList.varList["BigComb"]
-num_seeds = len(varList)*len(varList) - len(corr_seeds) 
+num_seeds = min(len(varList)*len(varList),150) - len(corr_seeds) # optionally cap the number of seeds generated
 binary_str = "1" * len(varList)
 
 # submit manually generated seed jobs
