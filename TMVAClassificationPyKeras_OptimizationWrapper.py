@@ -20,6 +20,7 @@ import varsList
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout
+from keras.layers import BatchNormalization
 from keras.optimizers import Adam
 from keras import backend
 
@@ -79,21 +80,21 @@ def build_custom_model(hidden, nodes, lrate, regulator, pattern, activation):
   partition = int( nodes / hidden )
   for i in range(hidden):
     if regulator in ['normalization','both']: model.add(BatchNormalization())
-    if pattern == 'dynamic':
+    if pattern in ['dynamic']:
       model.add(Dense(
           nodes - ( partition * i),
           kernel_initializer = 'glorot_normal',
           activation = activation
         )
       )
-    else:
+    if pattern in ['static']:
       model.add(Dense(
           nodes,
           kernel_initializer = 'glorot_normal',
           activation = activation
         )
       )
-	if regulator in ['dropout','both']: model.add(model.add(Dropout(0.5)))
+    if regulator in ['dropout','both']: model.add(Dropout(0.5))
   model.add(Dense(
       2, # signal or background classification
       activation = 'sigmoid'
@@ -316,7 +317,7 @@ def main():
   result_file.write(' Learning Rate: {}\n'.format(res_gp.x[3]))
   result_file.write(' Node Pattern: {}\n'.format(res_gp.x[4]))
   result_file.write(' Regulator: {}\n'.format(res_gp.x[5]))
-  result_file.close(' Activation Function: {}\n'.format(res_gp[6])
+  result_file.close(' Activation Function: {}\n'.format(res_gp.x[6]))
   print('Finished optimization in: {} s'.format(time.time()-start_time))
 
 
