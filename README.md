@@ -12,7 +12,7 @@ There are three general steps for this analysis:
     
     # retrieve the CMSSW environment
     source /cvmfs/cms.cern.ch/cmsset_default.sh
-    export SCRAM_ARCH=slc6_amd64_gcc530
+    export SCRAM_ARCH=slc7_amd64_gcc530
     cmsrel CMSSW_9_4_6_patch1
     cd CMSSW_9_4_6_patch1/src/
     cmsenv
@@ -21,8 +21,15 @@ There are three general steps for this analysis:
     git clone https://github.com/daniel-sunyou-li/TTTT_TMVA_DNN.git
     cd ./TTTT_TMVA_DNN/
     mkdir dataset
+    pip install --user scikit-optimize # this should be stored in .local/lib/python2.7/site-packages
     
 Some of the scripts have the line `os.system('bash')` which is required for setting up the environment but requires `exit` in the command line after running the script to view the outputs.
+
+Also, make sure that the `keras` config has `"backend": "tensorflow"` which can be found by:
+
+      cd ~/.keras/
+      vim keras.json # or use whatever text editing tool you prefer
+      
 ### Datasets ###
 We are using 2017 Step 2 LJMET samples that are stored in: `/mnt/hadoop/store/group/bruxljm/FWLJMET102X_1lep2017_Oct2019_4t_12122019_step2/nominal/`
 * The directory is also listed in `varsList.py` as `inputDir`
@@ -95,6 +102,9 @@ For each of these hyper parameters, the survey space can be edited before runnin
 * `NSTARTS`: the number of randomly sampled hyper parameter iterations
 
 If editing the static parameters, necessary to edit `EPOCHS` and `PATIENCE` in `TMVAOptimization.py` as well.
+
+__(Important!!!)__ Need to edit the line `sys.path.insert(0, "/home/dli50/.local/lib/python2.7/site-packages")` to point to your own directory where `scikit-optimize` is stored.
+* Install `scikit-optimize` using: `pip install --user scikit-optimize`
 ### 2.2 Run the hyper parameter optimization ###
 Check the script `doCondorClassification.sh` and make sure that the correct script is uncommented.  It should have the line:
 
