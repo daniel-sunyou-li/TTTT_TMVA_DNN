@@ -59,7 +59,11 @@ The variable importance analysis is run by the command:
 
 which submits Condor jobs, each representing a different input subset to be trained.  The results and logs are stored in `condor_log` where the desired result is the ROC value, which is contained in the `.out` file.  
 ### 1.3.2 Resubmit failed Condor jobs ###
-Some jobs will fail since the same `.h5` file will be used when preparing `ROOT.TMVA.factory()` by competing Condor jobs with the same number of inputs. You can identify a failed job by noting a small `.out` file size and checking the `.err` log. In the case of failed jobs, run the script:
+Some jobs will fail since the same `.h5` file will be used when preparing `ROOT.TMVA.factory()` by competing Condor jobs with the same number of inputs. 
+
+To check the status of the Condor job, use the command: `condor_q`
+
+You can identify a failed job by noting a small `.out` file size and checking the `.err` log. In the case of failed jobs, run the script:
 
 `python resubmitCondorVariableImportanceDNN.py`
 
