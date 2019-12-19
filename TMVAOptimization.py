@@ -8,9 +8,11 @@ import time, datetime
 import getopt
 import ROOT
 from ROOT import TMVA, TFile, TTree, TCut, TRandom3, gSystem, gApplication, gROOT
-#import tmva as TMVA
+import varsList
 
-os.system('bash')
+TMVA.Tools.Instance()
+TMVA.PyMethodBase.PyInitialize()
+
 os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh')
 
 # Define some variables defaults
@@ -19,8 +21,8 @@ EPOCHS =            20
 BATCH_SIZE =        1028
 PATIENCE =          5
 outf_key =          "PyKeras"
-INPUTFILE =         "input.root"
-TEMPFILE =          "dataset/optimize/temp.txt"
+INPUTFILE =         varsList.inputDir + "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
+TEMPFILE =          "dataset/temp_file.txt"
 
 ######################################################
 ######################################################
@@ -31,8 +33,8 @@ TEMPFILE =          "dataset/optimize/temp.txt"
 ######################################################
 
 try: # retrieve command line options
-  shortopts   = "b:p:i:o" # possible command line options
-  opts, args = getopt.getopt( sys.argv[1:], shortops ) # associates command line inputs to variables
+  shortopts   = "b:o" # possible command line options
+  opts, args = getopt.getopt( sys.argv[1:], shortopts ) # associates command line inputs to variables
   
 except getopt.GetoptError: # output error if command line argument invalid
   print("ERROR: unknown options in argument %s" %sys.argv[1:])
@@ -40,11 +42,8 @@ except getopt.GetoptError: # output error if command line argument invalid
   sys.exit(1)
   
 for opt, arg in opts:
-    elif opt in ('b'): BATCH_SIZE = int(arg)
-    elif opt in ('p'): PATIENCE = int(arg)
-    elif opt in ('i'): INPUTFILE = str(arg)
+    if opt in ('b'): BATCH_SIZE = int(arg)
     elif opt in ('o'): outf_key = str(arg)
-    elif opt in ('t'): TEMPFILE = str(arg)
 
 ######################################################
 ######################################################
@@ -54,10 +53,10 @@ for opt, arg in opts:
 ######################################################
 ######################################################
 
-NSIG =        100000
-NSIG_TEST =   200000
-NBKG =        200000
-NBKG_TEST =   400000
+NSIG =        20000
+NSIG_TEST =   20000
+NBKG =        100000
+NBKG_TEST =   200000
 
 # Set cut and weight values
 weightStrC = "pileupWeight*lepIdSF*EGammaGsfSF*MCWeight_MultiLepCalc/abs(MCWeight_MultiLepCalc)"
@@ -77,7 +76,7 @@ hist_list = []
 weightsList = []
 
 print("Output file: dataset/weights/TMVAOpt_" + outf_key + ".root")
-outputfile =    TFile( OUTPUTFILE, "RECREATE" )
+outputfile =    TFile( "dataset/weights/TMVAOpt_"+outf_key+".root", "RECREATE" )
 
 print("Input file",INPUTFILE)
 iFileSig =      TFile.Open( INPUTFILE )
@@ -85,15 +84,15 @@ sigChain =      iFileSig.Get( "ljmet" )
 
 loader = TMVA.DataLoader( "dataset/optimize_" + outf_key )
 
-for var in varList:
+for var in varsList.varList["BigComb"]:
   if var[0] == 'NJets_singleLepCalc': loader.AddVariable(var[0],var[1],var[2],'I')
   else: loader.AddVariable(var[0],var[1],var[2],'F')
   
 loader.AddSignalTree(sigChain)
   
 for i in range(len(varsList.bkg)):
-  bkg_list.append(TFile.Open( inputDir + varsList.bkg[i] ))
-  print( inputDir + varsList.bkg[i] )
+  bkg_list.append(TFile.Open( varsList.inputDir + varsList.bkg[i] ))
+  print( varsList.inputDir + varsList.bkg[i] )
   bkg_trees_list.append( bkg_list[i].Get('ljmet') )
   bkg_trees_list[i].GetEntry(0)
     
@@ -118,14 +117,13 @@ loader.PrepareTrainingAndTestTree(
   
 factory_name = 'DNNOptimizer'  
 factory = TMVA.Factory(
-  factory_name, outputfile,
+  factory_name,
   '!V:!ROC:!Silent:Color:!DrawProgressBar:Transformations=I;:AnalysisType=Classification'
 )
 
-factory.SetVerbose( False )
 (TMVA.gConfig().GetIONames()).fWeightFileDir = '/weights'
 
-kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + MODEL_NAME +\
+kerasSetting = '!H:!V:VarTransform=I:FilenameModel=' + MODEL_NAME +\
                ':SaveBestOnly=true' +\
                ':NumEpochs=' + str(EPOCHS) +\
                ':BatchSize=' + str(BATCH_SIZE) +\

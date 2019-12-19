@@ -16,4 +16,8 @@ eval `scramv1 runtime -sh`
 source /cvmfs/sft.cern.ch/lcg/contrib/gcc/7.3.0/x86_64-centos7-gcc7-opt/setup.sh
 source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.16.00/x86_64-centos7-gcc48-opt/bin/thisroot.sh
 
+<<<<<<< HEAD
 python TMVAClassification_VarImportanceDNN.py -m $method -i "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root" -s $str_xbitset -t $tag
+=======
+python TMVAClassification_VarImportanceDNN.py -m $method -i "TTTT_TuneCP5_PSweights_13TeV-powheg-pythia8_hadd.root" -s $str_xbitset -t $tag
+>>>>>>> e48c532fcdea7a0bf010483746f3831f7b4cc115
