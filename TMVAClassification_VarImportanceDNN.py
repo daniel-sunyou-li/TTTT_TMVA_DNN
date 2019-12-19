@@ -12,7 +12,8 @@ import varsList
 from subprocess import call
 
 from keras.models import Sequential
-from keras.layers.core import Dense
+from keras.layers.core import Dense, Dropout
+from keras.layers import BatchNormalization
 from keras.optimizers import Adam
 
 os.system('bash')
@@ -32,9 +33,8 @@ cutStrB = cutStrC
 DEFAULT_METHODS		  = "Keras" 			        # how was the .root file trained
 DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
 DEFAULT_INFNAME		  = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
-DEFAULT_MASS		    = "180"
-DEFAULT_SEED        = 1
-DEFAULT_VARLISTKEY  = "BigComb"
+DEFAULT_SEED        = 2
+DEFAULT_TAG         = "0"
 
 ######################################################
 ######################################################
@@ -50,8 +50,6 @@ def usage(): # conveys what command line arguments can be used for main()
   print("  -m | --methods    : gives methods to be run (default: all methods)")
   print("  -i | --inputfile  : name of input ROOT file (default: '%s')" % DEFAULT_INFNAME)
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
-  print("  -k | --mass : mass of the signal (default: '%s')" %DEFAULT_MASS)
-  print("  -l | --varListKey : DNN input variable list (default: '%s')" %DEFAULT_VARLISTKEY)
   print("  -s | --seed : random seed for selecting variable (default: '%s')" %DEFAULT_SEED) 
   print("  -v | --verbose")
   print("  -? | --usage      : print this help message")
@@ -75,14 +73,13 @@ def printMethods_(methods): # prints a list of the methods being used
       
 def main(): # runs the program
   try: # retrieve command line options
-    shortopts   = "m:i:k:l:o:v:s:h?" # possible command line options
+    shortopts   = "m:i:o:v:s:t:h?" # possible command line options
     longopts    = ["methods=", 
                    "inputfile=",
-                   "mass=",
-                   "varListKey=",
                    "outputfile=",
                    "verbose",
             		   "seed=",
+                   "tag=",
                    "help",
                    "usage"]
     opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
@@ -94,12 +91,11 @@ def main(): # runs the program
   
   myArgs = np.array([ # Stores the command line arguments
     ['-m','--methods','methods',        DEFAULT_METHODS],     #0  Reference Indices
-    ['-k','--mass','mass',              DEFAULT_MASS],        #1
-    ['-l','--varListKey','varListKey',  DEFAULT_VARLISTKEY],  #2
     ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #3
     ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #4 
     ['-v','--verbose','verbose',        True],                #5
-    ['-s','--seed','SeedN',             DEFAULT_SEED]         #6
+    ['-s','--seed','SeedN',             DEFAULT_SEED],        #6
+    ['-t','--tag','tag',                DEFAULT_TAG]
   ])
   
   for opt, arg in opts:
@@ -114,22 +110,23 @@ def main(): # runs the program
       sys.exit(0)
   
   # Initialize some variables after reading in arguments
-  varListKey_index = np.where(myArgs[:,2] == 'varListKey')[0][0]
   method_index = np.where(myArgs[:,2] == 'methods')[0][0]
   SeedN_index = np.where(myArgs[:,2] == 'SeedN')[0][0]
   infname_index = np.where(myArgs[:,2] == 'infname')[0][0]
   outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
   verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
- 
-  str_xbitset = '{:011b}'.format(long(myArgs[SeedN_index,3]))
+  tag_index = np.where(myArgs[:,2] == 'tag')[0][0]
+
   seed = myArgs[SeedN_index,3]
-
-  varList = varsList.varList[myArgs[varListKey_index,3]]
-  nVars = str_xbitset.count('1')
+  model_tag = str(myArgs[tag_index,3])
+  varList = varsList.varList["BigComb"]
   var_length = len(varList)
-  outf_key = str(myArgs[method_index,3] +  '_' + myArgs[varListKey_index,3] + '_' + str(nVars) + 'vars')
-  myArgs[outfname_index,3] = 'dataset/weights/TMVA_' + outf_key + '.root'   
 
+  str_xbitset = '{:0{}b}'.format(long(myArgs[SeedN_index,3]),var_length)
+  nVars = str_xbitset.count('1')
+  outf_key = str(myArgs[method_index,3] +  "_BigComb_" + str(nVars) + 'vars')
+  myArgs[outfname_index,3] = 'dataset/weights/TMVA_' + outf_key + '.root'   
+  
   print("Seed: {}".format(str_xbitset))
 
   outputfile = TFile( myArgs[outfname_index,3], 'RECREATE' ) 
@@ -149,13 +146,11 @@ def main(): # runs the program
   bkg_trees_list = []
   hist_list = []
   weightsList = []
-  signalWeight = 1
   
   # Setting up TMVA
   
   inputDir = varsList.inputDir # get current input directory path
   iFileSig = TFile.Open(inputDir + myArgs[infname_index,3])
-  #print("Input directory path: " + inputDir + myArgs[infname_index,3])
   sigChain = iFileSig.Get("ljmet") 
    
   bkgList = varsList.bkg 
@@ -171,25 +166,24 @@ def main(): # runs the program
 
   loader = TMVA.DataLoader('dataset/'+str_xbitset)
 
-  index = len(varList) - 1
+  index = 0
   
   for var in varList:
     if (str_xbitset[index] == '1'):
-      loader.AddVariable(var[0], var[1], var[2], 'F')
-      #print('Testing variable: ' + str(var[0]))
-    index -= 1
+      if var[0] == "NJets_MultiLepCalc": loader.AddVariable(var[0], var[1], var[2], "I")
+      else: loader.AddVariable(var[0], var[1], var[2], "F")
+    index += 1
  
   loader.AddSignalTree(sigChain)
 
   for i in range(len(varsList.bkg)):
     bkg_list.append(TFile.Open(inputDir + bkgList[i]))
-    #print( inputDir + varsList.bkg[i] )
     bkg_trees_list.append(bkg_list[i].Get("ljmet"))
     bkg_trees_list[i].GetEntry(0)
   
     if bkg_trees_list[i].GetEntries() == 0:
       continue
-    loader.AddBackgroundTree( bkg_trees_list[i], 1 )
+    loader.AddBackgroundTree( bkg_trees_list[i] )
 
   # set signal and background weights 
   loader.SetSignalWeightExpression( weightStrS )
@@ -212,14 +206,28 @@ def main(): # runs the program
 #####################################################
 #####################################################                         
 
-  model_name = 'TTTT_TMVA_model_' + str(nVars) + 'vars.h5'
+  model_name = 'TTTT_TMVA_model_' + model_tag + '.h5'
 
   model = Sequential()
-  model.add(Dense(100, activation = 'softplus', input_dim = nVars))
-  model.add(Dense(100, activation = 'softplus'))
-  model.add(Dense(100, activation = 'softplus'))
-  model.add(Dense(100, activation = 'softplus'))
-  model.add(Dense(2, activation = 'sigmoid'))
+  model.add(Dense(
+    10*nVars, input_dim = nVars,
+    kernel_initializer = "glorot_normal", 
+    activation = "relu"
+    )
+  )
+  for i in range(5):
+    model.add(BatchNormalization())
+    model.add(Dense(
+      10*nVars,
+      kernel_initializer = "glorot_normal",
+      activation = "relu"
+      )
+    )
+  model.add(Dense(
+    2,
+    activation = 'sigmoid'
+    )
+  )
 
   model.compile(
 	loss = 'categorical_crossentropy',
@@ -239,7 +247,7 @@ def main(): # runs the program
 ######################################################
   
   # Declare some containers
-  kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=15:BatchSize=1028' # the trained model has to be specified in this string
+  kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=15:BatchSize=256' # the trained model has to be specified in this string
   
   # run the classifier
   fClassifier.BookMethod(
@@ -261,6 +269,7 @@ def main(): # runs the program
   fClassifier.fMethodsMap.clear()
   
   outputfile.Close()
+  os.system('rm ' + model_name)
 
 main()
 os.system('exit')

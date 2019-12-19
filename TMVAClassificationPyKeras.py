@@ -12,7 +12,7 @@ from ROOT import gSystem, gApplication, gROOT
 import varsList
 
 from keras.models import Sequential
-from keras.layers.core import Dense
+from keras.layers.core import Dense, Dropout
 from keras.optimizers import Adam
 
 os.system('bash')
@@ -38,8 +38,8 @@ cutStrB = cutStrC
 DEFAULT_METHODS		  = "Keras"      # how was the .root file trained
 DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
 DEFAULT_INFNAME		  = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
-DEFAULT_MASS		  = "180"
-DEFAULT_VARLISTKEY	  = "BigComb"
+DEFAULT_MASS   		  = "180"
+DEFAULT_VARLISTKEY	= "BigComb"
 
 ######################################################
 ######################################################
@@ -55,7 +55,6 @@ def usage(): # conveys what command line arguments can be used for main()
   print("  -m | --methods    : gives methods to be run (default: all methods)")
   print("  -i | --inputfile  : name of input ROOT file (default: '%s')" % DEFAULT_INFNAME)
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
-  print("  -k | --mass : mass of the signal (default: '%s')" %DEFAULT_MASS)
   print("  -l | --varListKey : BDT input variable list (default: '%s')" %DEFAULT_VARLISTKEY)
   print("  -v | --verbose")
   print("  -? | --usage      : print this help message")
@@ -92,10 +91,9 @@ def main(): # runs the program
   checkRootVer() # check that ROOT version is correct
   
   try: # retrieve command line options
-    shortopts   = "m:i:k:l:o:v:h?" # possible command line options
+    shortopts   = "m:i:l:o:v:h?" # possible command line options
     longopts    = ["methods=", 
                    "inputfile=",
-                   "mass=",
                    "varListKey=",
                    "outputfile=",
                    "verbose",
@@ -110,7 +108,6 @@ def main(): # runs the program
   
   myArgs = np.array([ # Stores the command line arguments
     ['-m','--methods','methods',        DEFAULT_METHODS],     #0  Reference Indices
-    ['-k','--mass','mass',              DEFAULT_MASS],        #2
     ['-l','--varListKey','varListKey',  DEFAULT_VARLISTKEY],  #3
     ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #4
     ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #5
@@ -148,7 +145,6 @@ def main(): # runs the program
   outf_key = str(myArgs[method_index,3] +  '_' + myArgs[varListKey_index,3] + '_' + nVars) 
   myArgs[outfname_index,3] = 'dataset/weights/TMVA_' + outf_key + '.root'
   
-  signalWeight = 1
   
   outputfile = TFile( myArgs[outfname_index,3], 'RECREATE' )
   inputDir = varsList.inputDir
@@ -170,8 +166,8 @@ def main(): # runs the program
   loader = TMVA.DataLoader( 'dataset' )
   
   for var in varList:
-    if var[0] == 'NJets_singleLepCalc': loader.AddVariable(var[0],var[1],var[2],'I')
-    else: loader.AddVariable(var[0],var[1],var[2],'F')
+    if var[0] == 'NJets_MultiLepCalc': loader.AddVariable(var[0],var[1],var[2],'I')
+    else: loader.AddVariable(var[0],var[1],var[2],"F")
   
   loader.AddSignalTree(sigChain)
   
@@ -183,7 +179,7 @@ def main(): # runs the program
     
     if bkg_trees_list[i].GetEntries() == 0:
       continue
-    loader.AddBackgroundTree( bkg_trees_list[i], 1 )
+    loader.AddBackgroundTree( bkg_trees_list[i] )
   
   loader.SetSignalWeightExpression( weightStrS )
   loader.SetBackgroundWeightExpression( weightStrB )
@@ -197,7 +193,7 @@ def main(): # runs the program
   
   # modify this when implementing hyper parameter optimization:
   model_name = 'TTTT_TMVA_model.h5'
-  kerasSetting = 'H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=10:BatchSize=1028'
+  kerasSetting = 'H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=15:BatchSize=256'
  
 ######################################################
 ######################################################
@@ -208,12 +204,28 @@ def main(): # runs the program
 ######################################################
   
   model = Sequential()
-  model.add(Dense(100, activation='softplus', input_dim=var_length))
-  model.add((Dense(100, activation='softplus')))
-  model.add((Dense(100, activation='softplus')))
-  model.add((Dense(100, activation='softplus')))
+  '''
+  model.add(Dense(var_length*4, activation='softplus', input_dim=var_length,
+    kernel_initializer = 'glorot_normal'))
+  model.add(Dropout(0.5))
+  model.add((Dense(var_length*2, activation='softplus',
+    kernel_initializer = 'glorot_normal')))
+  model.add(Dropout(0.5))
+  model.add((Dense(var_length, activation='softplus',
+    kernel_initializer = 'glorot_normal')))
+  model.add(Dropout(0.5))
+  model.add((Dense(int(var_length/2), activation='softplus',
+    kernel_initializer = 'glorot_normal')))
   model.add((Dense(2, activation='sigmoid')))
-  
+  '''
+  model.add(Dense(100, activation='softplus', input_dim=var_length,
+    kernel_initializer = 'glorot_normal'))
+  model.add(Dense(100, activation='softplus',
+    kernel_initializer = 'glorot_normal'))
+  model.add(Dense(100, activation='softplus',
+    kernel_initializer = 'glorot_normal'))
+  model.add(Dense(2, activation='sigmoid'))
+
   # set loss and optimizer
   model.compile(
     loss = 'categorical_crossentropy',
@@ -240,6 +252,8 @@ def main(): # runs the program
   
   print("Finished training in " + str((time.time() - START_TIME) / 60.0) + " minutes.")
   
+  ROC = factory.GetROCIntegral( 'dataset', 'PyKeras')
+  print('ROC value is: {}'.format(ROC))
 
 main()
 os.system('exit') 

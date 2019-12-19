@@ -31,11 +31,11 @@ cutStrB = TCut(cutStrC) # cut expression for Background
 loader = TMVA.DataLoader("dataset")
 varNames = []
 for var in varsList.varList["BigComb"]:
-  if var[0] in "NJets_MultiLepCalc":  loader.Addvariable( str(var[0]), "I" )
-  else:                               loader.AddVariable( str(var[0]), "F" )
+  if var[0] in "NJets_MultiLepCalc":  loader.Addvariable( var[0], var[1], var[2], "I" )
+  else:                               loader.AddVariable( var[0], var[1], var[2], "F" )
   varNames.append(var[0])
   
-inFile = TFile.Open(inputDir + "TTTT_TuneCP5_PSweights_13TeV-powheg-pythia8_hadd.root")
+inFile = TFile.Open(inputDir + "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root")
 signal = inFile.Get("ljmet") # retrieves the ljmet branch from the signal tree
 bkgFile = TFile.Open(inputDir + varsList.bkg[0]) # read in a random background file to be able to use loader functions
 background = bkgFile.Get("ljmet")
@@ -82,8 +82,12 @@ corr_count = 0
 for i in range(n_bins):
   corr_group = [i]
   for j in np.arange(i+1 , n_bins):
-    if abs(sig_corr[i,j]) > corr_cut:
+    if abs(sig_corr[i,j]) >= corr_cut:
       corr_group.append(j)
+      print("{} and {} are {} % correlated.".format(
+        varNames[i],varNames[j],sig_corr[i,j]
+        )
+      )
   if len(corr_group) > 1:
     tot_diff = sum(2**np.array(corr_group))
     for var in corr_group:
@@ -91,7 +95,6 @@ for i in range(n_bins):
 corr_seeds = set(corr_seeds) # remove duplicate seeds
 print("Manually generated {} seeds using a threshold of {}.".format(len(corr_seeds),corr_cut))
 
-varListKeys = ['BigComb']
 runDir = os.getcwd()
 condorDir = runDir + '/condor_log/'
 os.system('mkdir -p ' + condorDir)
@@ -99,7 +102,7 @@ os.system('mkdir -p ' + condorDir)
 method = "Keras"
 
 varList = varsList.varList["BigComb"]
-num_seeds = min(len(varList)*len(varList),150) - len(corr_seeds) # optionally cap the number of seeds generated
+num_seeds = min(len(varList)*len(varList),100) - len(corr_seeds) # optionally cap the number of seeds generated
 binary_str = "1" * len(varList)
 
 # submit manually generated seed jobs
@@ -115,7 +118,7 @@ for seed in corr_seeds:
   dict = {
     "RUNDIR":runDir,
     "METHOD":method,
-    "vListKey":"BigComb",
+    "TAG":str(count),
     "SeedN":SeedN,
     "FILENAME":fileName
     }
@@ -132,7 +135,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(RUNDIR)s %(METHOD)s %(vListKey)s %(SeedN)s
+Arguments = %(RUNDIR)s %(METHOD)s %(TAG)s %(SeedN)s
 Queue 1"""%dict)
   jdf.close()
   os.chdir("%s/"%(condorDir))
@@ -141,7 +144,7 @@ Queue 1"""%dict)
   os.chdir("%s"%(runDir))
   count += 1 # iterate the job count
   print("{} jobs submitted.".format(count))
-  
+  #sys.exit(0)  
   for num in range(0, len(varList)):
     if(SeedN & (1 << num)):
       SubSeedN = SeedN & ~(1<<num)
@@ -150,7 +153,7 @@ Queue 1"""%dict)
       dict_sub = {
         'RUNDIR':runDir,
         'METHOD':method,
-        'vListKey':'BigComb',
+        'TAG':str(count),
         'SeedN':SeedN,
         'FILENAME':fileName,
         'SubSeedN':SubSeedN
@@ -168,7 +171,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(RUNDIR)s %(METHOD)s %(vListKey)s %(SubSeedN)s
+Arguments = %(RUNDIR)s %(METHOD)s %(TAG)s %(SubSeedN)s
 Queue 1"""%dict_sub)
       jdf.close()
       os.chdir('%s/'%(condorDir))
@@ -177,20 +180,21 @@ Queue 1"""%dict_sub)
       os.chdir('%s'%(runDir))
       count += 1
       print('{} jobs submitted.'.format(count))
-
-
+  sys.exit(0)
+  
 # submit remaining randomly generated seed jobs
 
 while len(used_seeds) != num_seeds:
   SeedN = random.randint(0,int(binary_str,2))
-  if SeedN not in used_seeds: # only use unique seeds
+  var_count = '{:0{}b}'.format(SeedN,len(varList)).count('1')
+  if (SeedN not in used_seeds) and (var_count > 1): # only use unique seeds
     used_seeds.append(SeedN)
     outf_key = 'Seed_' + str(SeedN)
     fileName = method + '_' + 'BigComb' + '_' + str(len(varList)) + 'vars_' + outf_key
     dict = {
       'RUNDIR':runDir,
       'METHOD':method,
-      'vListKey':'BigComb',
+      'TAG':str(count),
       'SeedN':SeedN,
       'FILENAME':fileName
       }
@@ -207,7 +211,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(RUNDIR)s %(METHOD)s %(vListKey)s %(SeedN)s
+Arguments = %(RUNDIR)s %(METHOD)s %(TAG)s %(SeedN)s
 Queue 1"""%dict)
     jdf.close()
     os.chdir('%s/'%(condorDir))
@@ -225,7 +229,7 @@ Queue 1"""%dict)
         dict_sub = {
           'RUNDIR':runDir,
           'METHOD':method,
-          'vListKey':'BigComb',
+          'TAG':str(count),
           'SeedN':SeedN,
           'FILENAME':fileName,
           'SubSeedN':SubSeedN
@@ -243,7 +247,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(RUNDIR)s %(METHOD)s %(vListKey)s %(SubSeedN)s
+Arguments = %(RUNDIR)s %(METHOD)s %(TAG)s %(SubSeedN)s
 Queue 1"""%dict_sub)
         jdf.close()
         os.chdir('%s/'%(condorDir))
