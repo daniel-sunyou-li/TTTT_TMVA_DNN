@@ -33,13 +33,9 @@ cutStrB = cutStrC
 DEFAULT_METHODS		  = "Keras" 			        # how was the .root file trained
 DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
 DEFAULT_INFNAME		  = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
-<<<<<<< HEAD
-DEFAULT_SEED        = 2
-DEFAULT_TAG         = "0"
-=======
-DEFAULT_SEED              = 1
-DEFAULT_TAG		  = "0"
->>>>>>> e48c532fcdea7a0bf010483746f3831f7b4cc115
+DEFAULT_SEED				= 2
+DEFAULT_TAG					= "0"
+DEFAULT_SEED				= 1
 
 ######################################################
 ######################################################
@@ -83,13 +79,9 @@ def main(): # runs the program
                    "inputfile=",
                    "outputfile=",
                    "verbose",
-<<<<<<< HEAD
             		   "seed=",
                    "tag=",
-=======
                    "seed=",
-		   "tag=",
->>>>>>> e48c532fcdea7a0bf010483746f3831f7b4cc115
                    "help",
                    "usage"]
     opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
@@ -100,21 +92,12 @@ def main(): # runs the program
     sys.exit(1)
   
   myArgs = np.array([ # Stores the command line arguments
-<<<<<<< HEAD
     ['-m','--methods','methods',        DEFAULT_METHODS],     #0  Reference Indices
     ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #3
     ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #4 
     ['-v','--verbose','verbose',        True],                #5
     ['-s','--seed','SeedN',             DEFAULT_SEED],        #6
     ['-t','--tag','tag',                DEFAULT_TAG]
-=======
-    ['-m','--methods','methods',        DEFAULT_METHODS],     
-    ['-i','--inputfile','infname',      DEFAULT_INFNAME],     
-    ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],     
-    ['-v','--verbose','verbose',        True],                
-    ['-s','--seed','SeedN',             DEFAULT_SEED],        
-    ['-t','--tag','tag',		DEFAULT_TAG]
->>>>>>> e48c532fcdea7a0bf010483746f3831f7b4cc115
   ])
   
   for opt, arg in opts:
@@ -135,7 +118,6 @@ def main(): # runs the program
   outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
   verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
   tag_index = np.where(myArgs[:,2] == 'tag')[0][0]
-<<<<<<< HEAD
 
   seed = myArgs[SeedN_index,3]
   model_tag = str(myArgs[tag_index,3])
@@ -143,14 +125,6 @@ def main(): # runs the program
   var_length = len(varList)
 
   str_xbitset = '{:0{}b}'.format(long(myArgs[SeedN_index,3]),var_length)
-=======
- 
-  str_xbitset = '{:011b}'.format(long(myArgs[SeedN_index,3]))
-  seed = myArgs[SeedN_index,3]
-  model_tag = str(myArgs[tag_index,3])
-
-  varList = varsList.varList["BigComb"]
->>>>>>> e48c532fcdea7a0bf010483746f3831f7b4cc115
   nVars = str_xbitset.count('1')
   outf_key = str(myArgs[method_index,3] +  "_BigComb_" + str(nVars) + 'vars')
   myArgs[outfname_index,3] = 'dataset/weights/TMVA_' + outf_key + '.root'   
@@ -275,11 +249,7 @@ def main(): # runs the program
 ######################################################
   
   # Declare some containers
-<<<<<<< HEAD
   kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=15:BatchSize=256' # the trained model has to be specified in this string
-=======
-  kerasSetting = '!H:!V:VarTransform=I:FilenameModel=' + model_name + ':NumEpochs=15:BatchSize=1028' # the trained model has to be specified in this string
->>>>>>> e48c532fcdea7a0bf010483746f3831f7b4cc115
   
   # run the classifier
   fClassifier.BookMethod(
