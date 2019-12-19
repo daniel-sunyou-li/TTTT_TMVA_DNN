@@ -32,9 +32,8 @@ cutStrB = cutStrC
 DEFAULT_METHODS		  = "Keras" 			        # how was the .root file trained
 DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
 DEFAULT_INFNAME		  = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
-DEFAULT_MASS		    = "180"
-DEFAULT_SEED        = 1
-DEFAULT_VARLISTKEY  = "BigComb"
+DEFAULT_SEED              = 1
+DEFAULT_TAG		  = "0"
 
 ######################################################
 ######################################################
@@ -50,8 +49,6 @@ def usage(): # conveys what command line arguments can be used for main()
   print("  -m | --methods    : gives methods to be run (default: all methods)")
   print("  -i | --inputfile  : name of input ROOT file (default: '%s')" % DEFAULT_INFNAME)
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
-  print("  -k | --mass : mass of the signal (default: '%s')" %DEFAULT_MASS)
-  print("  -l | --varListKey : DNN input variable list (default: '%s')" %DEFAULT_VARLISTKEY)
   print("  -s | --seed : random seed for selecting variable (default: '%s')" %DEFAULT_SEED) 
   print("  -v | --verbose")
   print("  -? | --usage      : print this help message")
@@ -75,14 +72,13 @@ def printMethods_(methods): # prints a list of the methods being used
       
 def main(): # runs the program
   try: # retrieve command line options
-    shortopts   = "m:i:k:l:o:v:s:h?" # possible command line options
+    shortopts   = "m:i:o:v:s:t:h?" # possible command line options
     longopts    = ["methods=", 
                    "inputfile=",
-                   "mass=",
-                   "varListKey=",
                    "outputfile=",
                    "verbose",
-            		   "seed=",
+                   "seed=",
+		   "tag=",
                    "help",
                    "usage"]
     opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
@@ -93,13 +89,12 @@ def main(): # runs the program
     sys.exit(1)
   
   myArgs = np.array([ # Stores the command line arguments
-    ['-m','--methods','methods',        DEFAULT_METHODS],     #0  Reference Indices
-    ['-k','--mass','mass',              DEFAULT_MASS],        #1
-    ['-l','--varListKey','varListKey',  DEFAULT_VARLISTKEY],  #2
-    ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #3
-    ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #4 
-    ['-v','--verbose','verbose',        True],                #5
-    ['-s','--seed','SeedN',             DEFAULT_SEED]         #6
+    ['-m','--methods','methods',        DEFAULT_METHODS],     
+    ['-i','--inputfile','infname',      DEFAULT_INFNAME],     
+    ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],     
+    ['-v','--verbose','verbose',        True],                
+    ['-s','--seed','SeedN',             DEFAULT_SEED],        
+    ['-t','--tag','tag',		DEFAULT_TAG]
   ])
   
   for opt, arg in opts:
@@ -114,17 +109,18 @@ def main(): # runs the program
       sys.exit(0)
   
   # Initialize some variables after reading in arguments
-  varListKey_index = np.where(myArgs[:,2] == 'varListKey')[0][0]
   method_index = np.where(myArgs[:,2] == 'methods')[0][0]
   SeedN_index = np.where(myArgs[:,2] == 'SeedN')[0][0]
   infname_index = np.where(myArgs[:,2] == 'infname')[0][0]
   outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
   verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
+  tag_index = np.where(myArgs[:,2] == 'tag')[0][0]
  
   str_xbitset = '{:011b}'.format(long(myArgs[SeedN_index,3]))
   seed = myArgs[SeedN_index,3]
+  model_tag = str(myArgs[tag_index,3])
 
-  varList = varsList.varList[myArgs[varListKey_index,3]]
+  varList = varsList.varList["BigComb"]
   nVars = str_xbitset.count('1')
   var_length = len(varList)
   outf_key = str(myArgs[method_index,3] +  '_' + myArgs[varListKey_index,3] + '_' + str(nVars) + 'vars')
@@ -212,7 +208,7 @@ def main(): # runs the program
 #####################################################
 #####################################################                         
 
-  model_name = 'TTTT_TMVA_model_' + str(nVars) + 'vars.h5'
+  model_name = 'TTTT_TMVA_model_' + model_tag + '.h5'
 
   model = Sequential()
   model.add(Dense(100, activation = 'softplus', input_dim = nVars))
@@ -261,6 +257,7 @@ def main(): # runs the program
   fClassifier.fMethodsMap.clear()
   
   outputfile.Close()
+  os.system('rm ' + model_name)
 
 main()
 os.system('exit')
