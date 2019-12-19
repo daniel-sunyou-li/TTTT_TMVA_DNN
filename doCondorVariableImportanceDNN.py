@@ -115,7 +115,7 @@ for seed in corr_seeds:
   dict = {
     "RUNDIR":runDir,
     "METHOD":method,
-    "vListKey":"BigComb",
+    "TAG":str(count),
     "SeedN":SeedN,
     "FILENAME":fileName
     }
@@ -132,7 +132,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(RUNDIR)s %(METHOD)s %(vListKey)s %(SeedN)s
+Arguments = %(RUNDIR)s %(METHOD)s %(TAG)s %(SeedN)s
 Queue 1"""%dict)
   jdf.close()
   os.chdir("%s/"%(condorDir))
@@ -150,7 +150,7 @@ Queue 1"""%dict)
       dict_sub = {
         'RUNDIR':runDir,
         'METHOD':method,
-        'vListKey':'BigComb',
+        'TAG':str(count),
         'SeedN':SeedN,
         'FILENAME':fileName,
         'SubSeedN':SubSeedN
@@ -168,7 +168,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(RUNDIR)s %(METHOD)s %(vListKey)s %(SubSeedN)s
+Arguments = %(RUNDIR)s %(METHOD)s %(TAG)s %(SubSeedN)s
 Queue 1"""%dict_sub)
       jdf.close()
       os.chdir('%s/'%(condorDir))
@@ -190,7 +190,7 @@ while len(used_seeds) != num_seeds:
     dict = {
       'RUNDIR':runDir,
       'METHOD':method,
-      'vListKey':'BigComb',
+      'TAG':str(count),
       'SeedN':SeedN,
       'FILENAME':fileName
       }
@@ -207,7 +207,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(RUNDIR)s %(METHOD)s %(vListKey)s %(SeedN)s
+Arguments = %(RUNDIR)s %(METHOD)s %(TAG)s %(SeedN)s
 Queue 1"""%dict)
     jdf.close()
     os.chdir('%s/'%(condorDir))
@@ -225,7 +225,7 @@ Queue 1"""%dict)
         dict_sub = {
           'RUNDIR':runDir,
           'METHOD':method,
-          'vListKey':'BigComb',
+          'TAG':str(count),
           'SeedN':SeedN,
           'FILENAME':fileName,
           'SubSeedN':SubSeedN
@@ -243,7 +243,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(RUNDIR)s %(METHOD)s %(vListKey)s %(SubSeedN)s
+Arguments = %(RUNDIR)s %(METHOD)s %(TAG)s %(SubSeedN)s
 Queue 1"""%dict_sub)
         jdf.close()
         os.chdir('%s/'%(condorDir))
