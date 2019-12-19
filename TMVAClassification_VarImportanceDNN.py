@@ -235,7 +235,7 @@ def main(): # runs the program
 ######################################################
   
   # Declare some containers
-  kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=15:BatchSize=1028' # the trained model has to be specified in this string
+  kerasSetting = '!H:!V:VarTransform=I:FilenameModel=' + model_name + ':NumEpochs=15:BatchSize=1028' # the trained model has to be specified in this string
   
   # run the classifier
   fClassifier.BookMethod(
