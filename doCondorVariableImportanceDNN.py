@@ -12,7 +12,7 @@ import varsList
 
 # methods
 
-def condorJob(SeedN="",SubSeedN="",count,options): # submits a single condor job
+def condorJob(SeedN="",SubSeedN="",count=0,options=['','','']): # submits a single condor job
     runDir = options[0]
     condorDir = options[1]
     numVars = options[2]
@@ -21,7 +21,7 @@ def condorJob(SeedN="",SubSeedN="",count,options): # submits a single condor job
         fileName = "Keras_" + str(numVars) + "_Seed_" + str(SeedN)
         SubmitSeedN = SeedN
     else: 
-        fileName = "Keras_" + str(numVars) + "_Seed_" + str(SeedN) + "_Subseed_" + str(SubSeedN)
+        fileName = "Keras_" + str(numVars) + "vars_Seed_" + str(SeedN) + "_Subseed_" + str(SubSeedN)
         SubmitSeedN = SubSeedN
     dict = {
         "RUNDIR": runDir,           # run directory
@@ -37,7 +37,7 @@ def condorJob(SeedN="",SubSeedN="",count,options): # submits a single condor job
 Executable = %(RUNDIR)s/doCondorVariableImportanceWrapper.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
-request_memory = 3072
+request_memory = 10240
 Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
@@ -131,7 +131,7 @@ corr_seeds = []                         # stores seeds generated for high correl
 used_seeds = []                         # stores which seeds have been used
 options = [                             # contains arguments for condor job submission functions
     os.getcwd(),
-    runDir + "/condor_log/",
+    os.getcwd() + "/condor_log/",
     len(varList)
 ]
 
@@ -165,14 +165,16 @@ sig_corr, varNames = getCorrelationMatrix(
     varList
 )
 
+print("Using {} inputs...".format(len(varNames)))
+
 # generate seeds to test based on correlation coefficients
 
 if correlation_option == 1 or 2:
     corr_group = {}                 # holds all the correlated groups
     # generate the seeds by searching for correlated variables above the threshold
-    for i in range(n_bins):        
+    for i in range(len(varList)):        
       corr_group[i] = [i]
-      for j in np.arange(i+1 , n_bins):
+      for j in np.arange(i+1 , len(varList)):
         if abs(sig_corr[i,j]) >= corr_cut:
           print("{} and {} are {} % correlated.".format(
             varNames[i],varNames[j],sig_corr[i,j]
@@ -217,4 +219,3 @@ while len(used_seeds) < (min(len(varList)*len(varList),maxSeeds) - len(corr_seed
         used_seeds, count = submitSeedJob(seed,used_seeds,count,options)
     else:
       used_seeds, count = submitSeedJob(SeedN,used_seeds,count,options)
-  sys.exit(0)

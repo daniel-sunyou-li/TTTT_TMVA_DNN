@@ -162,7 +162,7 @@ def main(): # runs the program
   ROOT.TMVA.PyMethodBase.PyInitialize()
 
   fClassifier = TMVA.Factory( 'VariableImportance',
-        '!V:!ROC:!Silent:Color:!DrawProgressBar:Transformations=I;:AnalysisType=Classification' )
+        '!V:!ROC:Silent:!Color:!DrawProgressBar:Transformations=I;:AnalysisType=Classification' )
 
   fClassifier.SetVerbose(bool( myArgs[verbose_index,3] ) )
 
@@ -249,7 +249,7 @@ def main(): # runs the program
 ######################################################
   
   # Declare some containers
-  kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=15:BatchSize=256' # the trained model has to be specified in this string
+  kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=10:BatchSize=256' # the trained model has to be specified in this string
   
   # run the classifier
   fClassifier.BookMethod(
