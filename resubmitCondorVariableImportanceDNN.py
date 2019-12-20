@@ -19,7 +19,6 @@ seedList = []
 for Files in outFile:
   if "Subseed_" not in Files and ".out" in Files:
     seed_number = Files.split("_Seed_")[1].split(".out")[0]
-    #print("Tracking seed: {}".format(seed_number))
     seedList.append(seed_number)
     
 os.chdir(outPath+'/condor_log')
@@ -32,17 +31,23 @@ for index, seed in enumerate(seedList):
   seedDict[seed] = glob.glob("Keras_" + str(numVars) + "vars_Seed_" + seed + "_Subseed_*.out")
   
 for seed in seedDict:
-  write_bool = True
+  check_one = True # both check one and check two have to be true to submit a new job
+  check_two = False
   for line in open("Keras_" + str(numVars) + "vars_Seed_" + seed + ".out").readlines():
-    if "ROC-integral" in line: write_bool = False
-  if write_bool == True and os.stat("Keras_" + str(numVars) + "vars_Seed_" + seed + ".out").st_size > 5:
+    if "ROC-integral" in line: check_one = False
+  for line in open("Keras_" + str(numVars) + "vars_Seed_" + seed + ".log").readlines():
+    if "005" in line: check_two = True
+  if check_one == True and check_two == True:
     seedResubmit.append(seed)
   for subseedout in seedDict[seed]:
     subseed = subseedout.split("_Subseed_")[1].split(".out")[0]
-    write_bool = True
+    check_one = True
+    check_two = False
     for line in open("Keras_" + str(numVars) + "vars_Seed_" + seed + "_Subseed_" + subseed + ".out").readlines():
-      if "ROC-integral" in line: write_bool = False
-    if write_bool == True and os.stat("Keras_" + str(numVars) + "vars_Seed_" + seed + "_Subseed_" + subseed + ".out").st_size > 5:
+      if "ROC-integral" in line: check_one = False
+    for line in open("Keras_" + str(numVars) + "vars_Seed_" + seed + "_Subseed_" + subseed + ".log").readlines():
+      if "005" in line: check_two = True
+    if check_one == True and check_two == True:
       if seed in subseedResubmit.keys():
         subseedResubmit[seed].append(subseed)
       else:
