@@ -79,7 +79,7 @@ def main(): # runs the program
                    "inputfile=",
                    "outputfile=",
                    "verbose",
-            		   "seed=",
+		   "seed=",
                    "tag=",
                    "seed=",
                    "help",
@@ -195,9 +195,20 @@ def main(): # runs the program
   mycutSig = TCut( cutStrS )
   mycutBkg = TCut( cutStrB )
 
+  NSIG =	20000
+  NSIG_TEST =	20000
+  NBKG =	200000
+  NBKG_TEST =	200000
+
+  layer_coeff =	2
+
   loader.PrepareTrainingAndTestTree(
     mycutSig, mycutBkg,
-    "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V"
+    "nTrain_Signal=" + str(NSIG) + \
+    ":nTrain_Background=" + str(NBKG) + \
+    ":nTest_Signal=" + str(NSIG_TEST) + \
+    ":nTest_Background=" + str(NBKG_TEST) + \
+    ":nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V"
   )
 
 #####################################################
@@ -212,15 +223,15 @@ def main(): # runs the program
 
   model = Sequential()
   model.add(Dense(
-    10*nVars, input_dim = nVars,
+    layer_coeff*nVars, input_dim = nVars,
     kernel_initializer = "glorot_normal", 
     activation = "relu"
     )
   )
-  for i in range(5):
+  for i in range(3):
     model.add(BatchNormalization())
     model.add(Dense(
-      10*nVars,
+      layer_coeff*nVars,
       kernel_initializer = "glorot_normal",
       activation = "relu"
       )
