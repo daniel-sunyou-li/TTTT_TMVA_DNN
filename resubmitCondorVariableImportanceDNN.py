@@ -35,7 +35,7 @@ for seed in seedDict:
   write_bool = True
   for line in open("Keras_" + str(numVars) + "vars_Seed_" + seed + ".out").readlines():
     if "ROC-integral" in line: write_bool = False
-  if write_bool == True: and os.stat("Keras_" + str(numVars) + "vars_Seed_" + seed + ".out").st_size > 5:
+  if write_bool == True and os.stat("Keras_" + str(numVars) + "vars_Seed_" + seed + ".out").st_size > 5:
     seedResubmit.append(seed)
   for subseedout in seedDict[seed]:
     subseed = subseedout.split("_Subseed_")[1].split(".out")[0]
