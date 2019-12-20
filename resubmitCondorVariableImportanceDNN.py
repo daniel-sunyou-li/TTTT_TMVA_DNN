@@ -59,7 +59,7 @@ for seed in seedResubmit:
   dict = {
     "RUNDIR":outPath,
     "METHOD":method,
-    "TAG":"str(count),
+    "TAG":str(count),
     "SeedN":seed,
     "FILENAME":fileName
   }
