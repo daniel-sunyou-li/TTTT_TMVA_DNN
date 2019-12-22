@@ -61,6 +61,8 @@ count = 0
 for seed in seedResubmit:
   outf_key = "Seed_" + str(seed)
   fileName = "Keras_" + str(len(varList)) + "vars_" + outf_key
+  count += 1
+  print("Job {} submitted / Old Size: {} ".format(count,os.stat(fileName + ".out")))
   dict = {
     "RUNDIR":outPath,
     "METHOD":method,
@@ -89,12 +91,13 @@ Queue 1"""%dict
   os.system("condor_submit %(FILENAME)s.job"%dict)
   os.system("sleep 0.5")
   os.chdir("%s"%(outPath))
-count += 1
   
 for seed in subseedResubmit:
   for subseed in subseedResubmit[seed]:
     outf_key = "Seed_" + str(seed) + "_Subseed_" + str(subseed)
     fileName = "Keras_" + str(len(varList)) + "vars_" + outf_key
+    count += 1
+    print("Job {} submitted / Old Size: {} ".format(count,os.stat(fileName + ".out")))
     dict_sub = {
       "RUNDIR":outPath,
       "METHOD":method,
@@ -124,4 +127,3 @@ Queue 1"""%dict_sub
     os.system("condor_submit %(FILENAME)s.job"%dict_sub)
     os.system("sleep 0.5")
     os.chdir("%s"%(outPath))
-    count += 1
