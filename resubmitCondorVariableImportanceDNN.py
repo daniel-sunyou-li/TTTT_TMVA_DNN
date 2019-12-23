@@ -40,23 +40,19 @@ Queue 1"""%dict)
     os.system("condor_submit %(FILENAME)s.job"%dict)
     os.system("sleep 0.5")
     os.chdir("%s"%(runDir))
-    
     count += 1
-    print("{} jobs submitted.".format(count))
     return count
     
 options = [
     os.getcwd(),
     os.getcwd() + "/condor_log/",
-    len(varsList.varList["BigComb"]
+    len(varsList.varList["BigComb"])
 ]
 
 count = 0
 
 seedList = []           # holds all seed keys
 seedDict = {}           # seeds are the key and subseeds are the entries
-seedResubmit = []       # seeds to resubmit
-subseedResubmit = {}    # subseeds to resubmit where seeds are the key
 
 seedStrDir = os.listdir(options[1])
 
@@ -66,14 +62,17 @@ for seedStr in seedStrDir:
         seedList.append(seed)
         
 for seed in seedList:
-    seedDict[seed] = glob.glob("Keras_" + str(numVars) + "vars_Seed_" + seed + "_Subseed_*.out")
+    subSeedArr = glob.glob(options[1] + "Keras_" + str(options[2]) + "vars_Seed_" + seed + "_Subseed_*.out")
+    seedDict[seed] = subSeedArr
 
 maxSeed = str(int("1"*options[2],2))
 formSize = max(len(maxSeed) + 1, 8)
-print("{:{}}{:{}}{:5}".format("Seed",formSize,"Subseed",formSize,"Size (b)"))
+seedDictNum = sum([len(x) for x in seedDict.values()])
+print("Total seeds: {}, Total subseeds: {}".format(len(seedList),seedDictNum))
+print("{:{}}{:{}}{:10}".format("Seed",formSize,"Subseed",formSize,".out Size (b)"))
 # resubmit the seed jobs that failed
 for seed in seedDict:
-    fileName = "Keras_" + str(numVars) + "vars_Seed_" + seed
+    fileName = "Keras_" + str(options[2]) + "vars_Seed_" + seed
     check_one = True        # checks if "ROC-integral" is in .out file
     check_two = False       # checks if file is done running
     
@@ -84,30 +83,32 @@ for seed in seedDict:
     if check_one:
         for line in open(options[1] + fileName + ".log").readlines():
             # if 005 is the last condor status, then do resubmit
-            if "005" in line: check_two = True
+            if "005 (" in line: check_two = True
             # if 000 or 006, then the job is either in queue or running
-            elif "000" or "006" in line: check_two = False
+            elif "006 (" in line: check_two = False
+            elif "000 (" in line: check_two = False
+            elif "001 (" in line: check_two = False
     if check_one and check_two:
         fileSize = os.stat(options[1] + fileName + ".out").st_size
-        print("{:{}}{:{}}{:5}".format(seed,formSize,"",formSize,fileSize))
-        seedResubmit.append(seed)
-        #count = condorJob(seed=seed,count=count,options=options)
+        print("{:<{}}{:<{}}{:<10}".format(seed,formSize,"",formSize,fileSize))
+        count = condorJob(seed=seed,count=count,options=options)
     for subseedStr in seedDict[seed]:
         subseed = subseedStr.split("_Subseed_")[1].split(".out")[0]
         fileNameSS = fileName + "_Subseed_" + subseed
         check_one = True
         check_two = False
-        for line in open(fileNameSS + ".out").readlines():
+        for line in open(options[1] + fileNameSS + ".out").readlines():
             if "ROC-integral" in line: check_one = False
         if check_one:
-            for line in open(fileNameSS + ".log").readlines():
-                if "005" in line: check_two = True
-                elif "000" or "006" in line: check_two = False
+            for line in open(options[1] + fileNameSS + ".log").readlines():
+                if "005 (" in line: check_two = True
+                elif "006 (" in line: check_two = False
+                elif "000 (" in line: check_two = False
+                elif "001 (" in line: check_two = False
         if check_one and check_two:
             fileSize = os.stat(options[1] + fileNameSS + ".out").st_size
-            print("{:{}}{:{}}{:5}".format(seed,formSize,subseed,formSize,fileSize))
-            if seed in subseedResubmit.keys():
-                subseedResubmit[seed].append(subseed)
-            else:
-                subseedResubmit[seed] = [subseed]
-            #count = condorJob(seed,subseed,count,options)
+            print("{:<{}}{:<{}}{:<5}".format(seed,formSize,subseed,formSize,fileSize))
+            count = condorJob(seed,subseed,count,options)
+
+print("___________________")
+print("{} Jobs Resubmitted.".format(count))
