@@ -18,7 +18,7 @@ def condorJob(SeedN="",SubSeedN="",count=0,options=['','','']): # submits a sing
     numVars = options[2]
     SubmitSeedN = ""
     if SubSeedN == "": 
-        fileName = "Keras_" + str(numVars) + "_Seed_" + str(SeedN)
+        fileName = "Keras_" + str(numVars) + "vars_Seed_" + str(SeedN)
         SubmitSeedN = SeedN
     else: 
         fileName = "Keras_" + str(numVars) + "vars_Seed_" + str(SeedN) + "_Subseed_" + str(SubSeedN)
@@ -37,7 +37,7 @@ def condorJob(SeedN="",SubSeedN="",count=0,options=['','','']): # submits a sing
 Executable = %(RUNDIR)s/doCondorVariableImportanceWrapper.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
-request_memory = 10240
+request_memory = 4025
 Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log

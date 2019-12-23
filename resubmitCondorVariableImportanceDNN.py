@@ -31,22 +31,38 @@ for index, seed in enumerate(seedList):
   seedDict[seed] = glob.glob("Keras_" + str(numVars) + "vars_Seed_" + seed + "_Subseed_*.out")
   
 for seed in seedDict:
+  fileName = "Keras_" + str(numVars) + "vars_Seed_" + seed
   check_one = True # both check one and check two have to be true to submit a new job
   check_two = False
-  for line in open("Keras_" + str(numVars) + "vars_Seed_" + seed + ".out").readlines():
-    if "ROC-integral" in line: check_one = False
+  for line in open(fileName + ".out").readlines():
+    if "ROC-integral" in line:
+      check_one = False
+      print("Deleting {} with file size: {}".format(fileName+".out",os.stat(condorDir + fileName + ".out").st_size))
+      os.system("rm {}".format(condorDir + fileName + ".out"))
+      break
   for line in open("Keras_" + str(numVars) + "vars_Seed_" + seed + ".log").readlines():
-    if "005" in line: check_two = True
+    if "005" in line: 
+      check_two = True
+      os.system("rm {}".format(condorDir + fileName + ".log"))
+      break
   if check_one == True and check_two == True:
     seedResubmit.append(seed)
   for subseedout in seedDict[seed]:
     subseed = subseedout.split("_Subseed_")[1].split(".out")[0]
+    fileName = "Keras_" + str(numVars) + "vars_Seed_" + seed + "_Subseed_" + subseed
     check_one = True
     check_two = False
-    for line in open("Keras_" + str(numVars) + "vars_Seed_" + seed + "_Subseed_" + subseed + ".out").readlines():
-      if "ROC-integral" in line: check_one = False
-    for line in open("Keras_" + str(numVars) + "vars_Seed_" + seed + "_Subseed_" + subseed + ".log").readlines():
-      if "005" in line: check_two = True
+    for line in open(fileName + ".out").readlines():
+      if "ROC-integral" in line:
+        check_one = False
+        print("Deleting {} with file size: {}".format(fileName + ".out",os.stat(condorDir + fileName + ".out").st_size))
+        os.system("rm {}".format(condorDir + fileName + ".out"))
+        break
+    for line in open(fileName + ".log").readlines():
+      if "005" in line:
+        check_two = True
+        os.system("rm {}".format(condorDir + fileName + ".log"))
+        break
     if check_one == True and check_two == True:
       if seed in subseedResubmit.keys():
         subseedResubmit[seed].append(subseed)
@@ -62,7 +78,7 @@ for seed in seedResubmit:
   outf_key = "Seed_" + str(seed)
   fileName = "Keras_" + str(len(varList)) + "vars_" + outf_key
   count += 1
-  print("Job {} submitted / Old Size: {} ".format(count,os.stat(fileName + ".out")))
+  print("Job {} submitted.".format(count))
   dict = {
     "RUNDIR":outPath,
     "METHOD":method,
@@ -97,7 +113,7 @@ for seed in subseedResubmit:
     outf_key = "Seed_" + str(seed) + "_Subseed_" + str(subseed)
     fileName = "Keras_" + str(len(varList)) + "vars_" + outf_key
     count += 1
-    print("Job {} submitted / Old Size: {} ".format(count,os.stat(fileName + ".out")))
+    print("Job {} submitted.".format(count))
     dict_sub = {
       "RUNDIR":outPath,
       "METHOD":method,

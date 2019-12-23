@@ -195,8 +195,8 @@ def main(): # runs the program
   mycutSig = TCut( cutStrS )
   mycutBkg = TCut( cutStrB )
 
-  NSIG =	20000
-  NSIG_TEST =	20000
+  NSIG =	40000
+  NSIG_TEST =	40000
   NBKG =	200000
   NBKG_TEST =	200000
 
@@ -228,7 +228,7 @@ def main(): # runs the program
     activation = "relu"
     )
   )
-  for i in range(3):
+  for i in range(2):
     model.add(BatchNormalization())
     model.add(Dense(
       layer_coeff*nVars,
@@ -260,7 +260,7 @@ def main(): # runs the program
 ######################################################
   
   # Declare some containers
-  kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=10:BatchSize=256' # the trained model has to be specified in this string
+  kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=5:BatchSize=256' # the trained model has to be specified in this string
   
   # run the classifier
   fClassifier.BookMethod(
