@@ -79,7 +79,7 @@ def main(): # runs the program
                    "inputfile=",
                    "outputfile=",
                    "verbose",
-		   "seed=",
+		               "seed=",
                    "tag=",
                    "seed=",
                    "help",
@@ -126,7 +126,7 @@ def main(): # runs the program
 
   str_xbitset = '{:0{}b}'.format(long(myArgs[SeedN_index,3]),var_length)
   nVars = str_xbitset.count('1')
-  outf_key = str(myArgs[method_index,3] +  "_BigComb_" + str(nVars) + 'vars')
+  outf_key = str(myArgs[method_index,3] +  "_" + str(nVars) + 'vars')
   myArgs[outfname_index,3] = 'dataset/weights/TMVA_' + outf_key + '.root'   
   
   print("Seed: {}".format(str_xbitset))
@@ -166,7 +166,7 @@ def main(): # runs the program
 
   fClassifier.SetVerbose(bool( myArgs[verbose_index,3] ) )
 
-  loader = TMVA.DataLoader('dataset/'+str_xbitset)
+  loader = TMVA.DataLoader("dataset/" + str_xbitset + "_seednum" + model_tag)
 
   index = 0
   
@@ -200,8 +200,6 @@ def main(): # runs the program
   NBKG =	200000
   NBKG_TEST =	200000
 
-  layer_coeff =	2
-
   loader.PrepareTrainingAndTestTree(
     mycutSig, mycutBkg,
     "nTrain_Signal=" + str(NSIG) + \
@@ -223,7 +221,7 @@ def main(): # runs the program
 
   model = Sequential()
   model.add(Dense(
-    layer_coeff*nVars, input_dim = nVars,
+    100, input_dim = nVars,
     kernel_initializer = "glorot_normal", 
     activation = "relu"
     )
@@ -231,7 +229,7 @@ def main(): # runs the program
   for i in range(2):
     model.add(BatchNormalization())
     model.add(Dense(
-      layer_coeff*nVars,
+      100,
       kernel_initializer = "glorot_normal",
       activation = "relu"
       )
@@ -260,7 +258,7 @@ def main(): # runs the program
 ######################################################
   
   # Declare some containers
-  kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=5:BatchSize=256' # the trained model has to be specified in this string
+  kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=10:BatchSize=256' # the trained model has to be specified in this string
   
   # run the classifier
   fClassifier.BookMethod(
@@ -269,14 +267,14 @@ def main(): # runs the program
     'PyKeras',
     kerasSetting) 
 
-  (TMVA.gConfig().GetIONames()).fWeightFileDir = str_xbitset + "/weights/" + outf_key
+  (TMVA.gConfig().GetIONames()).fWeightFileDir = str_xbitset + "_seednum" + model_tag + "/weights/" + outf_key
   print("New weight file directory: {}".format((TMVA.gConfig().GetIONames()).fWeightFileDir))
   
   fClassifier.TrainAllMethods()
   fClassifier.TestAllMethods()
   fClassifier.EvaluateAllMethods()
   
-  SROC = fClassifier.GetROCIntegral("dataset/"+ str_xbitset, "PyKeras")
+  SROC = fClassifier.GetROCIntegral("dataset/"+ str_xbitset + "_seednum" + model_tag, "PyKeras")
   print("ROC-integral: {}".format(SROC))
   fClassifier.DeleteAllMethods()
   fClassifier.fMethodsMap.clear()

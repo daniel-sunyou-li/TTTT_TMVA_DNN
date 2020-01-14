@@ -1,5 +1,6 @@
 #/usr/bin/env python
 import glob, os, sys 
+import getopt
 import math
 import varsList
 
@@ -49,6 +50,9 @@ options = [
     len(varsList.varList["BigComb"])
 ]
 
+RESUBMIT = True
+
+finished_count = 0
 count = 0
 
 seedList = []           # holds all seed keys
@@ -79,7 +83,9 @@ for seed in seedDict:
     # perform first check on [fileName].out
     for line in open(options[1] + fileName + ".out").readlines():
         # don't want to resubmit if "ROC-integral" is already calculated
-        if "ROC-integral" in line: check_one = False
+        if "ROC-integral" in line: 
+            check_one = False
+            finished_count += 1
     if check_one:
         for line in open(options[1] + fileName + ".log").readlines():
             # if 005 is the last condor status, then do resubmit
@@ -91,14 +97,18 @@ for seed in seedDict:
     if check_one and check_two:
         fileSize = os.stat(options[1] + fileName + ".out").st_size
         print("{:<{}}{:<{}}{:<10}".format(seed,formSize,"",formSize,fileSize))
-        count = condorJob(seed=seed,count=count,options=options)
+        if RESUBMIT:
+          count = condorJob(SeedN=seed,count=count,options=options)
+          print("would resubmit")
     for subseedStr in seedDict[seed]:
         subseed = subseedStr.split("_Subseed_")[1].split(".out")[0]
         fileNameSS = fileName + "_Subseed_" + subseed
         check_one = True
         check_two = False
         for line in open(options[1] + fileNameSS + ".out").readlines():
-            if "ROC-integral" in line: check_one = False
+            if "ROC-integral" in line:
+                check_one = False
+                finished_count += 1
         if check_one:
             for line in open(options[1] + fileNameSS + ".log").readlines():
                 if "005 (" in line: check_two = True
@@ -108,7 +118,11 @@ for seed in seedDict:
         if check_one and check_two:
             fileSize = os.stat(options[1] + fileNameSS + ".out").st_size
             print("{:<{}}{:<{}}{:<5}".format(seed,formSize,subseed,formSize,fileSize))
-            count = condorJob(seed,subseed,count,options)
+            if RESUBMIT:
+              count = condorJob(seed,subseed,count,options)
 
+total_seeds = len(seedList) + seedDictNum
+percent_done = ( float(finished_count) / float(total_seeds) ) * 100
 print("___________________")
+print("{} out of {} ({:.2f}%) Jobs Done".format(finished_count,total_seeds,percent_done))
 print("{} Jobs Resubmitted.".format(count))
