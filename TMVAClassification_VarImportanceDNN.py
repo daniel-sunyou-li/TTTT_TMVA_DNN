@@ -11,6 +11,8 @@ from ROOT import gSystem, gApplication, gROOT
 import varsList
 from subprocess import call
 
+os.environ['KERAS_BACKEND'] = 'tensorflow'
+
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout
 from keras.layers import BatchNormalization
