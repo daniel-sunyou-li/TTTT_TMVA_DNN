@@ -34,7 +34,7 @@ def condorJob(SeedN="",SubSeedN="",count=0,options=['','','']): # submits a sing
     jdf = open(jdfName, "w")
     jdf.write(
 """universe = vanilla
-Executable = %(RUNDIR)s/submitCondorVariableImportance.sh
+Executable = submitCondorVariableImportance.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 request_memory = 4025
