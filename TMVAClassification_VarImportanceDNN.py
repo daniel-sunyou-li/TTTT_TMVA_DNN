@@ -35,9 +35,9 @@ cutStrB = cutStrC
 DEFAULT_METHODS		  = "Keras" 			        # how was the .root file trained
 DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
 DEFAULT_INFNAME		  = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
-DEFAULT_SEED				= 2
-DEFAULT_TAG					= "0"
-DEFAULT_SEED				= 1
+DEFAULT_SEED		  = 2
+DEFAULT_TAG		  = "0"
+DEFAULT_SEED		  = 1
 
 ######################################################
 ######################################################
@@ -81,7 +81,7 @@ def main(): # runs the program
                    "inputfile=",
                    "outputfile=",
                    "verbose",
-		               "seed=",
+		   "seed=",
                    "tag=",
                    "seed=",
                    "help",
@@ -197,10 +197,10 @@ def main(): # runs the program
   mycutSig = TCut( cutStrS )
   mycutBkg = TCut( cutStrB )
 
-  NSIG =	40000
-  NSIG_TEST =	40000
-  NBKG =	200000
-  NBKG_TEST =	200000
+  NSIG =	50000
+  NSIG_TEST =	50000
+  NBKG =	500000
+  NBKG_TEST =	500000
 
   loader.PrepareTrainingAndTestTree(
     mycutSig, mycutBkg,
@@ -208,7 +208,7 @@ def main(): # runs the program
     ":nTrain_Background=" + str(NBKG) + \
     ":nTest_Signal=" + str(NSIG_TEST) + \
     ":nTest_Background=" + str(NBKG_TEST) + \
-    ":nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V"
+    ":SplitMode=Random:NormMode=NumEvents:!V"
   )
 
 #####################################################
