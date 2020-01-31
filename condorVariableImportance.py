@@ -54,7 +54,7 @@ Queue 1"""%dict)
     os.chdir("%s"%(runDir))
     
     count += 1
-    print("{} jobs submitted.".format(count))
+    
     return count
     
 def submitSeedJob(SeedN,used_seeds,count,options): # submits seed job and corresponding subseed jobs
@@ -183,7 +183,7 @@ print("Using {} inputs...".format(len(varNames)))
 
 # submit jobs
 
-correlated_pairs = getCorrelatedPairs(sig_corr, corr_cut)
+correlated_pairs = getCorrelatedPairs(sig_corr, corr_cut, varNames)
 
 while len(used_seeds) < maxSeeds:
     NewSeed = random.randint(0,int(binary_str,2))
