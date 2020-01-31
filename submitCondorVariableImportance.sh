@@ -7,7 +7,7 @@ str_xbitset=${4}
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
-xrdcp -s root://cmseos.fnal.gov//store/user/dsunyou/CMSSW946.tgz
+xrdcp -s root://cmseos.fnal.gov//store/user/dsunyou/CMSSW946.tgz .
 tar -xf CMSSW946.tgz
 rm CMSSW946.tgz
 
