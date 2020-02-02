@@ -23,12 +23,29 @@ There are three general steps for this analysis:
     mkdir dataset
     pip install --user scikit-optimize # this should be stored in .local/lib/python2.7/site-packages
     
+### Set-up Instructions for LPC
+    # sign-in to LPC
+    kinit -f [username]@FNAL.GOV
+    ssh -XY [username]@cmslpc-sl7.fnal.gov
+    
+    cd nobackup/
+    
+    # retrieve the CMSSW environment
+    source /cvmfs/cms.cern.ch/cmsset_default.csh
+    export SCRAM_ARCH=slc7_amd64_gcc530
+    cmsrel CMSSW_9_4_6_patch1
+    cd CMSSW_9_4_6_patch1/src/
+    cmsenv
+    
+    # clone the repository
+    git clone https://github.com/daniel-sunyou-li/TTTT_TMVA_DNN.git
+    cd ./TTTT_TMVA_DNN/
+    mkdir dataset
+    
+    # recommended to only use LPC for variable importance, so don't need scikit-optimize
+
+    
 Some of the scripts have the line `os.system('bash')` which is required for setting up the environment but requires `exit` in the command line after running the script to view the outputs.
-
-Also, make sure that the `keras` config has `"backend": "tensorflow"` which can be found by:
-
-      cd ~/.keras/
-      vim keras.json # or use whatever text editing tool you prefer
       
 ### Datasets ###
 We are using 2017 Step 2 LJMET samples that are stored in: `/mnt/hadoop/store/group/bruxljm/FWLJMET102X_1lep2017_Oct2019_4t_12122019_step2/nominal/`
@@ -36,6 +53,9 @@ We are using 2017 Step 2 LJMET samples that are stored in: `/mnt/hadoop/store/gr
 
 There is one signal sample: `TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root`
 * You can select backgrounds--the essential ones are `TTToSemiLeptonic`
+
+### Importing Datasets to LPC ###
+When running variable importance on the LPC, we need to import the signal and background samples onto both the LPC storage and the EOS storage. 
 
 __(Important!!!)__ If you are changing the weights or cuts applied to the data, be sure to edit the variables `weightStrC` and/or `cutStrC` in:
 1. `TMVAClassificationPyKeras.py`
