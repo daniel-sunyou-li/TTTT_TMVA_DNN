@@ -55,50 +55,67 @@ There is one signal sample: `TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.
 * You can select backgrounds--the essential ones are `TTToSemiLeptonic`
 
 ### Importing Datasets to LPC ###
-When running variable importance on the LPC, we need to import the signal and background samples onto both the LPC storage and the EOS storage. 
+When running variable importance on the LPC, we need to import the signal and background samples onto both the LPC storage and the EOS storage. Run the commands:
+
+`python ~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/setupLPC.py`
+
+In case there are issues with the tar file, then make adjustments to `TTTT_TMVA_DNN` and run the commands,
+
+`tar -zcvf CMSSW946.tgz ~/nobackup/CMSSW_9_4_6_patch1/`
+`xrdcp CMSSW946.tgz root://cmseos.fnal.gov//store/user/<EOS Username>/`
+
+Make sure that the background samples specified (uncommented) in `varsList.py` are reflected in `LPC/VariableImportanceLPC_step2.sh`.
 
 __(Important!!!)__ If you are changing the weights or cuts applied to the data, be sure to edit the variables `weightStrC` and/or `cutStrC` in:
-1. `TMVAClassificationPyKeras.py`
-2. `TMVAClassificationPyKeras_OptimizationWrapper.py`
-3. `TMVAClassification_VarImportanceDNN.py`
-4. `TMVAOptimization.py`
-5. `doCondorVariableImportanceDNN.py`
+1. `TMVAClassification_Training.py`
+2. `TMVAClassification_OptimizationWrapper.py`
+3. `TMVAClassification_Optimization.py`
+4. `TMVAClassification_VariableImportance.py`
+5. `/BRUX/VariableImportanceBRUX_step1.py` and `/LPC/VariableImportanceLPC_step2.py`
 
 ## 1. Input Variable Importance Calculation ###
 __Calculate the relative importance of a Step 2 input variable in training a dense neural network classifier.  Then, the "unimportant" variables can be excluded from subsequent training to save time.__
 ### 1.1 (Optional) Edit `varsList.py` ###
 `varsList.py` contains a python `dict` named `varList["BigComb"]` containing lists of: the input variable name, expression and units.  Comment out (or uncomment) the variables being included in the variable importance calculation.
 * As of the 2017 Step 2 samples, there are an additional 11 HOT Tagger variables
-### 1.2 (Optional) Edit the network architecture `TMVAClassification_VarImportanceDNN.py` ###
-If you would like to change the generic unoptimized network architecture being trained, then you can edit `TMVAClassification_VarImportanceDNN.py`.  
+### 1.2 (Optional) Edit the network architecture ###
+If you would like to change the generic unoptimized network architecture being trained, then you can edit `TMVAClassification_VariableImportance.py`.  
 ### 1.3.1 Run the variable importance calculation script ###
 The variable importance analysis is run by the command:
 
     mkdir condor_log
-    ./doCondorVariableImportance.sh
+    ./submit_VariableImportance.sh LPC # or BRUX
 
-which submits Condor jobs, each representing a different input subset to be trained.  The results and logs are stored in `condor_log` where the desired result is the ROC value, which is contained in the `.out` file.  
+which submits Condor jobs, each representing a different input subset to be trained.  The results and logs are stored in `condor_log` where the desired result is the ROC value, which is contained in the `.out` file.
+
+If submitting on the LPC, be sure to edit the username parameters in:
+1. `setupLPC.py`
+2. `VariableImportanceLPC_step2.sh`
+
 ### 1.3.2 Resubmit failed Condor jobs ###
-Some jobs will fail since the same `.h5` file will be used when preparing `ROOT.TMVA.factory()` by competing Condor jobs with the same number of inputs. 
-
 To check the status of the Condor job, use the command: `condor_q`
+* Using the option `-better-analyze` provides a summary of available nodes
 
 You can identify a failed job by noting a small `.out` file size and checking the `.err` log. In the case of failed jobs, run the script:
 
-`python resubmitCondorVariableImportanceDNN.py`
+`python resubmit_VariableImportance.sh BRUX # or LPC`
 
-which iterates through the `.out` files identifying if the ROC value is present.  Keep running the script so long as there are failed Condor jobs.
+which iterates through the `.out` files identifying if the ROC value is present.  Keep running the script so long as there are failed Condor jobs. 
+
+On the LPC, if a job uses more memory than specified in the Condor job submission file, then the scheduler will remove the job. To adjust the memory usage, edit `/LPC/VariableImportanceLPC_step1.py` and adjust the variable `request_memory`.
+* Advised to ([read the description of the LPC condor cluster machines](https://uscms.org/uscms_at_work/computing/setup/batch_systems_advanced.shtml)) before adjusting parameters
+
 ### 1.4.1 Calculate the variable importance ###
 After ensuring that all jobs are finished running--or finding out by the calculation script failing--run the script:
 
-`python VarImportanceCalcDNN.py`
+`python VariableImportance_Calculation.py`
 
-which iterates through all the `.out` files determining the relative importance of the variables and storing the results in `TTTT_TMVA_DNN/dataset/VarImportanceCalculation_vars[#].txt`.
+which iterates through all the `.out` files determining the relative importance of the variables and storing the results in `TTTT_TMVA_DNN/dataset/VariableImportanceResults_vars[#].txt`.
 
 ### 1.4.2 Plot the variable importance ###
-Because BRUX cannot display graphics, to visualize the variable importance, we need to move `VarImportanceCalculation_vars[#].txt` to a different system.  Using a Jupyter python notebook ([Google Colab](https://colab.research.google.com/notebooks/welcome.ipynb) or [CERN SWAN](swan.cern.ch)):
-1. From a local repository (or from the terminal in SWAN) use: `scp [brux_username]@brux.hep.brown.edu:/path/to/file.txt/ ./`
-2. Run `VarImportancePlotDNN.ipynb` which should generate a bar graph of the variable importance.
+Because BRUX cannot display graphics, to visualize the variable importance, we need to move `VariableImportanceResults_vars[#].txt` to a different system.  Using a Jupyter python notebook ([Google Colab](https://colab.research.google.com/notebooks/welcome.ipynb) or [CERN SWAN](swan.cern.ch)):
+1. From a local repository (or from the terminal in SWAN) use: `scp [brux_username]@brux.hep.brown.edu:/path/to/file.txt/ ./` or `scp [lpc_username]@cmslpc-sl7.fnal.gov:/path/to/file/`
+2. Run `VariableImportance_Plot.ipynb` which should generate a bar graph of the variable importance.
 * For Google Colab, be sure to use the code:
 
       from google.colab import drive
@@ -130,28 +147,20 @@ If editing the static parameters, necessary to edit `EPOCHS` and `PATIENCE` in `
 __(Important!!!)__ Need to edit the line `sys.path.insert(0, "/home/dli50/.local/lib/python2.7/site-packages")` to point to your own directory where `scikit-optimize` is stored.
 * Install `scikit-optimize` using: `pip install --user scikit-optimize`
 ### 2.2 Run the hyper parameter optimization ###
-Check the script `doCondorClassification.sh` and make sure that the correct script is uncommented.  It should have the line:
-
-`python TMVAClassificationPyKeras_OptimizationWrapper.py -m Keras -i "[Signal .ROOT File]"`
-
-uncommented and the rest commented out.  This will begin the hyper parameter process that selects a hyper parameter set and then trains that architecture with the defined (reduced) input variable set.  The parameters and result (ROC integral) of each trained model are written to `TTTT_TMVA_DNN/dataset/optimize_Keras_BigComb_[#]vars/optimize_log_[date and tag].txt`.  The model with the best result (largest ROC integral) is written to `params_[date and tag].txt`.
+Run the script `submit_Optimization.sh`.  This will begin the hyper parameter process that selects a hyper parameter set and then trains that architecture with the defined (reduced) input variable set.  The parameters and result (ROC integral) of each trained model are written to `TTTT_TMVA_DNN/dataset/optimization_[#]vars/optimizationLog_[date and tag].txt`.  The model with the best result (largest ROC integral) is written to `optimizationParams_[date and tag].txt`.
 
 __Note:__ The hyper parameter optimization uses fewer number of training/testing events and fewer epochs to give preliminary results to a full training cycle.  Under the assumption that there is more than one signal sample and many background samples, the abridged dataset greatly reduces computation time.
 ## 3. Run a full training cycle ##
 __Using the "important" variables and optimized model architecture, run a full training set to get final results.__
-### 3.1 Edit `doCondorClassification.sh` ###
-Now, uncomment the previous script and change the line to:
 
-`python TMVAClassificationPyKeras.py -m Keras -i "[Signal .ROOT file]"`
-
-### 3.2 Edit `TMVAClassificationPyKeras.py` ###
-1. Referencing the optimized hyper parameter set defined in `TTTT_TMVA_DNN/dataset/weights/params_[date and tag].txt` edit the default model defined in `TMVAClassificationPyKeras.py`.  It would also be good to check that `varsList.py` has the desired set of input variables at this time.
+### 3.1 Edit `TMVAClassification_Training.py` ###
+1. Referencing the optimized hyper parameter set defined in `TTTT_TMVA_DNN/dataset/weights/params_[date and tag].txt` edit the default model defined in `TMVAClassification_Training.py`.  It would also be good to check that `varsList.py` has the desired set of input variables at this time.
 2. (Optional) Edit the static parameters (i.e. epochs, patience, etc.) for the full training cycle.
 
-### 3.3 Run the final full training cycle ###
-Run the final full training cycle using: `./doCondorClassification.sh`
+### 3.2 Run the final full training cycle ###
+Run the final full training cycle using: `./submit_Training.sh`
 * To see the final ROC integral value, type in the commandline `exit`
-* The fully trained model will be stored in `TTTT_TMVA_DNN/dataset/weights/Keras_BigComb_[#]vars/TrainedModel_PyKeras.h5`.  
+* The fully trained model will be stored in `TTTT_TMVA_DNN/dataset/weights/training_[#]vars/TrainedModel_PyKeras.h5`.  
 
 Now, you should have a fully trained model (`TrainedModel_PyKeras.h5`) that can be used on any dataset with the same Step 2 inputs! 
 * It would be a good idea to change the name of this model and store it somewhere safe
