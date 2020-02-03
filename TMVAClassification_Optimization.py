@@ -17,12 +17,13 @@ os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/s
 
 # Define some variables defaults
 MODEL_NAME =        "dummy_opt_model.h5"
-EPOCHS =            20
+EPOCHS =            10
 BATCH_SIZE =        1028
 PATIENCE =          5
-outf_key =          "PyKeras"
+outf_key =          "Keras"
 INPUTFILE =         varsList.inputDir + "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
 TEMPFILE =          "dataset/temp_file.txt"
+numVars =           len(varsList.varList["BigComb"])
 
 ######################################################
 ######################################################
@@ -33,7 +34,7 @@ TEMPFILE =          "dataset/temp_file.txt"
 ######################################################
 
 try: # retrieve command line options
-  shortopts   = "b:o" # possible command line options
+  shortopts   = "b:o:e:i" # possible command line options
   opts, args = getopt.getopt( sys.argv[1:], shortopts ) # associates command line inputs to variables
   
 except getopt.GetoptError: # output error if command line argument invalid
@@ -43,6 +44,8 @@ except getopt.GetoptError: # output error if command line argument invalid
   
 for opt, arg in opts:
     if opt in ('b'): BATCH_SIZE = int(arg)
+    elif opt in ('e'): EPOCHS = int(arg)
+    elif opt in ('i'): INPUTFILE = str(arg)
     elif opt in ('o'): outf_key = str(arg)
 
 ######################################################
@@ -53,9 +56,9 @@ for opt, arg in opts:
 ######################################################
 ######################################################
 
-NSIG =        20000
+NSIG =        50000
 NSIG_TEST =   20000
-NBKG =        100000
+NBKG =        500000
 NBKG_TEST =   200000
 
 # Set cut and weight values
@@ -76,16 +79,16 @@ hist_list = []
 weightsList = []
 
 print("Output file: dataset/weights/TMVAOpt_" + outf_key + ".root")
-outputfile =    TFile( "dataset/weights/TMVAOpt_"+outf_key+".root", "RECREATE" )
+outputfile =    TFile( "dataset/weights/TMVAOptimization_"+ numVars +"vars.root", "RECREATE" )
 
-print("Input file",INPUTFILE)
+print("Input file: {}".format(INPUTFILE))
 iFileSig =      TFile.Open( INPUTFILE )
 sigChain =      iFileSig.Get( "ljmet" )
 
 loader = TMVA.DataLoader( "dataset/optimize_" + outf_key )
 
 for var in varsList.varList["BigComb"]:
-  if var[0] == 'NJets_singleLepCalc': loader.AddVariable(var[0],var[1],var[2],'I')
+  if var[0] == 'NJets_MultiLepCalc': loader.AddVariable(var[0],var[1],var[2],'I')
   else: loader.AddVariable(var[0],var[1],var[2],'F')
   
 loader.AddSignalTree(sigChain)
@@ -115,9 +118,9 @@ loader.PrepareTrainingAndTestTree(
   ":SplitMode=Random:NormMode=NumEvents:!V"
 )
   
-factory_name = 'DNNOptimizer'  
+  
 factory = TMVA.Factory(
-  factory_name,
+  "Optimization",
   '!V:!ROC:!Silent:Color:!DrawProgressBar:Transformations=I;:AnalysisType=Classification'
 )
 
@@ -136,14 +139,10 @@ factory.BookMethod(
   kerasSetting
 )
   
-print("Training all methods...")
 factory.TrainAllMethods()
-print("Testing all methods...")
 factory.TestAllMethods()
-print("Evaluating all methods...")
 factory.EvaluateAllMethods()
   
-print("Evaluating ROC Integral")
 ROC = factory.GetROCIntegral( 'dataset/optimize_' + outf_key, 'PyKeras' )
   
 factory.DeleteAllMethods()
