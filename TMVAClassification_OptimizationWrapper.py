@@ -227,7 +227,12 @@ def objective(**X):
   BATCH_SIZE = int(2 ** X["batch_power"])
   
   TEMP_NAME = 'dataset/temp_file.txt'
-  os.system("python TMVAClassification_Optimization.py -o {} -b {} -e {}".format(outf_key, BATCH_SIZE, EPOCHS))   
+  os.system("python TMVAClassification_Optimization.py -o {} -b {} -e {} -i {}".format(
+    outf_key,
+    BATCH_SIZE,
+    EPOCHS,
+    INPUTFILE
+  ))   
   
   while not os.path.exists(TEMP_NAME):    # wait until temp_file.txt is created after training
     time.sleep(1)
