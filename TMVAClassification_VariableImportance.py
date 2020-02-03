@@ -32,11 +32,8 @@ cutStrS = cutStrC # + " && ( isTraining == 1 || isTraining == 2 )"
 cutStrB = cutStrC
 
 # default command line arguments
-DEFAULT_METHODS		  = "Keras" 			        # how was the .root file trained
 DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
 DEFAULT_INFNAME		  = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
-DEFAULT_SEED		  = 2
-DEFAULT_TAG		  = "0"
 DEFAULT_SEED		  = 1
 
 ######################################################
@@ -50,7 +47,6 @@ DEFAULT_SEED		  = 1
 def usage(): # conveys what command line arguments can be used for main()
   print(" ")
   print("Usage: python %s [options]" % sys.argv[0])
-  print("  -m | --methods    : gives methods to be run (default: all methods)")
   print("  -i | --inputfile  : name of input ROOT file (default: '%s')" % DEFAULT_INFNAME)
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
   print("  -s | --seed : random seed for selecting variable (default: '%s')" %DEFAULT_SEED) 
@@ -66,23 +62,14 @@ def checkRootVer():
       print "*** Solution: either use CINT or a C++ compiled version (see TMVA/macros or TMVA/examples),"
       print "*** or use another ROOT version (e.g., ROOT 5.19)."
       sys.exit(1)
-  
-def printMethods_(methods): # prints a list of the methods being used
-  mlist = methods.replace(' ',',').split(',')
-  print('=== TMVAClassification: using method(s)...')
-  for m in mlist:
-    if m.strip() != '':
-      print('=== - <%s>'%m.strip())
       
 def main(): # runs the program
   try: # retrieve command line options
-    shortopts   = "m:i:o:v:s:t:h?" # possible command line options
-    longopts    = ["methods=", 
-                   "inputfile=",
+    shortopts   = "i:o:v:s:h?" # possible command line options
+    longopts    = ["inputfile=",
                    "outputfile=",
                    "verbose",
 		   "seed=",
-                   "tag=",
                    "seed=",
                    "help",
                    "usage"]
@@ -94,12 +81,10 @@ def main(): # runs the program
     sys.exit(1)
   
   myArgs = np.array([ # Stores the command line arguments
-    ['-m','--methods','methods',        DEFAULT_METHODS],     #0  Reference Indices
-    ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #3
-    ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #4 
-    ['-v','--verbose','verbose',        True],                #5
-    ['-s','--seed','SeedN',             DEFAULT_SEED],        #6
-    ['-t','--tag','tag',                DEFAULT_TAG]
+    ['-i','--inputfile','infname',      DEFAULT_INFNAME],     
+    ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
+    ['-v','--verbose','verbose',        True],               
+    ['-s','--seed','SeedN',             DEFAULT_SEED],        
   ])
   
   for opt, arg in opts:
@@ -114,21 +99,18 @@ def main(): # runs the program
       sys.exit(0)
   
   # Initialize some variables after reading in arguments
-  method_index = np.where(myArgs[:,2] == 'methods')[0][0]
   SeedN_index = np.where(myArgs[:,2] == 'SeedN')[0][0]
   infname_index = np.where(myArgs[:,2] == 'infname')[0][0]
   outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
   verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
-  tag_index = np.where(myArgs[:,2] == 'tag')[0][0]
 
   seed = myArgs[SeedN_index,3]
-  model_tag = str(myArgs[tag_index,3])
   varList = varsList.varList["BigComb"]
   var_length = len(varList)
 
   str_xbitset = '{:0{}b}'.format(long(myArgs[SeedN_index,3]),var_length)
   nVars = str_xbitset.count('1')
-  outf_key = str(myArgs[method_index,3] +  "_" + str(nVars) + 'vars')
+  outf_key = str("DNN_" + str(nVars) + 'vars')
   myArgs[outfname_index,3] = 'dataset/weights/TMVA_' + outf_key + '.root'   
   
   print("Seed: {}".format(str_xbitset))
@@ -168,7 +150,7 @@ def main(): # runs the program
 
   fClassifier.SetVerbose(bool( myArgs[verbose_index,3] ) )
 
-  loader = TMVA.DataLoader("dataset/" + str_xbitset + "_seednum" + model_tag)
+  loader = TMVA.DataLoader("dataset/" + str_xbitset)
 
   index = 0
   
@@ -219,7 +201,7 @@ def main(): # runs the program
 #####################################################
 #####################################################                         
 
-  model_name = 'TTTT_TMVA_model_' + model_tag + '.h5'
+  model_name = "TTTT_TMVA_model.h5"
 
   model = Sequential()
   model.add(Dense(
@@ -238,14 +220,14 @@ def main(): # runs the program
     )
   model.add(Dense(
     2,
-    activation = 'sigmoid'
+    activation = "sigmoid"
     )
   )
 
   model.compile(
-	loss = 'categorical_crossentropy',
+	loss = "categorical_crossentropy",
 	optimizer = Adam(),
-	metrics = ['accuracy']
+	metrics = ["accuracy"]
   )
 
   model.save( model_name )
@@ -260,29 +242,28 @@ def main(): # runs the program
 ######################################################
   
   # Declare some containers
-  kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=10:BatchSize=256' # the trained model has to be specified in this string
+  kerasSetting = "!H:!V:VarTransform=G:FilenameModel=" + model_name + ":NumEpochs=10:BatchSize=256" # the trained model has to be specified in this string
   
   # run the classifier
   fClassifier.BookMethod(
     loader,
     TMVA.Types.kPyKeras,
-    'PyKeras',
+    "PyKeras",
     kerasSetting) 
 
-  (TMVA.gConfig().GetIONames()).fWeightFileDir = str_xbitset + "_seednum" + model_tag + "/weights/" + outf_key
+  (TMVA.gConfig().GetIONames()).fWeightFileDir = str_xbitset + "/weights/" + outf_key
   print("New weight file directory: {}".format((TMVA.gConfig().GetIONames()).fWeightFileDir))
   
   fClassifier.TrainAllMethods()
   fClassifier.TestAllMethods()
   fClassifier.EvaluateAllMethods()
   
-  SROC = fClassifier.GetROCIntegral("dataset/"+ str_xbitset + "_seednum" + model_tag, "PyKeras")
+  SROC = fClassifier.GetROCIntegral("dataset/"+ str_xbitset, "PyKeras")
   print("ROC-integral: {}".format(SROC))
   fClassifier.DeleteAllMethods()
   fClassifier.fMethodsMap.clear()
   
   outputfile.Close()
-  os.system('rm ' + model_name)
 
 main()
 os.system('exit')
