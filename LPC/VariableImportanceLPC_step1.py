@@ -12,7 +12,7 @@ import varsList
 
 # methods
 
-def condorJob(SeedN="",SubSeedN="",count=0,options=['','','']): # submits a single condor job
+def condorJob(SeedN="",SubSeedN="",count=0,options=['','',''],maxSeeds=0): # submits a single condor job
     runDir = options[0]
     condorDir = options[1]
     numVars = options[2]
@@ -24,28 +24,25 @@ def condorJob(SeedN="",SubSeedN="",count=0,options=['','','']): # submits a sing
         fileName = "Keras_" + str(numVars) + "vars_Seed_" + str(SeedN) + "_Subseed_" + str(SubSeedN)
         SubmitSeedN = SubSeedN
     dict = {
-        "RUNDIR": runDir,           # run directory
-        "METHOD": "Keras",          # tmva method, should be "Keras"
         "SubmitSeedN": SubmitSeedN,
-        "TAG": str(count),
         "FILENAME": fileName
     }
     jdfName = condorDir + "%(FILENAME)s.job"%dict
     jdf = open(jdfName, "w")
     jdf.write(
 """universe = vanilla
-Executable = %(RUNDIR)s/doCondorVariableImportanceWrapper.sh
+Executable = %(RUNDIR)s/VariableImportanceLPC_step2.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
-request_memory = 3 GB
+request_memory = 4 GB
 request_cpus = 4
 request_disk = 40 GB
-image_size = 3 GB
+image_size = 4 GB
 Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(RUNDIR)s %(METHOD)s %(TAG)s %(SubmitSeedN)s
+Arguments = %(SubmitSeedN)s
 Queue 1"""%dict)
     jdf.close()
     os.chdir("%s/"%(condorDir))
@@ -57,14 +54,14 @@ Queue 1"""%dict)
     
     return count
     
-def submitSeedJob(SeedN,used_seeds,count,options): # submits seed job and corresponding subseed jobs
+def submitSeedJob(SeedN,used_seeds,maxSeeds,count,options): # submits seed job and corresponding subseed jobs
     numVars = options[2]
     used_seeds.append(SeedN)
-    count = condorJob(str(SeedN),count=count,options=options)
+    count = condorJob(str(SeedN),count=count,options=options,maxSeeds=maxSeeds)
     for num in range(0, numVars):
         if(SeedN & (1 << num)):
             SubSeedN = SeedN & ~(1 << num)
-            count = condorJob(str(SeedN),str(SubSeedN),count,options) 
+            count = condorJob(str(SeedN),str(SubSeedN),count,options,maxSeeds) 
     return used_seeds, count
 
 def getCorrelationMatrix(sigFile, bkgFile, weightStr, cutStr, varList): # gets the correlation matrix as np array
@@ -97,7 +94,7 @@ def getCorrelationMatrix(sigFile, bkgFile, weightStr, cutStr, varList): # gets t
         "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V"
     )
     
-    # set the pointer to the right histogram
+    # set the pointer to the right histogram, very important step
     loader.GetDefaultDataSetInfo().GetDataSet().GetEventCollection()
     
     # retrieve the signal correlation matrix
@@ -143,6 +140,26 @@ def generateUncorrSeeds(seed,correlated_pairs):
     for combo in correlation_combos:
         new_seeds.append((seedReplace(seed,0,combo)))
     return new_seeds
+
+def variableInclusion(used_seeds,correlated_pairs,count,options):
+    count_arr = np.zeros(len(varList))      # holds count of input variable usage in seed generation
+    # get a list of variables not included yet
+    for seed in used_seeds:
+        seed_str = "{:0{}b}".format(seed,len(varList))
+        for indx, variable in enumerate(seed_str):
+            if variable == "1": count_arr[indx] += 1
+
+    # generate seeds that include the excluded variables
+    if 0 in count_arr:
+        Seed = random.randint(0,int(binary_str,2))
+        SeedStr = "{:0{}b}".format(NewSeed,len(varList))
+        seed_mask = count_arr == 0
+        NewSeed = seedReplace(bitstring=SeedStr,val=1,indices=seed_mask)
+        gen_seeds = generateUncorrSeeds(NewSeed,correlated_pairs)
+        for gen_seed in gen_seeds:
+            used_seeds, count = submitSeedJob(int(gen_seed,2),used_seeds,count,options)
+    else: print("All variables were included in the prior seed generation.")
+    return used_seeds, count
     
 os.system("bash")
 os.system("source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh")
@@ -160,8 +177,7 @@ options = [                             # contains arguments for condor job subm
     len(varList)
 ]
 
-# variable parameters
-method = "Keras"    
+# variable parameters  
 weightStrC = "pileupWeight*lepIdSF*EGammaGsfSF*MCWeight_MultiLepCalc/abs(MCWeight_MultiLepCalc)"
 cutStrC = "(NJets_JetSubCalc >= 5 && NJetsCSV_JetSubCalc >= 2) && ((leptonPt_MultiLepCalc > 35 && isElectron) || (leptonPt_MultiLepCalc > 30 && isMuon))"
 binary_str = "1" * len(varList)         # bitstring full of '1' 
@@ -193,3 +209,5 @@ while len(used_seeds) < maxSeeds:
         var_count = gen_seed.count("1")
         if ( gen_seed not in used_seeds ) and ( var_count > 1 ):
             used_seeds, count = submitSeedJob(int(gen_seed,2),used_seeds,count,options)
+
+used_seeds, count = variableInclusion(used_seeds,correlated_pairs,count,options)
