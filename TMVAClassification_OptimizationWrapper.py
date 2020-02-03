@@ -24,7 +24,9 @@ from keras.layers import BatchNormalization
 from keras.optimizers import Adam
 from keras import backend
 
-sys.path.insert(0, "/home/dli50/.local/lib/python2.7/site-packages")
+bruxUserName = "dli50"
+
+sys.path.insert(0, "/home/{}/.local/lib/python2.7/site-packages".format(bruxUserName))
 
 from skopt import gp_minimize
 from skopt.space import Real, Integer, Categorical
@@ -44,10 +46,8 @@ os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/s
 def usage(): # conveys what command line arguments can be used for main()
   print(" ")
   print("Usage: python %s [options]" % sys.argv[0])
-  print("  -m | --methods    : gives methods to be run (default: all methods)")
   print("  -i | --inputfile  : name of input ROOT file (default: '%s')" % DEFAULT_INFNAME)
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
-  print("  -l | --varListKey : BDT input variable list (default: '%s')" %DEFAULT_VARLISTKEY)
   print("  -v | --verbose")
   print("  -? | --usage      : print this help message")
   print("  -h | --help       : print this help message")
@@ -60,14 +60,7 @@ def checkRootVer():
       print "*** Solution: either use CINT or a C++ compiled version (see TMVA/macros or TMVA/examples),"
       print "*** or use another ROOT version (e.g., ROOT 5.19)."
       sys.exit(1)
-  
-def printMethods_(methods): # prints a list of the methods being used
-  mlist = methods.replace(' ',',').split(',')
-  print('=== TMVAClassification: using method(s)...')
-  for m in mlist:
-    if m.strip() != '':
-      print('=== - <%s>'%m.strip())
-      
+   
 def build_custom_model(hidden, nodes, lrate, regulator, pattern, activation):
   model = Sequential()
   model.add(Dense(
@@ -115,24 +108,18 @@ def build_custom_model(hidden, nodes, lrate, regulator, pattern, activation):
 ######################################################
 ######################################################
 
-DEFAULT_METHODS       = "Keras"
 DEFAULT_OUTFNAME      = "dataset/weights/TMVA.root"
 DEFAULT_INFNAME       = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
-DEFAULT_VARLISTKEY    = "BigComb"
 
 myArgs = np.array([ # Stores the command line arguments
-  ['-m','--methods','methods',        DEFAULT_METHODS],     #0  Reference Indices
-  ['-l','--varListKey','varListKey',  DEFAULT_VARLISTKEY],  #1
   ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #2
   ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #3
   ['-v','--verbose','verbose',        True],                #4
 ])    
 
 try: # retrieve command line options
-  shortopts   = "m:i:k:l:o:vh?" # possible command line options
-  longopts    = ["methods=", 
-                 "inputfile=",
-                 "varListKey=",
+  shortopts   = "i:k:l:o:vh?" # possible command line options
+  longopts    = ["inputfile=",
                  "outputfile=",
                  "verbose",
                  "help",
@@ -156,20 +143,17 @@ for opt, arg in opts:
     myArgs[index_sig,3], myArgs[index_bkg,3] == treeSplit_(arg) # override signal, background tree
 
 # Initialize some variables after reading in arguments
-method_index = np.where(myArgs[:,2] == 'methods')[0][0]
 infname_index = np.where(myArgs[:,2] == 'infname')[0][0]
 outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
 verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
-varListKey_index = np.where(myArgs[:,2] == 'varListKey')[0][0]
 
-varList = varsList.varList[myArgs[varListKey_index,3]]
-nVars = str(len(varList)) + 'vars'
-var_length = len(varList)
+varList = varsList.varList["BigComb"]
+numVars = len(varList)
 
-outf_key = str(myArgs[method_index,3] + '_' + myArgs[varListKey_index,3] + '_' + nVars)
-myArgs[outfname_index,3] = 'dataset/weights/TMVAOpt_' + outf_key + '.root'
+outf_key = str("Keras_" + numVars + "vars")
+myArgs[outfname_index,3] = "dataset/weights/TMVAOptimization_" + numVars + "vars.root"
 
-INPUTFILE =     varsList.inputDir + myArgs[infname_index,3]
+INPUTFILE = varsList.inputDir + myArgs[infname_index,3]
 
 # Create directory for hyper parameter optimization for # of input variables if it doesn't exit
 if not os.path.exists('dataset/optimize_' + outf_key):
@@ -186,7 +170,7 @@ if not os.path.exists('dataset/optimize_' + outf_key):
 
 ### Define some static model parameters
 
-EPOCHS =      20
+EPOCHS =      10
 PATIENCE =    5
 MODEL_NAME =  "dummy_opt_model.h5"
 TAG_NUM =     str(datetime.datetime.now().hour)
@@ -201,11 +185,11 @@ PATTERN =     ['static', 'dynamic']
 BATCH_POW =   [7,11] # used as 2 ^ BATCH_POW
 LRATE =       [1e-4,1e-2]
 REGULATOR =   ['none', 'dropout', 'normalization', 'both']
-ACTIVATION =  ['relu','softplus']
+ACTIVATION =  ['relu','softplus','elu']
 
 ### Optimization parameters
 NCALLS =      30
-NSTARTS =     15
+NSTARTS =     10
 
 space = [
   Integer(HIDDEN[0],       HIDDEN[1],      name = "hidden_layers"),
