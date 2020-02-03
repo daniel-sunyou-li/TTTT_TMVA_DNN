@@ -17,5 +17,5 @@ elif [ $host == 'LPC' ] || [ $host == 'lpc' ] || [ $host == 'Lpc' ]
 then
   python ./LPC/VariableImportanceLPC_step1.py   # running on LPC clusters, use this if input variables > 20
 else
-  echo Invalid or No Option Used. Choose [BRUX] or [LPC].
+  echo Invalid or No Option Used. Submit as [./submit_VariableImportance.sh BRUX] or [./submit_VariableImportance.sh LPC].
 fi
