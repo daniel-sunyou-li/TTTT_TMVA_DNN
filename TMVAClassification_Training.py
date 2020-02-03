@@ -35,11 +35,8 @@ cutStrS = cutStrC
 cutStrB = cutStrC
 
 # default command line arguments
-DEFAULT_METHODS		  = "Keras"      # how was the .root file trained
 DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
 DEFAULT_INFNAME		  = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
-DEFAULT_MASS   		  = "180"
-DEFAULT_VARLISTKEY	= "BigComb"
 
 ######################################################
 ######################################################
@@ -52,10 +49,8 @@ DEFAULT_VARLISTKEY	= "BigComb"
 def usage(): # conveys what command line arguments can be used for main()
   print(" ")
   print("Usage: python %s [options]" % sys.argv[0])
-  print("  -m | --methods    : gives methods to be run (default: all methods)")
   print("  -i | --inputfile  : name of input ROOT file (default: '%s')" % DEFAULT_INFNAME)
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
-  print("  -l | --varListKey : BDT input variable list (default: '%s')" %DEFAULT_VARLISTKEY)
   print("  -v | --verbose")
   print("  -? | --usage      : print this help message")
   print("  -h | --help       : print this help message")
@@ -80,21 +75,12 @@ def treeSplit_(arg): # takes in the tree argument and splits into signal and bac
     sys.exit(1)
   return trees
   
-def printMethods_(methods): # prints a list of the methods being used
-  mlist = methods.replace(' ',',').split(',')
-  print('=== TMVAClassification: using method(s)...')
-  for m in mlist:
-    if m.strip() != '':
-      print('=== - <%s>'%m.strip())
-      
 def main(): # runs the program
   checkRootVer() # check that ROOT version is correct
   
   try: # retrieve command line options
-    shortopts   = "m:i:l:o:v:h?" # possible command line options
-    longopts    = ["methods=", 
-                   "inputfile=",
-                   "varListKey=",
+    shortopts   = "i:o:v:h?" # possible command line options
+    longopts    = ["inputfile=",
                    "outputfile=",
                    "verbose",
                    "help",
@@ -107,11 +93,9 @@ def main(): # runs the program
     sys.exit(1)
   
   myArgs = np.array([ # Stores the command line arguments
-    ['-m','--methods','methods',        DEFAULT_METHODS],     #0  Reference Indices
-    ['-l','--varListKey','varListKey',  DEFAULT_VARLISTKEY],  #3
-    ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #4
-    ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #5
-    ['-v','--verbose','verbose',        True],                #8
+    ['-i','--inputfile','infname',      DEFAULT_INFNAME],     
+    ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
+    ['-v','--verbose','verbose',        True],                
   ])
   
   for opt, arg in opts:
@@ -132,41 +116,35 @@ def main(): # runs the program
   weightsList = []
   
   # Initialize some variables after reading in arguments
-  varListKey_index = np.where(myArgs[:,2] == 'varListKey')[0][0]
-
-  method_index = np.where(myArgs[:,2] == 'methods')[0][0]
   infname_index = np.where(myArgs[:,2] == 'infname')[0][0]
   outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
-  verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
+  verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
 
-  varList = varsList.varList[myArgs[varListKey_index,3]]
-  nVars = str(len(varList)) + 'vars'
-  var_length = len(varList)
-  outf_key = str(myArgs[method_index,3] +  '_' + myArgs[varListKey_index,3] + '_' + nVars) 
-  myArgs[outfname_index,3] = 'dataset/weights/TMVA_' + outf_key + '.root'
+  varList = varsList.varList["BigComb"]
+  numVars = len(varList)
+  outf_key = str("Keras_" + str(numVars) + "vars") 
+  myArgs[outfname_index,3] = "dataset/weights/TMVA_" + outf_key + ".root"
   
   
-  outputfile = TFile( myArgs[outfname_index,3], 'RECREATE' )
+  outputfile = TFile( myArgs[outfname_index,3], "RECREATE" )
   inputDir = varsList.inputDir
   iFileSig = TFile.Open( inputDir + myArgs[infname_index,3] )
-  sigChain = iFileSig.Get( 'ljmet' )
-  
-  printMethods_(myArgs[method_index,3]) # references myArgs array method string and prints
+  sigChain = iFileSig.Get( "ljmet" )
   
   # initialize and set-up TMVA factory
   
-  factory = TMVA.Factory( 'TMVAClassification', outputfile,
-    '!V:!Silent:Color:DrawProgressBar:Transformations=I;:AnalysisType=Classification' )
+  factory = TMVA.Factory( "Training", outputfile,
+    "!V:!ROC:Silent:Color:!DrawProgressBar:Transformations=I;:AnalysisType=Classification" )
     
   factory.SetVerbose(bool( myArgs[verbose_index,3] ) )
-  (TMVA.gConfig().GetIONames()).fWeightFileDir = 'weights/' + outf_key
+  (TMVA.gConfig().GetIONames()).fWeightFileDir = "weights/" + outf_key
   
   # initialize and set-up TMVA loader
   
-  loader = TMVA.DataLoader( 'dataset' )
+  loader = TMVA.DataLoader( "dataset" )
   
   for var in varList:
-    if var[0] == 'NJets_MultiLepCalc': loader.AddVariable(var[0],var[1],var[2],'I')
+    if var[0] == "NJets_MultiLepCalc": loader.AddVariable(var[0],var[1],var[2],'I')
     else: loader.AddVariable(var[0],var[1],var[2],"F")
   
   loader.AddSignalTree(sigChain)
@@ -174,7 +152,7 @@ def main(): # runs the program
   for i in range(len(varsList.bkg)):
     bkg_list.append(TFile.Open( inputDir + varsList.bkg[i] ))
     print( inputDir + varsList.bkg[i] )
-    bkg_trees_list.append( bkg_list[i].Get('ljmet') )
+    bkg_trees_list.append( bkg_list[i].Get("ljmet") )
     bkg_trees_list[i].GetEntry(0)
     
     if bkg_trees_list[i].GetEntries() == 0:
@@ -204,25 +182,12 @@ def main(): # runs the program
 ######################################################
   
   model = Sequential()
-  '''
-  model.add(Dense(var_length*4, activation='softplus', input_dim=var_length,
+
+  model.add(Dense(100, activation='relu', input_dim=var_length,
     kernel_initializer = 'glorot_normal'))
-  model.add(Dropout(0.5))
-  model.add((Dense(var_length*2, activation='softplus',
-    kernel_initializer = 'glorot_normal')))
-  model.add(Dropout(0.5))
-  model.add((Dense(var_length, activation='softplus',
-    kernel_initializer = 'glorot_normal')))
-  model.add(Dropout(0.5))
-  model.add((Dense(int(var_length/2), activation='softplus',
-    kernel_initializer = 'glorot_normal')))
-  model.add((Dense(2, activation='sigmoid')))
-  '''
-  model.add(Dense(100, activation='softplus', input_dim=var_length,
+  model.add(Dense(100, activation='relu',
     kernel_initializer = 'glorot_normal'))
-  model.add(Dense(100, activation='softplus',
-    kernel_initializer = 'glorot_normal'))
-  model.add(Dense(100, activation='softplus',
+  model.add(Dense(100, activation='relu',
     kernel_initializer = 'glorot_normal'))
   model.add(Dense(2, activation='sigmoid'))
 
