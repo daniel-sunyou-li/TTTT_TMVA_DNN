@@ -152,7 +152,7 @@ def variableInclusion(used_seeds,correlated_pairs,count,options):
     # generate seeds that include the excluded variables
     if 0 in count_arr:
         Seed = random.randint(0,int(binary_str,2))
-        SeedStr = "{:0{}b}".format(NewSeed,len(varList))
+        SeedStr = "{:0{}b}".format(Seed,len(varList))
         seed_mask = count_arr == 0
         NewSeed = seedReplace(bitstring=SeedStr,val=1,indices=seed_mask)
         gen_seeds = generateUncorrSeeds(NewSeed,correlated_pairs)
