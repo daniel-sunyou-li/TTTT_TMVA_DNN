@@ -139,7 +139,7 @@ def generate_uncorr_seeds(seed,correlated_pairs):
     correlation_combos = list(itertools.product(*correlated_pairs_list))
     for combo in correlation_combos:
         new_seeds.append((seed_replace(seed,0,combo)))
-    return new_seeds
+    return set(new_seeds)
 
 def variable_inclusion(used_seeds,correlated_pairs,count,options):
     count_arr = np.zeros(len(varList))      # holds count of input variable usage in seed generation
@@ -154,13 +154,25 @@ def variable_inclusion(used_seeds,correlated_pairs,count,options):
         Seed = random.randint(0,int(binary_str,2))
         SeedStr = "{:0{}b}".format(Seed,len(varList))
         seed_mask = count_arr == 0
-        NewSeed = seed_replace(bitstring=SeedStr,val=1,indices=seed_mask)
+        index_mask = []
+        for indx, entry in enumerate(seed_mask):
+            if entry == True: index_mask.append(indx)
+        NewSeed = seed_replace(bitstring=SeedStr,val=1,indices=index_mask)
         gen_seeds = generate_uncorr_seeds(NewSeed,correlated_pairs)
         for gen_seed in gen_seeds:
             used_seeds, count = submit_seed_job(int(gen_seed,2),used_seeds,count,options)
     else: print("All variables were included in the prior seed generation.")
     return used_seeds, count
     
+def variable_occurence(used_seeds,varNames):
+    count_arr = np.zeros(len(varList))
+    for seed in used_seeds:
+        seed_str = "{:0{}b}".format(int(seed),len(count_arr))
+        for indx, variable in enumerate(seed_str):
+            if variable == "1": count_arr[indx] += 1
+    for indx, varName in enumerate(varNames):
+        print("{:32}: {:3}".format(len(used_seeds)))
+          
 os.system("bash")
 os.system("source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh")
 
@@ -207,7 +219,10 @@ while len(used_seeds) < maxSeeds:
     gen_seeds = generate_uncorr_seeds(NewSeedStr,correlated_pairs)
     for gen_seed in gen_seeds:
         var_count = gen_seed.count("1")
-        if ( gen_seed not in used_seeds ) and ( var_count > 1 ):
+        if ( gen_seed not in used_seeds ) and ( var_count > 1 ) and ( len(used_seeds) < maxSeeds ):
             used_seeds, count = submit_seed_job(int(gen_seed,2),used_seeds,count,options)
 
 used_seeds, count = variable_inclusion(used_seeds,correlated_pairs,count,options)
+
+#variable_occurence(used_seeds, varNames)   # include if you want to see the frequency of variables considered in seeds
+          
