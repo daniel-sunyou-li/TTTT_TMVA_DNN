@@ -12,7 +12,7 @@ import varsList
 
 # methods
 
-def condorJob(SeedN="",SubSeedN="",count=0,options=['','',''],maxSeeds=0): # submits a single condor job
+def condor_job(SeedN="",SubSeedN="",count=0,options=['','',''],maxSeeds=0): # submits a single condor job
     runDir = options[0]
     condorDir = options[1]
     numVars = options[2]
@@ -51,20 +51,20 @@ Queue 1"""%dict)
     os.chdir("%s"%(runDir))
     
     count += 1
-    
+    print("{} jobs submitted, {} out of {} seeds generated.".format(count,len(used_seeds),maxSeeds)
     return count
     
-def submitSeedJob(SeedN,used_seeds,maxSeeds,count,options): # submits seed job and corresponding subseed jobs
+def submit_seed_job(SeedN,used_seeds,maxSeeds,count,options): # submits seed job and corresponding subseed jobs
     numVars = options[2]
     used_seeds.append(SeedN)
-    count = condorJob(str(SeedN),count=count,options=options,maxSeeds=maxSeeds)
+    count = condor_job(str(SeedN),count=count,options=options,maxSeeds=maxSeeds)
     for num in range(0, numVars):
         if(SeedN & (1 << num)):
             SubSeedN = SeedN & ~(1 << num)
-            count = condorJob(str(SeedN),str(SubSeedN),count,options,maxSeeds) 
+            count = condor_job(str(SeedN),str(SubSeedN),count,options,maxSeeds) 
     return used_seeds, count
 
-def getCorrelationMatrix(sigFile, bkgFile, weightStr, cutStr, varList): # gets the correlation matrix as np array
+def get_correlation_matrix(sigFile, bkgFile, weightStr, cutStr, varList): # gets the correlation matrix as np array
     varNames = []
     loader = TMVA.DataLoader("dataset")
     for var in varList:
@@ -111,13 +111,13 @@ def getCorrelationMatrix(sigFile, bkgFile, weightStr, cutStr, varList): # gets t
     
     return sig_corr, varNames
           
-def seedReplace(bitstring,val,indices):
+def seed_replace(bitstring,val,indices):
     new_bitstring = bitstring
     for index in indices:
         new_bitstring = new_bitstring[:index] + str(val) + new_bitstring[index+1:]
     return new_bitstring
     
-def getCorrelatedPairs(corrMatrix,corrCut,varNames):
+def get_correlated_pairs(corrMatrix,corrCut,varNames):
     correlated_paris = {}
     for i in np.arange(np.shape(corrMatrix)[0] - 1):
         correlated_pairs[i] = [i]
@@ -131,17 +131,17 @@ def getCorrelatedPairs(corrMatrix,corrCut,varNames):
         if len(correlated_pairs[i]) == 1: del correlated_pairs[i]
     return correlated_pairs
 
-def generateUncorrSeeds(seed,correlated_pairs):
+def generate_uncorr_seeds(seed,correlated_pairs):
     new_seeds = []
     correlated_pair_list = []
     for pair_key in correlated_pairs:
         correlated_pairs_list.append(correlated_pairs[pair_key])
     correlation_combos = list(itertools.product(*correlated_pairs_list))
     for combo in correlation_combos:
-        new_seeds.append((seedReplace(seed,0,combo)))
+        new_seeds.append((seed_replace(seed,0,combo)))
     return new_seeds
 
-def variableInclusion(used_seeds,correlated_pairs,count,options):
+def variable_inclusion(used_seeds,correlated_pairs,count,options):
     count_arr = np.zeros(len(varList))      # holds count of input variable usage in seed generation
     # get a list of variables not included yet
     for seed in used_seeds:
@@ -154,10 +154,10 @@ def variableInclusion(used_seeds,correlated_pairs,count,options):
         Seed = random.randint(0,int(binary_str,2))
         SeedStr = "{:0{}b}".format(Seed,len(varList))
         seed_mask = count_arr == 0
-        NewSeed = seedReplace(bitstring=SeedStr,val=1,indices=seed_mask)
-        gen_seeds = generateUncorrSeeds(NewSeed,correlated_pairs)
+        NewSeed = seed_replace(bitstring=SeedStr,val=1,indices=seed_mask)
+        gen_seeds = generate_uncorr_seeds(NewSeed,correlated_pairs)
         for gen_seed in gen_seeds:
-            used_seeds, count = submitSeedJob(int(gen_seed,2),used_seeds,count,options)
+            used_seeds, count = submit_seed_job(int(gen_seed,2),used_seeds,count,options)
     else: print("All variables were included in the prior seed generation.")
     return used_seeds, count
     
@@ -187,7 +187,7 @@ maxSeeds = 60                           # maximum number of generated seeds
 count = 0                               # counts the number of jobs submitted
 
 # get the signal correlation matrix and the variable names, used in correlation options
-sig_corr, varNames = getCorrelationMatrix(
+sig_corr, varNames = get_correlation_matrix(
     inputDir + "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root",
     inputDir + varsList.bkg[0],     # choose a random background sample since we only care about signal
     weightStrC,
@@ -199,15 +199,15 @@ print("Using {} inputs...".format(len(varNames)))
 
 # submit jobs
 
-correlated_pairs = getCorrelatedPairs(sig_corr, corr_cut, varNames)
+correlated_pairs = get_correlated_pairs(sig_corr, corr_cut, varNames)
 
 while len(used_seeds) < maxSeeds:
     NewSeed = random.randint(0,int(binary_str,2))
     NewSeedStr = '{:0{}b}'.format(NewSeed,len(varList))
-    gen_seeds = generateUncorrSeeds(NewSeedStr,correlated_pairs)
+    gen_seeds = generate_uncorr_seeds(NewSeedStr,correlated_pairs)
     for gen_seed in gen_seeds:
         var_count = gen_seed.count("1")
         if ( gen_seed not in used_seeds ) and ( var_count > 1 ):
-            used_seeds, count = submitSeedJob(int(gen_seed,2),used_seeds,count,options)
+            used_seeds, count = submit_seed_job(int(gen_seed,2),used_seeds,count,options)
 
-used_seeds, count = variableInclusion(used_seeds,correlated_pairs,count,options)
+used_seeds, count = variable_inclusion(used_seeds,correlated_pairs,count,options)
