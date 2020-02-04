@@ -3,8 +3,9 @@
 #input variables
 varList = {}
 
-inputDir = "/mnt/hadoop/store/group/bruxljm/FWLJMET102X_1lep2017_Oct2019_4t_12122019_step2/nominal/" # 2017
-#inputDir = "./"
+inputDirBRUX =  "/mnt/hadoop/store/group/bruxljm/FWLJMET102X_1lep2017_Oct2019_4t_12122019_step2/nominal/"   # BRUX 2017 step 2 path
+inputDirLPC =   "~/nobackup/FWLJMET102X_1lep2017_Oct2019_4t_1212209_step2/"                                 # LPC 2017 step 2 path
+inputDirEOS =   "./"                                                                                        # LPC Remote Node 2017 step 2 path
 
 bkg = [
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_hadd.root",
@@ -24,6 +25,7 @@ bkg = [
   "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_hadd.root",
   "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_hadd.root"
 ]
+
 #[<variable in trees>, <variable name for axes and titles>, <unit>]
 
 varList['BigComb'] = [
