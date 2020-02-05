@@ -22,13 +22,13 @@ os.system('bash')
 os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh')
 
 # weight calculation equation
-weightStrC = "pileupWeight*lepIdSF*EGammaGsfSF*MCWeight_MultiLepCalc/abs(MCWeight_MultiLepCalc)"
+weightStrC = varsList.weightStr
 weightStrS = weightStrC # weight equation for Signal
 weightStrB = weightStrC # weight equation for Background
 
 # cut calculation equation
-cutStrC = "(NJets_JetSubCalc >= 5 && NJetsCSV_JetSubCalc >= 2) && ((leptonPt_MultiLepCalc > 35 && isElectron) || (leptonPt_MultiLepCalc > 30 && isMuon))"
-cutStrS = cutStrC # + " && ( isTraining == 1 || isTraining == 2 )"
+cutStrC = varsList.cutStr
+cutStrS = cutStrC
 cutStrB = cutStrC
 
 # default command line arguments
