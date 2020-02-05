@@ -9,4 +9,4 @@ eval `scramv1 runtime -sh`
 source /cvmfs/sft.cern.ch/lcg/contrib/gcc/7.3.0/x86_64-centos7-gcc7-opt/setup.sh
 source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.16.00/x86_64-centos7-gcc48-opt/bin/thisroot.sh
 
-python TMVAClassification_Optimization.py -i $signalFile
+python TMVAClassification_OptimizationWrapper.py -i $signalFile
