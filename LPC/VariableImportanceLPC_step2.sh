@@ -1,7 +1,7 @@
 #!/bin/sh
 
 str_xbitset=${1}
-signalFile = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root" # 2017 TTTT Step 2 signal
+signalFile="TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root" # 2017 TTTT Step 2 signal
 eosUserName="dsunyou" # change me
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
