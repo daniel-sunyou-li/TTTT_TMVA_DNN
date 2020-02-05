@@ -13,6 +13,7 @@ import varsList
 TMVA.Tools.Instance()
 TMVA.PyMethodBase.PyInitialize()
 
+os.environ['KERAS_BACKEND'] = 'tensorflow'
 os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh')
 
 # Define some variables defaults
