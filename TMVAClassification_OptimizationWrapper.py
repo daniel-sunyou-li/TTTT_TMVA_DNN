@@ -25,6 +25,7 @@ from keras.optimizers import Adam
 from keras import backend
 
 bruxUserName = "dli50"
+var_length = len(varsList.varList["BigComb"])
 
 sys.path.insert(0, "/home/{}/.local/lib/python2.7/site-packages".format(bruxUserName))
 
