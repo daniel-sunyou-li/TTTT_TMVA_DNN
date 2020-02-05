@@ -125,7 +125,7 @@ factory = TMVA.Factory(
 
 (TMVA.gConfig().GetIONames()).fWeightFileDir = '/weights'
 
-kerasSetting = '!H:!V:VarTransform=I:FilenameModel=' + MODEL_NAME +\
+kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + MODEL_NAME +\
                ':SaveBestOnly=true' +\
                ':NumEpochs=' + str(EPOCHS) +\
                ':BatchSize=' + str(BATCH_SIZE) +\
