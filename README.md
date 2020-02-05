@@ -12,7 +12,7 @@ There are three general steps for this analysis:
     
     # retrieve the CMSSW environment
     source /cvmfs/cms.cern.ch/cmsset_default.sh
-    export SCRAM_ARCH=slc7_amd64_gcc530
+    export SCRAM_ARCH=slc7_amd64_gcc630
     cmsrel CMSSW_9_4_6_patch1
     cd CMSSW_9_4_6_patch1/src/
     cmsenv
