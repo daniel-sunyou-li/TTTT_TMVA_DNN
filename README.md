@@ -66,13 +66,6 @@ In case there are issues with the tar file, then make adjustments to `TTTT_TMVA_
 
 Make sure that the background samples specified (uncommented) in `varsList.py` are reflected in `LPC/VariableImportanceLPC_step2.sh`.
 
-__(Important!!!)__ If you are changing the weights or cuts applied to the data, be sure to edit the variables `weightStrC` and/or `cutStrC` in:
-1. `TMVAClassification_Training.py`
-2. `TMVAClassification_OptimizationWrapper.py`
-3. `TMVAClassification_Optimization.py`
-4. `TMVAClassification_VariableImportance.py`
-5. `/BRUX/VariableImportanceBRUX_step1.py` and `/LPC/VariableImportanceLPC_step2.py`
-
 ## 1. Input Variable Importance Calculation ###
 __Calculate the relative importance of a Step 2 input variable in training a dense neural network classifier.  Then, the "unimportant" variables can be excluded from subsequent training to save time.__
 ### 1.1 (Optional) Edit `varsList.py` ###
