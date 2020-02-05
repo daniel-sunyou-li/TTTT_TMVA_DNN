@@ -151,14 +151,11 @@ def main(): # runs the program
   fClassifier.SetVerbose(bool( myArgs[verbose_index,3] ) )
 
   loader = TMVA.DataLoader("dataset/" + str_xbitset)
-
-  index = 0
-  
-  for var in varList:
-    if (str_xbitset[index] == '1'):
+	
+  for indx,var in enumerate(varList):
+    if (str_xbitset[indx] == '1'):
       if var[0] == "NJets_MultiLepCalc": loader.AddVariable(var[0], var[1], var[2], "I")
       else: loader.AddVariable(var[0], var[1], var[2], "F")
-    index += 1
  
   loader.AddSignalTree(sigChain)
 
