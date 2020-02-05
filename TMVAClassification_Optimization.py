@@ -62,13 +62,12 @@ NBKG =        500000
 NBKG_TEST =   200000
 
 # Set cut and weight values
-weightStrC = "pileupWeight*lepIdSF*EGammaGsfSF*MCWeight_MultiLepCalc/abs(MCWeight_MultiLepCalc)"
+weightStrC = varsList.weightStr
 weightStrS = weightStrC # weight equation for Signal
 weightStrB = weightStrC # weight equation for Background
 
 # cut calculation equation
-cutStrC = "(NJets_JetSubCalc >= 5 && NJetsCSV_JetSubCalc >= 2) && " +\
-          "((leptonPt_MultiLepCalc > 35 && isElectron) || (leptonPt_MultiLepCalc > 30 && isMuon))"
+cutStrC = varsList.cutStr
 cutStrS = cutStrC
 cutStrB = cutStrC
 
