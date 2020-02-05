@@ -21,7 +21,7 @@ EPOCHS =            10
 BATCH_SIZE =        1028
 PATIENCE =          5
 outf_key =          "Keras"
-INPUTFILE =         varsList.inputDir + "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
+INPUTFILE =         varsList.inputDirBRUX + "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
 TEMPFILE =          "dataset/temp_file.txt"
 numVars =           len(varsList.varList["BigComb"])
 
@@ -94,8 +94,8 @@ for var in varsList.varList["BigComb"]:
 loader.AddSignalTree(sigChain)
   
 for i in range(len(varsList.bkg)):
-  bkg_list.append(TFile.Open( varsList.inputDir + varsList.bkg[i] ))
-  print( varsList.inputDir + varsList.bkg[i] )
+  bkg_list.append(TFile.Open( varsList.inputDirBRUX + varsList.bkg[i] ))
+  print( varsList.inputDirBRUX + varsList.bkg[i] )
   bkg_trees_list.append( bkg_list[i].Get('ljmet') )
   bkg_trees_list[i].GetEntry(0)
     
