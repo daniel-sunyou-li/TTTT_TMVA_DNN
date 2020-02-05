@@ -78,7 +78,7 @@ hist_list = []
 weightsList = []
 
 print("Output file: dataset/weights/TMVAOpt_" + outf_key + ".root")
-outputfile =    TFile( "dataset/weights/TMVAOptimization_"+ numVars +"vars.root", "RECREATE" )
+outputfile =    TFile( "dataset/weights/TMVAOptimization_"+ str(numVars) +"vars.root", "RECREATE" )
 
 print("Input file: {}".format(INPUTFILE))
 iFileSig =      TFile.Open( INPUTFILE )
