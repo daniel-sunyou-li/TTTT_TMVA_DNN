@@ -154,7 +154,7 @@ numVars = len(varList)
 outf_key = str("Keras_" + str(numVars) + "vars")
 myArgs[outfname_index,3] = "dataset/weights/TMVAOptimization_" + str(numVars) + "vars.root"
 
-INPUTFILE = varsList.inputDir + myArgs[infname_index,3]
+INPUTFILE = varsList.inputDirLPC + myArgs[infname_index,3]
 
 # Create directory for hyper parameter optimization for # of input variables if it doesn't exit
 if not os.path.exists('dataset/optimize_' + outf_key):
