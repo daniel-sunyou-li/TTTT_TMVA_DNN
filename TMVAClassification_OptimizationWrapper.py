@@ -150,8 +150,8 @@ verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
 varList = varsList.varList["BigComb"]
 numVars = len(varList)
 
-outf_key = str("Keras_" + numVars + "vars")
-myArgs[outfname_index,3] = "dataset/weights/TMVAOptimization_" + numVars + "vars.root"
+outf_key = str("Keras_" + str(numVars) + "vars")
+myArgs[outfname_index,3] = "dataset/weights/TMVAOptimization_" + str(numVars) + "vars.root"
 
 INPUTFILE = varsList.inputDir + myArgs[infname_index,3]
 
