@@ -24,6 +24,7 @@ from keras.layers import BatchNormalization
 from keras.optimizers import Adam
 from keras import backend
 
+os.environ['KERAS_BACKEND'] = 'tensorflow'
 bruxUserName = "dli50"
 var_length = len(varsList.varList["BigComb"])
 
