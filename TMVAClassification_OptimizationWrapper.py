@@ -29,7 +29,7 @@ from keras import backend
 bruxUserName = "dli50"
 var_length = len(varsList.varList["BigComb"])
 
-sys.path.insert(0, "/home/{}/.local/lib/python2.7/site-packages".format(bruxUserName))
+# sys.path.insert(0, "/home/{}/.local/lib/python2.7/site-packages".format(bruxUserName)) # add if on BRUX, LPC adds path automatically
 
 from skopt import gp_minimize
 from skopt.space import Real, Integer, Categorical
@@ -112,18 +112,15 @@ def build_custom_model(hidden, nodes, lrate, regulator, pattern, activation):
 ######################################################
 
 DEFAULT_OUTFNAME      = "dataset/weights/TMVA.root"
-DEFAULT_INFNAME       = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
 
 myArgs = np.array([ # Stores the command line arguments
-  ['-i','--inputfile','infname',      DEFAULT_INFNAME],     #2
   ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #3
   ['-v','--verbose','verbose',        True],                #4
 ])    
 
 try: # retrieve command line options
-  shortopts   = "i:k:l:o:vh?" # possible command line options
-  longopts    = ["inputfile=",
-                 "outputfile=",
+  shortopts   = "k:l:o:vh?" # possible command line options
+  longopts    = ["outputfile=",
                  "verbose",
                  "help",
                  "usage"]
@@ -146,7 +143,6 @@ for opt, arg in opts:
     myArgs[index_sig,3], myArgs[index_bkg,3] == treeSplit_(arg) # override signal, background tree
 
 # Initialize some variables after reading in arguments
-infname_index = np.where(myArgs[:,2] == 'infname')[0][0]
 outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
 verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
 
@@ -155,8 +151,6 @@ numVars = len(varList)
 
 outf_key = str("Keras_" + str(numVars) + "vars")
 myArgs[outfname_index,3] = "dataset/weights/TMVAOptimization_" + str(numVars) + "vars.root"
-
-INPUTFILE = varsList.inputDirLPC + myArgs[infname_index,3]
 
 # Create directory for hyper parameter optimization for # of input variables if it doesn't exit
 if not os.path.exists('dataset/optimize_' + outf_key):
@@ -230,11 +224,10 @@ def objective(**X):
   BATCH_SIZE = int(2 ** X["batch_power"])
   
   TEMP_NAME = 'dataset/temp_file.txt'
-  os.system("python TMVAClassification_Optimization.py -o {} -b {} -e {} -i {}".format(
+  os.system("python TMVAClassification_Optimization.py -o {} -b {} -e {}".format(
     outf_key,
     BATCH_SIZE,
-    EPOCHS,
-    INPUTFILE
+    EPOCHS
   ))   
   
   while not os.path.exists(TEMP_NAME):    # wait until temp_file.txt is created after training
