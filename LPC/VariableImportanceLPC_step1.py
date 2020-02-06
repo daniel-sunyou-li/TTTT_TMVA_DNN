@@ -200,7 +200,7 @@ count = 0                               # counts the number of jobs submitted
 
 # get the signal correlation matrix and the variable names, used in correlation options
 sig_corr, varNames = get_correlation_matrix(
-    inputDir + "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root",
+    inputDir + varsList.sig[0],
     inputDir + varsList.bkg[0],     # choose a random background sample since we only care about signal
     weightStrC,
     TCut(cutStrC),
