@@ -180,7 +180,7 @@ TMVA.Tools.Instance()
 TMVA.PyMethodBase.PyInitialize()
 
 # lists
-inputDir = varsList.inputDir            # string for path to ljmet samples
+inputDir = varsList.inputDirLPC         # string for path to ljmet samples
 varList = varsList.varList["BigComb"]   # contains all the input variables
 used_seeds = []                         # stores which seeds have been used
 options = [                             # contains arguments for condor job submission functions
@@ -190,8 +190,8 @@ options = [                             # contains arguments for condor job subm
 ]
 
 # variable parameters  
-weightStrC = "pileupWeight*lepIdSF*EGammaGsfSF*MCWeight_MultiLepCalc/abs(MCWeight_MultiLepCalc)"
-cutStrC = "(NJets_JetSubCalc >= 5 && NJetsCSV_JetSubCalc >= 2) && ((leptonPt_MultiLepCalc > 35 && isElectron) || (leptonPt_MultiLepCalc > 30 && isMuon))"
+weightStrC = varsList.weightStr
+cutStrC = varsList.cutStr
 binary_str = "1" * len(varList)         # bitstring full of '1' 
 max_int = int(binary_str,2)             # integer corresponding to bitstring full of '1'
 corr_cut = 80                           # set this between 0 and 100
