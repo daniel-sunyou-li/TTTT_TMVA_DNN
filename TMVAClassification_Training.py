@@ -39,7 +39,6 @@ cutStrB = cutStrC
 
 # default command line arguments
 DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
-DEFAULT_INFNAME		  = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
 
 ######################################################
 ######################################################
@@ -121,9 +120,8 @@ def main(): # runs the program
   checkRootVer() # check that ROOT version is correct
   
   try: # retrieve command line options
-    shortopts   = "i:o:v:h?" # possible command line options
-    longopts    = ["inputfile=",
-                   "outputfile=",
+    shortopts   = "o:v:h?" # possible command line options
+    longopts    = ["outputfile=",
                    "verbose",
                    "help",
                    "usage"]
@@ -134,8 +132,7 @@ def main(): # runs the program
     usage()
     sys.exit(1)
   
-  myArgs = np.array([ # Stores the command line arguments
-    ['-i','--inputfile','infname',      DEFAULT_INFNAME],     
+  myArgs = np.array([ # Stores the command line arguments   
     ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
     ['-v','--verbose','verbose',        True],                
   ])
@@ -169,9 +166,7 @@ def main(): # runs the program
   
   
   outputfile = TFile( myArgs[outfname_index,3], "RECREATE" )
-  inputDir = varsList.inputDirLPC
-  iFileSig = TFile.Open( inputDir + myArgs[infname_index,3] )
-  sigChain = iFileSig.Get( "ljmet" )
+  inputDir = varsList.inputDirLPC     # edit-me if not running on FNAL LPC, see varsList.py for options
   
   # initialize and set-up TMVA factory
   
@@ -189,8 +184,14 @@ def main(): # runs the program
     if var[0] == "NJets_MultiLepCalc": loader.AddVariable(var[0],var[1],var[2],'I')
     else: loader.AddVariable(var[0],var[1],var[2],"F")
   
-  loader.AddSignalTree(sigChain)
+  # add signal files
+  for i in range(len(varsList.sig)):
+    sig_list.append(TFile.Open( inputDir + varsList.sig[i] ))
+    sig_trees_list.append( sig_list[i].get("ljmet") )
+    sig_trees_list[i].GetEntry(0)
+    loader.AddSignalTree( sig_trees_list[i] )
   
+  # add background files
   for i in range(len(varsList.bkg)):
     bkg_list.append(TFile.Open( inputDir + varsList.bkg[i] ))
     bkg_trees_list.append( bkg_list[i].Get("ljmet") )
