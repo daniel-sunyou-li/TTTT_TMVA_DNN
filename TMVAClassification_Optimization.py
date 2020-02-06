@@ -95,7 +95,7 @@ loader.AddSignalTree(sigChain)
   
 for i in range(len(varsList.bkg)):
   bkg_list.append(TFile.Open( varsList.inputDirBRUX + varsList.bkg[i] ))
-  print( varsList.inputDirBRUX + varsList.bkg[i] )
+  #print( varsList.inputDirBRUX + varsList.bkg[i] )
   bkg_trees_list.append( bkg_list[i].Get('ljmet') )
   bkg_trees_list[i].GetEntry(0)
     
