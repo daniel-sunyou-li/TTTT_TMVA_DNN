@@ -1,8 +1,8 @@
 #!/bin/sh
 
 str_xbitset=${1}
-signalFile="TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root" # 2017 TTTT Step 2 signal
 eosUserName="dsunyou" # change me
+eosDir="FWLJMET102X_1lep2017_Oct2019_4t_02052020_step2/"
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
@@ -10,23 +10,23 @@ xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/CMSSW946.tgz .
 tar -xf CMSSW946.tgz
 rm CMSSW946.tgz
 
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root .
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_hadd.root .
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_hadd.root .
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_hadd.root .
-#xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_2_hadd.root .
-#xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_3_hadd.root .
-#xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_4_hadd.root .
-#xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_5_hadd.root .
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_hadd.root .
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_hadd.root .
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_hadd.root .
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_hadd.root .
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_hadd.root .
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_hadd.root .
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_hadd.root .
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_hadd.root .
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_hadd.root .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_hadd.root .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_hadd.root .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_hadd.root .
+#xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_2_hadd.root .
+#xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_3_hadd.root .
+#xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_4_hadd.root .
+#xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_5_hadd.root .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_hadd.root .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_hadd.root .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_hadd.root .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_hadd.root .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_hadd.root .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_hadd.root .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_hadd.root .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_hadd.root .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_hadd.root .
 
 mv *.root ./CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/
 
@@ -40,4 +40,4 @@ source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.16.00/x86_64-centos7-gcc48-opt
 
 cd ./TTTT_TMVA_DNN/
 
-python TMVAClassification_VariableImportance.py -i $signalFile -s $str_xbitset
+python TMVAClassification_VariableImportance.py -s $str_xbitset
