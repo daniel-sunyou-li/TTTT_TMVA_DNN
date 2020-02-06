@@ -11,8 +11,11 @@ from ROOT import TMVA, TFile, TTree, TCut, TRandom3
 from ROOT import gSystem, gApplication, gROOT
 import varsList
 
+os.environ['KERAS_BACKEND'] = 'tensorflow'
+
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout
+from keras.layers import BatchNormalization
 from keras.optimizers import Adam
 
 os.system('bash')
@@ -74,6 +77,45 @@ def treeSplit_(arg): # takes in the tree argument and splits into signal and bac
     print(trees)
     sys.exit(1)
   return trees
+
+def build_model(hidden, nodes, lrate, regulator, pattern, activation):
+  model = Sequential()
+  model.add(Dense(
+      nodes,
+      input_dim = var_length,
+      kernel_initializer = 'glorot_normal',
+      activation = activation
+    )
+  )
+  partition = int( nodes / hidden )
+  for i in range(hidden):
+    if regulator in ['normalization','both']: model.add(BatchNormalization())
+    if pattern in ['dynamic']:
+      model.add(Dense(
+          nodes - ( partition * i),
+          kernel_initializer = 'glorot_normal',
+          activation = activation
+        )
+      )
+    if pattern in ['static']:
+      model.add(Dense(
+          nodes,
+          kernel_initializer = 'glorot_normal',
+          activation = activation
+        )
+      )
+    if regulator in ['dropout','both']: model.add(Dropout(0.5))
+  model.add(Dense(
+      2, # signal or background classification
+      activation = 'sigmoid'
+    )
+  )
+  model.compile(
+    optimizer = Adam(lr = lrate),
+    loss = 'categorical_crossentropy',
+    metrics = ['accuracy']
+  )
+  return model
   
 def main(): # runs the program
   checkRootVer() # check that ROOT version is correct
@@ -127,7 +169,7 @@ def main(): # runs the program
   
   
   outputfile = TFile( myArgs[outfname_index,3], "RECREATE" )
-  inputDir = varsList.inputDir
+  inputDir = varsList.inputDirLPC
   iFileSig = TFile.Open( inputDir + myArgs[infname_index,3] )
   sigChain = iFileSig.Get( "ljmet" )
   
@@ -151,7 +193,6 @@ def main(): # runs the program
   
   for i in range(len(varsList.bkg)):
     bkg_list.append(TFile.Open( inputDir + varsList.bkg[i] ))
-    print( inputDir + varsList.bkg[i] )
     bkg_trees_list.append( bkg_list[i].Get("ljmet") )
     bkg_trees_list[i].GetEntry(0)
     
@@ -168,10 +209,6 @@ def main(): # runs the program
   loader.PrepareTrainingAndTestTree( mycutSig, mycutBkg, 
     "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V"
   )
-  
-  # modify this when implementing hyper parameter optimization:
-  model_name = 'TTTT_TMVA_model.h5'
-  kerasSetting = 'H:!V:VarTransform=G:FilenameModel=' + model_name + ':NumEpochs=15:BatchSize=256'
  
 ######################################################
 ######################################################
@@ -181,24 +218,28 @@ def main(): # runs the program
 ######################################################
 ######################################################
   
-  model = Sequential()
-
-  model.add(Dense(100, activation='relu', input_dim=var_length,
-    kernel_initializer = 'glorot_normal'))
-  model.add(Dense(100, activation='relu',
-    kernel_initializer = 'glorot_normal'))
-  model.add(Dense(100, activation='relu',
-    kernel_initializer = 'glorot_normal'))
-  model.add(Dense(2, activation='sigmoid'))
-
-  # set loss and optimizer
-  model.compile(
-    loss = 'categorical_crossentropy',
-    optimizer = Adam(),
-    metrics = ['accuracy']
-  )
+  # modify this when implementing hyper parameter optimization:
+  model_name = 'TTTT_' + str(numVars) + 'vars_model.h5'
   
-  # save the model
+  EPOCHS = 20
+  PATIENCE = 5
+  
+  # edit these based on hyper parameter optimization results
+  HIDDEN = 3
+  NODES = 100
+  LRATE = 0.01
+  PATTERN = 'static'
+  REGULATOR = 'none'
+  ACTIVATION = 'relu'
+  BATCH_SIZE = 256
+  
+  kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + \
+                 'SaveBestOnly=true' + \
+                 ':NumEpochs=' + str(EPOCHS) + \
+                 ':BatchSize=' + str(BATCH_SIZE) + \
+                 ':TriesEarlyStopping=' + str(PATIENCE)
+  
+  model = build_model(HIDDEN,NODES,LRATE,REGULATOR,PATTERN,ACTIVATION)
   model.save( model_name )
   model.summary()
   
