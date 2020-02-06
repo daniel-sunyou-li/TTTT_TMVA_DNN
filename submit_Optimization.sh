@@ -1,4 +1,5 @@
 #/bin/sh
+
 signalFile="TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root" # 2017 TTTT Step 2 signal
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
