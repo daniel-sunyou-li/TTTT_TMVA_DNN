@@ -33,7 +33,6 @@ cutStrB = cutStrC
 
 # default command line arguments
 DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
-DEFAULT_INFNAME		  = "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
 DEFAULT_SEED		  = 1
 
 ######################################################
@@ -47,7 +46,6 @@ DEFAULT_SEED		  = 1
 def usage(): # conveys what command line arguments can be used for main()
   print(" ")
   print("Usage: python %s [options]" % sys.argv[0])
-  print("  -i | --inputfile  : name of input ROOT file (default: '%s')" % DEFAULT_INFNAME)
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
   print("  -s | --seed : random seed for selecting variable (default: '%s')" %DEFAULT_SEED) 
   print("  -v | --verbose")
@@ -65,9 +63,8 @@ def checkRootVer():
       
 def main(): # runs the program
   try: # retrieve command line options
-    shortopts   = "i:o:v:s:h?" # possible command line options
-    longopts    = ["inputfile=",
-                   "outputfile=",
+    shortopts   = "o:v:s:h?" # possible command line options
+    longopts    = ["outputfile=",
                    "verbose",
 		   "seed=",
                    "seed=",
@@ -80,8 +77,7 @@ def main(): # runs the program
     usage()
     sys.exit(1)
   
-  myArgs = np.array([ # Stores the command line arguments
-    ['-i','--inputfile','infname',      DEFAULT_INFNAME],     
+  myArgs = np.array([ # Stores the command line arguments    
     ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
     ['-v','--verbose','verbose',        True],               
     ['-s','--seed','SeedN',             DEFAULT_SEED],        
@@ -100,7 +96,6 @@ def main(): # runs the program
   
   # Initialize some variables after reading in arguments
   SeedN_index = np.where(myArgs[:,2] == 'SeedN')[0][0]
-  infname_index = np.where(myArgs[:,2] == 'infname')[0][0]
   outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
   verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
 
@@ -128,18 +123,14 @@ def main(): # runs the program
 ######################################################
   
   # Declare some containers
+  sig_list = []
+  sig_trees_list = []
   bkg_list = []
   bkg_trees_list = []
   hist_list = []
   weightsList = []
-  
-  # Setting up TMVA
-  
-  inputDir = varsList.inputDir # get current input directory path
-  iFileSig = TFile.Open(inputDir + myArgs[infname_index,3])
-  sigChain = iFileSig.Get("ljmet") 
-   
-  bkgList = varsList.bkg 
+ 
+  inputDir = varsList.inputDirLPC # edit-me if not running on FNAL LPC
   
   # Set up TMVA
   ROOT.TMVA.Tools.Instance()
@@ -148,20 +139,26 @@ def main(): # runs the program
   fClassifier = TMVA.Factory( 'VariableImportance',
         '!V:!ROC:Silent:!Color:!DrawProgressBar:Transformations=I;:AnalysisType=Classification' )
 
-  fClassifier.SetVerbose(bool( myArgs[verbose_index,3] ) )
+  fClassifier.SetVerbose( bool( myArgs[verbose_index,3] ) )
 
   loader = TMVA.DataLoader("dataset/" + str_xbitset)
 	
-  for indx,var in enumerate(varList):
-    if (str_xbitset[indx] == '1'):
-      if var[0] == "NJets_MultiLepCalc": loader.AddVariable(var[0], var[1], var[2], "I")
-      else: loader.AddVariable(var[0], var[1], var[2], "F")
- 
-  loader.AddSignalTree(sigChain)
+  for indx,var in enumerate( varList ):
+    if ( str_xbitset[indx] == '1' ):
+      if var[0] == "NJets_MultiLepCalc": loader.AddVariable( var[0], var[1], var[2], "I" )
+      else: loader.AddVariable( var[0], var[1], var[2], "F" )
+  
+  # add signals to loader
+  for i in range( len( varsList.sig ) ):
+    sig_list.append( TFile.Open( inputDir + varsList.sig[i] ) )
+    sig_trees_list.append( sig_list[i].Get( "ljmet" ) )
+    sig_trees_list[i].GetEntry(0)
+    loader.AddSignalTree( sig_trees_list[i] )
 
-  for i in range(len(varsList.bkg)):
-    bkg_list.append(TFile.Open(inputDir + bkgList[i]))
-    bkg_trees_list.append(bkg_list[i].Get("ljmet"))
+  # add backgrounds to loader
+  for i in range( len( varsList.bkg ) ):
+    bkg_list.append( TFile.Open( inputDir + varsList.bkg[i] ) )
+    bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
     bkg_trees_list[i].GetEntry(0)
   
     if bkg_trees_list[i].GetEntries() == 0:
@@ -239,7 +236,8 @@ def main(): # runs the program
 ######################################################
   
   # Declare some containers
-  kerasSetting = "!H:!V:VarTransform=G:FilenameModel=" + model_name + ":NumEpochs=10:BatchSize=256" # the trained model has to be specified in this string
+  kerasSetting = "!H:!V:VarTransform=G:FilenameModel=" + model_name + \
+		 ":NumEpochs=10:BatchSize=256" # the trained model has to be specified in this string
   
   # run the classifier
   fClassifier.BookMethod(
@@ -249,7 +247,7 @@ def main(): # runs the program
     kerasSetting) 
 
   (TMVA.gConfig().GetIONames()).fWeightFileDir = str_xbitset + "/weights/" + outf_key
-  print("New weight file directory: {}".format((TMVA.gConfig().GetIONames()).fWeightFileDir))
+  #print("New weight file directory: {}".format((TMVA.gConfig().GetIONames()).fWeightFileDir))
   
   fClassifier.TrainAllMethods()
   fClassifier.TestAllMethods()
