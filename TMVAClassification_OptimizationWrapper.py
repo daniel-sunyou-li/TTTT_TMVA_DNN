@@ -18,13 +18,14 @@ import ROOT
 from ROOT import TMVA, TFile, TTree, TCut, TRandom3, gSystem, gApplication, gROOT
 import varsList
 
+os.environ['KERAS_BACKEND'] = 'tensorflow'
+
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout
 from keras.layers import BatchNormalization
 from keras.optimizers import Adam
 from keras import backend
 
-os.environ['KERAS_BACKEND'] = 'tensorflow'
 bruxUserName = "dli50"
 var_length = len(varsList.varList["BigComb"])
 
@@ -308,7 +309,8 @@ def main():
   result_file.write(' Learning Rate: {}\n'.format(res_gp.x[3]))
   result_file.write(' Node Pattern: {}\n'.format(res_gp.x[4]))
   result_file.write(' Regulator: {}\n'.format(res_gp.x[5]))
-  result_file.close(' Activation Function: {}\n'.format(res_gp.x[6]))
+  result_file.write(' Activation Function: {}\n'.format(res_gp.x[6]))
+  result_file.close()
   print('Finished optimization in: {} s'.format(time.time()-start_time))
 
 
