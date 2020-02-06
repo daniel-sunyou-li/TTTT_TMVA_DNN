@@ -22,7 +22,6 @@ EPOCHS =            10
 BATCH_SIZE =        1028
 PATIENCE =          5
 outf_key =          "Keras"
-INPUTFILE =         varsList.inputDirBRUX + "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"
 TEMPFILE =          "dataset/temp_file.txt"
 numVars =           len(varsList.varList["BigComb"])
 
@@ -35,7 +34,7 @@ numVars =           len(varsList.varList["BigComb"])
 ######################################################
 
 try: # retrieve command line options
-  shortopts   = "b:o:e:i" # possible command line options
+  shortopts   = "b:o:e" # possible command line options
   opts, args = getopt.getopt( sys.argv[1:], shortopts ) # associates command line inputs to variables
   
 except getopt.GetoptError: # output error if command line argument invalid
@@ -46,7 +45,6 @@ except getopt.GetoptError: # output error if command line argument invalid
 for opt, arg in opts:
     if opt in ('b'): BATCH_SIZE = int(arg)
     elif opt in ('e'): EPOCHS = int(arg)
-    elif opt in ('i'): INPUTFILE = str(arg)
     elif opt in ('o'): outf_key = str(arg)
 
 ######################################################
@@ -74,16 +72,17 @@ cutStrB = cutStrC
 
 # Initialize some containers
 bkg_list = []
+sig_list = []
 bkg_trees_list = []
+sig_trees_list = []
 hist_list = []
 weightsList = []
 
-print("Output file: dataset/weights/TMVAOpt_" + outf_key + ".root")
-outputfile =    TFile( "dataset/weights/TMVAOptimization_"+ str(numVars) +"vars.root", "RECREATE" )
+#print("Output file: dataset/weights/TMVAOpt_" + outf_key + ".root")
+inputDir =    varsList.inputDirEOS  # edit if not running on LPC
+outputfile =  TFile( "dataset/weights/TMVAOptimization_"+ str(numVars) +"vars.root", "RECREATE" )
 
-print("Input file: {}".format(INPUTFILE))
-iFileSig =      TFile.Open( INPUTFILE )
-sigChain =      iFileSig.Get( "ljmet" )
+#print("Input file: {}".format(INPUTFILE))
 
 loader = TMVA.DataLoader( "dataset/optimize_" + outf_key )
 
@@ -91,12 +90,18 @@ for var in varsList.varList["BigComb"]:
   if var[0] == 'NJets_MultiLepCalc': loader.AddVariable(var[0],var[1],var[2],'I')
   else: loader.AddVariable(var[0],var[1],var[2],'F')
   
-loader.AddSignalTree(sigChain)
+# add signal to loader
+for i in range( len( varsList.sig ) ):
+  sig_list.append( TFile.Open( inputDir + varsList.sig[i] ) )
+  sig_trees_list.append( sig_list[i].Get( "ljmet" ) )
+  sig_trees_list[i].GetEntry(0)
+  loader.AddSignalTree( sig_trees_list[i], 1 )
   
-for i in range(len(varsList.bkg)):
-  bkg_list.append(TFile.Open( varsList.inputDirBRUX + varsList.bkg[i] ))
-  #print( varsList.inputDirBRUX + varsList.bkg[i] )
-  bkg_trees_list.append( bkg_list[i].Get('ljmet') )
+# add background to loader
+for i in range( len( varsList.bkg ) ):
+  bkg_list.append( TFile.Open( inputDir + varsList.bkg[i] ) )
+  #print( inputDir + varsList.bkg[i] )
+  bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
   bkg_trees_list[i].GetEntry(0)
     
   if bkg_trees_list[i].GetEntries() == 0:
