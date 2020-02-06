@@ -8,6 +8,10 @@ inputDirBRUX =  "/mnt/hadoop/store/group/bruxljm/FWLJMET102X_1lep2017_Oct2019_4t
 inputDirLPC =   "~/nobackup/FWLJMET102X_1lep2017_Oct2019_4t_1212209_step2/"                                 # LPC 2017 step 2 path
 inputDirEOS =   "./"                                                                                        # LPC Remote Node 2017 step 2 path
 
+sig = [
+  "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"   # 2017 step 2
+]
+
 bkg = [
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_hadd.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_hadd.root",
