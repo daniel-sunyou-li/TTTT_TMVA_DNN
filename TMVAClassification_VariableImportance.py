@@ -129,7 +129,7 @@ def main(): # runs the program
   hist_list = []
   weightsList = []
  
-  inputDir = varsList.inputDirEOS # edit-me if not running on FNAL LPC
+  inputDir = varsList.inputDirCondor # edit-me if not running on FNAL LPC
   
   # Set up TMVA
   ROOT.TMVA.Tools.Instance()
