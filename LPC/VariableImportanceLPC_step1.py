@@ -31,7 +31,7 @@ def condor_job(SeedN="",SubSeedN="",count=0,options=['','',''],maxSeeds=0): # su
     jdf = open(jdfName, "w")
     jdf.write(
 """universe = vanilla
-Executable = %(RUNDIR)s/VariableImportanceLPC_step2.sh
+Executable = %(RUNDIR)s/LPC/VariableImportanceLPC_step2.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 request_memory = 4.2 GB
