@@ -38,7 +38,7 @@ cutStrS = cutStrC
 cutStrB = cutStrC
 
 # default command line arguments
-DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
+DEFAULT_OUTFNAME = "dataset/weights/TMVA.root" 	# this file to be read
 
 ######################################################
 ######################################################
@@ -51,7 +51,6 @@ DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
 def usage(): # conveys what command line arguments can be used for main()
   print(" ")
   print("Usage: python %s [options]" % sys.argv[0])
-  print("  -i | --inputfile  : name of input ROOT file (default: '%s')" % DEFAULT_INFNAME)
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
   print("  -v | --verbose")
   print("  -? | --usage      : print this help message")
@@ -81,7 +80,7 @@ def build_model(hidden, nodes, lrate, regulator, pattern, activation):
   model = Sequential()
   model.add(Dense(
       nodes,
-      input_dim = var_length,
+      input_dim = len(varsList.varList["BigComb"]),
       kernel_initializer = 'glorot_normal',
       activation = activation
     )
@@ -151,11 +150,10 @@ def main(): # runs the program
   # Initialize some containers
   bkg_list = []
   bkg_trees_list = []
-  hist_list = []
-  weightsList = []
+  sig_list = []
+  sig_trees_list = []
   
   # Initialize some variables after reading in arguments
-  infname_index = np.where(myArgs[:,2] == 'infname')[0][0]
   outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
   verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
 
@@ -185,16 +183,16 @@ def main(): # runs the program
     else: loader.AddVariable(var[0],var[1],var[2],"F")
   
   # add signal files
-  for i in range(len(varsList.sig)):
-    sig_list.append(TFile.Open( inputDir + varsList.sig[i] ))
+  for i in range( len( varsList.sig ) ):
+    sig_list.append( TFile.Open( inputDir + varsList.sig[i] ) )
     sig_trees_list.append( sig_list[i].get("ljmet") )
     sig_trees_list[i].GetEntry(0)
     loader.AddSignalTree( sig_trees_list[i] )
   
   # add background files
-  for i in range(len(varsList.bkg)):
-    bkg_list.append(TFile.Open( inputDir + varsList.bkg[i] ))
-    bkg_trees_list.append( bkg_list[i].Get("ljmet") )
+  for i in range( len( varsList.bkg ) ):
+    bkg_list.append( TFile.Open( inputDir + varsList.bkg[i] ) )
+    bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
     bkg_trees_list[i].GetEntry(0)
     
     if bkg_trees_list[i].GetEntries() == 0:
@@ -222,7 +220,7 @@ def main(): # runs the program
   # modify this when implementing hyper parameter optimization:
   model_name = 'TTTT_' + str(numVars) + 'vars_model.h5'
   
-  EPOCHS = 20
+  EPOCHS = 30
   PATIENCE = 5
   
   # edit these based on hyper parameter optimization results
