@@ -67,7 +67,6 @@ def main(): # runs the program
     longopts    = ["outputfile=",
                    "verbose",
 		   "seed=",
-                   "seed=",
                    "help",
                    "usage"]
     opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
@@ -130,7 +129,7 @@ def main(): # runs the program
   hist_list = []
   weightsList = []
  
-  inputDir = varsList.inputDirLPC # edit-me if not running on FNAL LPC
+  inputDir = varsList.inputDirEOS # edit-me if not running on FNAL LPC
   
   # Set up TMVA
   ROOT.TMVA.Tools.Instance()
