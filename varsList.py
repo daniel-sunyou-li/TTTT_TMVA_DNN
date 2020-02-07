@@ -5,7 +5,7 @@ varList = {}
 
 #inputDirBRUX =  "/mnt/hadoop/store/group/bruxljm/FWLJMET102X_1lep2017_Oct2019_4t_12122019_step2/nominal/"   # BRUX 2017 step 2 path
 inputDirBRUX =  "/mnt/hadoop/store/group/bruxljm/FWLJMET102X_1lep2017_Oct2019_4t_02052020_step2/nominal/"   # BRUX 2017 step 2 path
-inputDirLPC =   "~/nobackup/FWLJMET102X_1lep2017_Oct2019_4t_1212209_step2/"                                 # LPC 2017 step 2 path
+inputDirLPC =   "~/nobackup/FWLJMET102X_1lep2017_Oct2019_4t_02052020_step2/"                                 # LPC 2017 step 2 path
 inputDirEOS =   "./FWLJMET102X_1lep2017_Oct2019_4t_02052020_step2/"                                         # LPC Remote Node 2017 step 2 path
 inputDirCondor = "./"
 
