@@ -8,6 +8,9 @@ import ROOT
 import itertools
 from ROOT import TMVA, TFile, TTree, TCut
 from ROOT import gSystem, gApplication, gROOT
+
+sys.path.insert(0, "../TTTT_TMVA_DNN")
+
 import varsList
 
 # methods
