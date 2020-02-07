@@ -136,7 +136,7 @@ def get_correlated_pairs(corrMatrix,corrCut,varNames):
 
 def generate_uncorr_seeds(seed,correlated_pairs):
     new_seeds = []
-    correlated_pair_list = []
+    correlated_pairs_list = []
     for pair_key in correlated_pairs:
         correlated_pairs_list.append(correlated_pairs[pair_key])
     correlation_combos = list(itertools.product(*correlated_pairs_list))
