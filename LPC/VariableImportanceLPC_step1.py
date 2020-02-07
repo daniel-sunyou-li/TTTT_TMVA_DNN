@@ -51,7 +51,7 @@ Queue 1"""%dict)
     os.chdir("%s"%(runDir))
     
     count += 1
-    print("{} jobs submitted, {} out of {} seeds generated.".format(count,len(used_seeds),maxSeeds)
+    print("{} jobs submitted, {} out of {} seeds generated.".format(count,len(used_seeds),maxSeeds))
     return count
     
 def submit_seed_job(SeedN,used_seeds,maxSeeds,count,options): # submits seed job and corresponding subseed jobs
