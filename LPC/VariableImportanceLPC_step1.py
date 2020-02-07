@@ -130,7 +130,7 @@ def get_correlated_pairs(corrMatrix,corrCut,varNames):
                     varNames[i], varNames[j], 100*corrMatrix[i,j]
                     )
                 )
-                correlated_pairs.append(j)
+                correlated_pairs[i].append(j)
         if len(correlated_pairs[i]) == 1: del correlated_pairs[i]
     return correlated_pairs
 
