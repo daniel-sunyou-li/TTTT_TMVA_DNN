@@ -188,7 +188,7 @@ varList = varsList.varList["BigComb"]   # contains all the input variables
 used_seeds = []                         # stores which seeds have been used
 options = [                             # contains arguments for condor job submission functions
     os.getcwd(),
-    os.getcwd() + "/condor_log/",
+    os.getcwd() + "../condor_log/",
     len(varList)
 ]
 
