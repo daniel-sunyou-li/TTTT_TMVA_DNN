@@ -121,7 +121,7 @@ def seed_replace(bitstring,val,indices):
     return new_bitstring
     
 def get_correlated_pairs(corrMatrix,corrCut,varNames):
-    correlated_paris = {}
+    correlated_pairs = {}
     for i in np.arange(np.shape(corrMatrix)[0] - 1):
         correlated_pairs[i] = [i]
         for j in np.arange(i+1,np.shape(corrMatrix)[1]):
