@@ -18,8 +18,8 @@ from keras.layers.core import Dense, Dropout
 from keras.layers import BatchNormalization
 from keras.optimizers import Adam
 
-os.system('bash')
-os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh')
+os.system( 'bash' )
+os.system( 'source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh' )
 
 # weight calculation equation
 weightStrC = varsList.weightStr
@@ -32,8 +32,8 @@ cutStrS = cutStrC
 cutStrB = cutStrC
 
 # default command line arguments
-DEFAULT_OUTFNAME	  = "dataset/weights/TMVA.root" 	# this file to be read
-DEFAULT_SEED		  = 1
+DEFAULT_OUTFNAME = "dataset/weights/TMVA.root" 	# this file to be read
+DEFAULT_SEED     = 1
 
 ######################################################
 ######################################################
@@ -72,7 +72,7 @@ def main(): # runs the program
     opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
   
   except getopt.GetoptError: # output error if command line argument invalid
-    print("ERROR: unknown options in argument %s" %sys.argv[1:])
+    print( "ERROR: unknown options in argument %s" %sys.argv[1:] )
     usage()
     sys.exit(1)
   
@@ -104,10 +104,10 @@ def main(): # runs the program
 
   str_xbitset = '{:0{}b}'.format(long(myArgs[SeedN_index,3]),var_length)
   nVars = str_xbitset.count('1')
-  outf_key = str("DNN_" + str(nVars) + 'vars')
-  myArgs[outfname_index,3] = 'dataset/weights/TMVA_' + outf_key + '.root'   
+  outf_key = str( "DNN_" + str(nVars) + "vars" )
+  myArgs[outfname_index,3] = "dataset/weights/TMVA_" + outf_key + ".root"   
   
-  print("Seed: {}".format(str_xbitset))
+  print( "Seed: {}".format(str_xbitset) )
 
   outputfile = TFile( myArgs[outfname_index,3], 'RECREATE' ) 
 
@@ -140,7 +140,7 @@ def main(): # runs the program
 
   fClassifier.SetVerbose( bool( myArgs[verbose_index,3] ) )
 
-  loader = TMVA.DataLoader("dataset/" + str_xbitset)
+  loader = TMVA.DataLoader( "dataset/" + str_xbitset )
 	
   for indx,var in enumerate( varList ):
     if ( str_xbitset[indx] == '1' ):
@@ -197,21 +197,21 @@ def main(): # runs the program
   model_name = "TTTT_TMVA_model.h5"
 
   model = Sequential()
-  model.add(Dense(
+  model.add( Dense(
     100, input_dim = nVars,
     kernel_initializer = "glorot_normal", 
     activation = "relu"
     )
   )
   for i in range(2):
-    model.add(BatchNormalization())
-    model.add(Dense(
+    model.add( BatchNormalization() )
+    model.add( Dense(
       100,
       kernel_initializer = "glorot_normal",
       activation = "relu"
       )
     )
-  model.add(Dense(
+  model.add( Dense(
     2,
     activation = "sigmoid"
     )
@@ -236,7 +236,7 @@ def main(): # runs the program
   
   # Declare some containers
   kerasSetting = "!H:!V:VarTransform=G:FilenameModel=" + model_name + \
-		 ":NumEpochs=10:BatchSize=256" # the trained model has to be specified in this string
+		 ":NumEpochs=15:BatchSize=512" # the trained model has to be specified in this string
   
   # run the classifier
   fClassifier.BookMethod(
@@ -245,15 +245,15 @@ def main(): # runs the program
     "PyKeras",
     kerasSetting) 
 
-  (TMVA.gConfig().GetIONames()).fWeightFileDir = str_xbitset + "/weights/" + outf_key
+  ( TMVA.gConfig().GetIONames() ).fWeightFileDir = str_xbitset + "/weights/" + outf_key
   #print("New weight file directory: {}".format((TMVA.gConfig().GetIONames()).fWeightFileDir))
   
   fClassifier.TrainAllMethods()
   fClassifier.TestAllMethods()
   fClassifier.EvaluateAllMethods()
   
-  SROC = fClassifier.GetROCIntegral("dataset/"+ str_xbitset, "PyKeras")
-  print("ROC-integral: {}".format(SROC))
+  SROC = fClassifier.GetROCIntegral( "dataset/"+ str_xbitset, "PyKeras" )
+  print( "ROC-integral: {}".format(SROC) )
   fClassifier.DeleteAllMethods()
   fClassifier.fMethodsMap.clear()
   
