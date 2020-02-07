@@ -34,7 +34,7 @@ def condor_job(SeedN="",SubSeedN="",count=0,options=['','',''],maxSeeds=0): # su
 Executable = %(RUNDIR)s/VariableImportanceLPC_step2.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
-request_memory = 4 GB
+request_memory = 4.2 GB
 request_cpus = 4
 request_disk = 40 GB
 image_size = 4 GB
@@ -195,7 +195,7 @@ cutStrC = varsList.cutStr
 binary_str = "1" * len(varList)         # bitstring full of '1' 
 max_int = int(binary_str,2)             # integer corresponding to bitstring full of '1'
 corr_cut = 80                           # set this between 0 and 100
-maxSeeds = 60                           # maximum number of generated seeds
+maxSeeds = 100                          # maximum number of generated seeds
 count = 0                               # counts the number of jobs submitted
 
 # get the signal correlation matrix and the variable names, used in correlation options
@@ -220,7 +220,7 @@ while len(used_seeds) < maxSeeds:
     for gen_seed in gen_seeds:
         var_count = gen_seed.count("1")
         if ( gen_seed not in used_seeds ) and ( var_count > 1 ) and ( len(used_seeds) < maxSeeds ):
-            used_seeds, count = submit_seed_job(int(gen_seed,2),used_seeds,count,options)
+            used_seeds, count = submit_seed_job(int(gen_seed,2),used_seeds,maxSeeds,count,options)
 
 used_seeds, count = variable_inclusion(used_seeds,correlated_pairs,count,options)
 
