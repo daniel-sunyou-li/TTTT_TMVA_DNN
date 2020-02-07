@@ -28,7 +28,8 @@ def condor_job(SeedN="",SubSeedN="",count=0,options=['','',''],maxSeeds=0): # su
         SubmitSeedN = SubSeedN
     dict = {
         "SubmitSeedN": SubmitSeedN,
-        "FILENAME": fileName
+        "FILENAME": fileName,
+        "RUNDIR":runDir
     }
     jdfName = condorDir + "%(FILENAME)s.job"%dict
     jdf = open(jdfName, "w")
@@ -144,7 +145,7 @@ def generate_uncorr_seeds(seed,correlated_pairs):
         new_seeds.append((seed_replace(seed,0,combo)))
     return set(new_seeds)
 
-def variable_inclusion(used_seeds,correlated_pairs,count,options):
+def variable_inclusion(used_seeds,correlated_pairs,maxSeeds,count,options):
     count_arr = np.zeros(len(varList))      # holds count of input variable usage in seed generation
     # get a list of variables not included yet
     for seed in used_seeds:
@@ -163,7 +164,7 @@ def variable_inclusion(used_seeds,correlated_pairs,count,options):
         NewSeed = seed_replace(bitstring=SeedStr,val=1,indices=index_mask)
         gen_seeds = generate_uncorr_seeds(NewSeed,correlated_pairs)
         for gen_seed in gen_seeds:
-            used_seeds, count = submit_seed_job(int(gen_seed,2),used_seeds,count,options)
+            used_seeds, count = submit_seed_job(int(gen_seed,2),used_seeds,maxSeeds,count,options)
     else: print("All variables were included in the prior seed generation.")
     return used_seeds, count
     
@@ -188,7 +189,7 @@ varList = varsList.varList["BigComb"]   # contains all the input variables
 used_seeds = []                         # stores which seeds have been used
 options = [                             # contains arguments for condor job submission functions
     os.getcwd(),
-    os.getcwd() + "../condor_log/",
+    os.getcwd() + "/condor_log/",
     len(varList)
 ]
 
@@ -225,7 +226,7 @@ while len(used_seeds) < maxSeeds:
         if ( gen_seed not in used_seeds ) and ( var_count > 1 ) and ( len(used_seeds) < maxSeeds ):
             used_seeds, count = submit_seed_job(int(gen_seed,2),used_seeds,maxSeeds,count,options)
 
-used_seeds, count = variable_inclusion(used_seeds,correlated_pairs,count,options)
+used_seeds, count = variable_inclusion(used_seeds,correlated_pairs,maxSeeds,count,options)
 
 #variable_occurence(used_seeds, varNames)   # include if you want to see the frequency of variables considered in seeds
           
