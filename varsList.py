@@ -43,7 +43,7 @@ varList['BigComb'] = [
   ['deltaEta_maxBB','max[#Delta#eta(b,b)]',''],
   ['aveCSVpt','p_{T} weighted CSVv2',''],
   ['aveBBdr','ave[#DeltaR(b,b)]',''],
-#  ['FW_momentum_0','0^{th} FW moment','GeV'],
+  ['FW_momentum_0','0^{th} FW moment','GeV'],
   ['FW_momentum_1','1^{st} FW moment','GeV'],
   ['FW_momentum_2','2^{nd} FW moment','GeV'],
   ['FW_momentum_3','3^{rd} FW moment','GeV'],
