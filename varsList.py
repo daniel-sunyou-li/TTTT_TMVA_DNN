@@ -103,7 +103,7 @@ varList['BigComb'] = [
   ['NresolvedTops1pFake','resolvedTop multiplicity',''],
   ['NJetsTtagged','top multiplicity',''],
   ['NJetsWtagged','W multiplicity',''],
-  ['NJetsCSVwithSF_JetSubCalc','bjet multiplicity','']
+  ['NJetsCSVwithSF_JetSubCalc','bjet multiplicity',''],
   ['topJet1Index_HOTTaggerCalc','',''],           # added HOT Tagger variables
   ['topJet2Index_HOTTaggerCalc','',''],
   ['topJet3Index_HOTTaggerCalc','',''],
