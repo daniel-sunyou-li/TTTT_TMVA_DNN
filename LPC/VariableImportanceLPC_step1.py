@@ -128,7 +128,7 @@ def get_correlated_pairs(corrMatrix,corrCut,varNames):
         for j in np.arange(i+1,np.shape(corrMatrix)[1]):
             if abs(corrMatrix[i,j]) >= corrCut:
                 print("{} and {} are {:.2f} % correlated.".format(
-                    varNames[i], varNames[j], 100*corrMatrix[i,j]
+                    varNames[i], varNames[j], corrMatrix[i,j]
                     )
                 )
                 correlated_pairs[i].append(j)
