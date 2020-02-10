@@ -40,6 +40,7 @@ There are three general steps for this analysis:
     # clone the repository
     git clone https://github.com/daniel-sunyou-li/TTTT_TMVA_DNN.git
     cd ./TTTT_TMVA_DNN/
+    chmod u+rwx *
     mkdir dataset
     
     # recommended to only use LPC for variable importance, so don't need scikit-optimize
