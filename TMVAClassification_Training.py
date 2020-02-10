@@ -185,7 +185,7 @@ def main(): # runs the program
   # add signal files
   for i in range( len( varsList.sig ) ):
     sig_list.append( TFile.Open( inputDir + varsList.sig[i] ) )
-    sig_trees_list.append( sig_list[i].get("ljmet") )
+    sig_trees_list.append( sig_list[i].Get("ljmet") )
     sig_trees_list[i].GetEntry(0)
     loader.AddSignalTree( sig_trees_list[i] )
   
@@ -233,7 +233,7 @@ def main(): # runs the program
   BATCH_SIZE = 256
   
   kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + \
-                 'SaveBestOnly=true' + \
+                 ':SaveBestOnly=true' + \
                  ':NumEpochs=' + str(EPOCHS) + \
                  ':BatchSize=' + str(BATCH_SIZE) + \
                  ':TriesEarlyStopping=' + str(PATIENCE)
