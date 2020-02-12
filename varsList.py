@@ -92,7 +92,6 @@ varList['BigComb'] = [
   ['deltaR_lepBJets0','#DeltaR(l,b_{1})',''],
   ['minDR_lepJet','min[#DeltaR(l,j)]',''],
   ['mass_maxBBpt','M(b,b) with max[p_{T}(b,b)]','GeV'],
-  ['MT2bb','MT2bb','GeV'],
   #['deltaR_lepJets','#DeltaR(l,j)',''],
   ['mass_lepBB_minBBdr','M(l,bb) with min[#DeltaR(b,b)]','GeV'],
   ['corr_met','E_{T}^{miss}','GeV'],
