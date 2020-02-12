@@ -13,6 +13,7 @@ def variable_occurence(count_arr, seed):
 seedDirectory = os.listdir(os.getcwd() + "/condor_log/")
 seedOutDirectory = [seedStr for seedStr in seedDirectory if ".out" in seedStr]
 seedLogDirectory = [seedStr for seedStr in seedDirectory if ".log" in seedStr]
+seedJobDirectory = [seedStr for seedStr in seedDirectory if ".job" in seedStr]
 
 numVars = int(seedOutDirectory[0].split("vars_")[0].split("Keras_")[1])
 count_arr = np.zeros(numVars)
@@ -40,7 +41,8 @@ for seedOut in seedOutDirectory:
 print("Jobs that were removed by scheduler:")
 for seedLog in seedLogDirectory:
   seedOut = seedLog.split(".log")[0] + ".out"
-  if seedOut not in seedOutDirectory:
+  seedJob = seedLog.split(".log")[0] + ".job"
+  if seedOut not in seedOutDirectory and seedJob in seedJobDirectory:
     print(seedOut)
     failed_count += 1
 
