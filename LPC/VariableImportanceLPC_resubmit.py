@@ -2,6 +2,8 @@
 import glob, os, sys 
 import getopt
 import math
+
+sys.path.insert(0, "../TTTT_TMVA_DNN")
 import varsList
 
 def condorJob(SeedN="",SubSeedN="",count=0,options=['','','']): # submits a single condor job
@@ -17,19 +19,20 @@ def condorJob(SeedN="",SubSeedN="",count=0,options=['','','']): # submits a sing
         SubmitSeedN = SubSeedN
     dict = {
         "RUNDIR": runDir,           # run directory
-        "METHOD": "Keras",          # tmva method, should be "Keras"
         "SubmitSeedN": SubmitSeedN,
-        "TAG": str(count),
         "FILENAME": fileName
     }
     jdfName = condorDir + "%(FILENAME)s.job"%dict
     jdf = open(jdfName, "w")
     jdf.write(
 """universe = vanilla
-Executable = %(RUNDIR)s/doCondorVariableImportanceWrapper.sh
+Executable = %(RUNDIR)s/LPC/VariableImportanceLPC_step2.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
-request_memory = 4025
+request_memory = 4.2 GB
+request_cpus = 4
+request_disk = 40 GB
+image_size = 4 GB
 Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
@@ -41,7 +44,9 @@ Queue 1"""%dict)
     os.system("condor_submit %(FILENAME)s.job"%dict)
     os.system("sleep 0.5")
     os.chdir("%s"%(runDir))
+    
     count += 1
+    print("{} jobs submitted.".format(count))
     return count
     
 options = [
@@ -50,6 +55,29 @@ options = [
     len(varsList.varList["BigComb"])
 ]
 
+# checks if job was removed by scheduler (false)
+def check_one(seedOut,seedOutDirectory):
+    if seedOut in seedOutDirectory: return True
+    else: return False
+
+# checks if condor job is done running (true)
+def check_two(condorPath,seedLog):
+    condorJobDone = False
+    for line in open(condorPath + seedLog).readlines():
+        if "005 (" or "009 (" in line: 
+            condorJobDone = True
+        elif "006 (" or "000 (" or "001 (" in line:
+            condorJobDone = False
+        else: condorJobDone = True
+    return condorJobDone
+
+# check if ROC-integral is in .out file
+def check_three(condorPath,seedOut):
+    isROC = False
+    for line in open(condorPath + seedOut).readlines():
+        if "ROC-Integral" in line: isROC = True
+    return isROC
+    
 RESUBMIT = True
 
 finished_count = 0
@@ -58,10 +86,13 @@ count = 0
 seedList = []           # holds all seed keys
 seedDict = {}           # seeds are the key and subseeds are the entries
 
-seedStrDir = os.listdir(options[1])
+seedDirectory = os.listdir(options[1])
+seedOutDirectory = [seedStr for seedStr in seedDirectory if ".out" in seedStr]
+seedJobDirectory = [seedStr for seedStr in seedDirectory if ".job" in seedStr]
+seedLogDirectory = [seedStr for seedStr in seedDirectory if ".log" in seedStr]
 
 for seedStr in seedStrDir:
-    if "Subseed_" not in seedStr and ".out" in seedStr:
+    if "Subseed_" not in seedStr and ".job" in seedStr:
         seed = seedStr.split("_Seed_")[1].split(".out")[0]
         seedList.append(seed)
         
@@ -70,51 +101,26 @@ for seed in seedList:
     seedDict[seed] = subSeedArr
 
 maxSeed = str(int("1"*options[2],2))
-formSize = max(len(maxSeed) + 1, 8)
+formSize = max(len(maxSeed) + 1, 8)     # print formatting setting
 seedDictNum = sum([len(x) for x in seedDict.values()])
 print("Total seeds: {}, Total subseeds: {}".format(len(seedList),seedDictNum))
 print("{:{}}{:{}}{:10}".format("Seed",formSize,"Subseed",formSize,".out Size (b)"))
 # resubmit the seed jobs that failed
 for seed in seedDict:
     fileName = "Keras_" + str(options[2]) + "vars_Seed_" + seed
-    check_one = True        # checks if "ROC-integral" is in .out file
-    check_two = False       # checks if file is done running
+    seedOut = fileName + ".out"
+    seedLog = fileName + ".log"
+    seedJob = fileName + ".job"
+    check_one =     check_one(seedOut,seedOutDirectory)        # checks if .out file is present
+    check_two =     False       # checks if file is done running
+    check_three =   True        # checks if "ROC-integral" is in .out file
     
-    # perform first check on [fileName].out
-    for line in open(options[1] + fileName + ".out").readlines():
-        # don't want to resubmit if "ROC-integral" is already calculated
-        if "ROC-integral" in line: 
-            check_one = False
-            finished_count += 1
-    if check_one:
-        for line in open(options[1] + fileName + ".log").readlines():
-            # if 005 is the last condor status, then do resubmit
-            if "005 (" in line: check_two = True
-            # if 000 or 006, then the job is either in queue or running
-            elif "006 (" in line: check_two = False
-            elif "000 (" in line: check_two = False
-            elif "001 (" in line: check_two = False
     if check_one and check_two:
         fileSize = os.stat(options[1] + fileName + ".out").st_size
         print("{:<{}}{:<{}}{:<10}".format(seed,formSize,"",formSize,fileSize))
         if RESUBMIT:
           count = condorJob(SeedN=seed,count=count,options=options)
           print("would resubmit")
-    for subseedStr in seedDict[seed]:
-        subseed = subseedStr.split("_Subseed_")[1].split(".out")[0]
-        fileNameSS = fileName + "_Subseed_" + subseed
-        check_one = True
-        check_two = False
-        for line in open(options[1] + fileNameSS + ".out").readlines():
-            if "ROC-integral" in line:
-                check_one = False
-                finished_count += 1
-        if check_one:
-            for line in open(options[1] + fileNameSS + ".log").readlines():
-                if "005 (" in line: check_two = True
-                elif "006 (" in line: check_two = False
-                elif "000 (" in line: check_two = False
-                elif "001 (" in line: check_two = False
         if check_one and check_two:
             fileSize = os.stat(options[1] + fileNameSS + ".out").st_size
             print("{:<{}}{:<{}}{:<5}".format(seed,formSize,subseed,formSize,fileSize))
