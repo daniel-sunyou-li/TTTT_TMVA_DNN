@@ -26,13 +26,23 @@ for seedStr in seedDirectory:
   if ".job" in seedStr: total_count += 1
 
 # counts finished jobs and counts variable frequency in seed generation
+print("Jobs with .out files that do not have a ROC-integral:")
 for seedOut in seedOutDirectory:
   job_success = False
   for line in open(os.getcwd() + "/condor_log/" + seedOut).readlines():
     if "ROC-integral" in line:
       finished_count += 1
       job_success = True
-  if job_success == False: failed_count += 1
+  if job_success == False: 
+    print(seedOut)
+    failed_count += 1
+    
+print("Jobs that were removed by scheduler:")
+for seedLog in seedLogDirectory:
+  seedOut = seedLog.split(".log")[0] + ".out"
+  if seedOut not in seedOutDirectory:
+    print(seedOut)
+    failed_count += 1
 
 for seedName in seedDirectory:
   if "Subseed" not in seedName and ".job" in seedName:
