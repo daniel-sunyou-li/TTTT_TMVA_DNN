@@ -79,7 +79,7 @@ hist_list = []
 weightsList = []
 
 #print("Output file: dataset/weights/TMVAOpt_" + outf_key + ".root")
-inputDir =    varsList.inputDirEOS  # edit if not running on LPC
+inputDir =    varsList.inputDirLPC  # edit if not running on LPC
 outputfile =  TFile( "dataset/weights/TMVAOptimization_"+ str(numVars) +"vars.root", "RECREATE" )
 
 #print("Input file: {}".format(INPUTFILE))
