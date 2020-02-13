@@ -77,8 +77,6 @@ def check_three(condorPath,seedOut):
     for line in open(condorPath + seedOut).readlines():
         if "ROC-Integral" in line: isROC = True
     return isROC
-    
-RESUBMIT = True
 
 finished_count = 0
 count = 0
@@ -111,21 +109,28 @@ for seed in seedDict:
     seedOut = fileName + ".out"
     seedLog = fileName + ".log"
     seedJob = fileName + ".job"
-    check_one =     check_one(seedOut,seedOutDirectory)        # checks if .out file is present
-    check_two =     False       # checks if file is done running
-    check_three =   True        # checks if "ROC-integral" is in .out file
     
-    if check_one and check_two:
-        fileSize = os.stat(options[1] + fileName + ".out").st_size
-        print("{:<{}}{:<{}}{:<10}".format(seed,formSize,"",formSize,fileSize))
-        if RESUBMIT:
-          count = condorJob(SeedN=seed,count=count,options=options)
-          print("would resubmit")
-        if check_one and check_two:
-            fileSize = os.stat(options[1] + fileNameSS + ".out").st_size
-            print("{:<{}}{:<{}}{:<5}".format(seed,formSize,subseed,formSize,fileSize))
-            if RESUBMIT:
-              count = condorJob(seed,subseed,count,options)
+    if check_three(options[1],seedOut) == False:    # checks if ROC-integral is present
+        if check_two(options[1],seedLog) == True:   # checks if job finished running
+            if check_one(seedOut,seedOutDirectory): # checks if the .out file was produced
+                fileSize = os.stat(options[1] + fileName + ".out").st_size
+                print("{:<{}}{:<{}}{:<10}".format(seed,formSize,"",formSize,fileSize))
+                count = condorJob(SeedN=seed,count=count,options=options)
+                
+    for subSeed in seedDict[seed]:
+        fileName = "Keras_" + str(options[2]) + "vars_Seed_" + seed + "_Subseed_" + subSeed
+        subSeedOutDirectory = []
+        subSeedOut = fileName + ".out"
+        subSeedLog = fileName + ".log"
+        subSeedJob = fileName + ".job"
+        
+        if check_three(options[1],subSeedOut) == False:
+            if check_two(options[1],subSeedLog) == True:
+                if check_one(subSeedOut,seedDict[seed]):
+                    fileSize = os.stat(options[1] + fileName + ".out").st_size
+                    print("{:<{}}{:<{}}{:<10}".format(seed,formSize,subSeed,formSize,fileSize))
+                    count = condorJob(SeedN=subSeed,count=count,options=options)
+        
 
 total_seeds = len(seedList) + seedDictNum
 percent_done = ( float(finished_count) / float(total_seeds) ) * 100
