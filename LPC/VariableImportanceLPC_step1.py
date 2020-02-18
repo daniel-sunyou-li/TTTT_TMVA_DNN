@@ -163,6 +163,7 @@ def variable_inclusion(used_seeds,correlated_pairs,maxSeeds,count,options):
             if entry == True: index_mask.append(indx)
         NewSeed = seed_replace(bitstring=SeedStr,val=1,indices=index_mask)
         gen_seeds = generate_uncorr_seeds(NewSeed,correlated_pairs)
+        print("{} additional seeds generated based on Variable Inclusion...".format(len(gen_seeds)))
         for gen_seed in gen_seeds:
             used_seeds, count = submit_seed_job(int(gen_seed,2),used_seeds,maxSeeds,count,options)
     else: print("All variables were included in the prior seed generation.")
