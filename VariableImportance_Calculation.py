@@ -112,7 +112,7 @@ def variable_importance(filePath="",outPath="",seedDict={},numVars=0,option=0):
     varImportanceFile.close()
   
     if option == 1:
-        np.save("ROC_hists_" + str(numVars) + "vars",importance_stats)
+        np.save("ROC_hists_" + str(numVars) + "vars",importances)
   
 # Run the program  
 
