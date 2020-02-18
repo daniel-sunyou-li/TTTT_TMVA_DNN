@@ -112,11 +112,8 @@ def variable_importance(filePath="",outPath="",seedDict={},numVars=0,option=0):
     varImportanceFile.close()
   
     if option == 1:
-        np.save("ROC_hists_" + str(numVars) + "vars_opt1",importance_stats)
-    else:
-        np.save("ROC_hists_" + str(numVars) + "vars_opt0",importances)
+        np.save("ROC_hists_" + str(numVars) + "vars",importance_stats)
   
-
 # Run the program  
 
 seedDict, numVars = get_seeds(condor_dirs)
