@@ -109,7 +109,13 @@ def variable_importance(filePath="",outPath="",seedDict={},numVars=0,option=0):
                 count_arr[indx],
                 importances[indx] / normalization
             ))
-  varImportanceFile.close()
+    varImportanceFile.close()
+  
+    if option == 1:
+        np.save("ROC_hists_" + str(numVars) + "vars_opt1",importance_stats)
+    else:
+        np.save("ROC_hists_" + str(numVars) + "vars_opt0",importances)
+  
 
 # Run the program  
 
