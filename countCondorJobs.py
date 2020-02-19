@@ -10,6 +10,42 @@ def variable_occurence(count_arr, seed):
     if variable == "1": count_arr[count] += 1
   return count_arr
 
+def count_job(condorPath,seedOut,seedLog,seedOutDirectory,failed_count,finished_count):
+  if seedOut in seedOutDirectory:
+    job_success = False
+    for line in open(os.getcwd() + "/condor_log/" + seedOut).readlines():
+      if "ROC-integral" in line:
+        job_success = True
+        finished_count += 1
+        return failed_count, finished_count
+    if job_success == False:
+      failed_count += 1
+      print("{} failed to compute ROC-integral.".format(seedOut))
+      return failed_count, finished_count
+  else:
+    condor_done = False
+    for line in open(condorPath + seedLog).readlines():
+      if "005 (" or "009 (" in line: condor_done = True
+      if "006 (" or "000 (" or "001 (" in line: condor_done = False
+    if condor_done == False: return failed_count, finished_count
+    else:
+      failed_count += 1
+      print("{} failed to run.".format(seedLog))
+      return failed_count, finished_count
+
+def count_jobs(condorPath,seedJobDirectory,seedOutDirectory,seedLogDirectory):
+  failed_count = 0
+  finished_count = 0
+  for seedJob in seedJobDirectory:
+    seed = seedJob.split(".job")[0]
+    seedOut = seed + ".out"
+    seedLog = seed + ".log"
+    if seedLog not in seedLogDirectory:
+      os.system("rm ./condor_log/{}".format(seedJob))
+    else:
+      failed_count, finished_count = count_job(condorPath,seedOut,seedLog,seedOutDirectory,failed_count,finished_count)
+  return failed_count, finished_count
+    
 seedDirectory = os.listdir(os.getcwd() + "/condor_log/")
 seedOutDirectory = [seedStr for seedStr in seedDirectory if ".out" in seedStr]
 seedLogDirectory = [seedStr for seedStr in seedDirectory if ".log" in seedStr]
@@ -18,33 +54,8 @@ seedJobDirectory = [seedStr for seedStr in seedDirectory if ".job" in seedStr]
 numVars = int(seedOutDirectory[0].split("vars_")[0].split("Keras_")[1])
 count_arr = np.zeros(numVars)
 
-total_count = 0
-finished_count = 0
-failed_count = 0
-
-# count total number of jobs submitted
-for seedStr in seedDirectory:
-  if ".job" in seedStr: total_count += 1
-
-# counts finished jobs and counts variable frequency in seed generation
-print("Jobs with .out files that do not have a ROC-integral:")
-for seedOut in seedOutDirectory:
-  job_success = False
-  for line in open(os.getcwd() + "/condor_log/" + seedOut).readlines():
-    if "ROC-integral" in line:
-      finished_count += 1
-      job_success = True
-  if job_success == False: 
-    print(seedOut)
-    failed_count += 1
-    
-print("Jobs that were removed by scheduler:")
-for seedLog in seedLogDirectory:
-  seedOut = seedLog.split(".log")[0] + ".out"
-  seedJob = seedLog.split(".log")[0] + ".job"
-  if seedOut not in seedOutDirectory and seedJob in seedJobDirectory:
-    print(seedOut)
-    failed_count += 1
+total_count = sum(".job" in seedStr for seedStr in seedDirectory)
+failed_count, finished_count = count_jobs(os.getcwd()+"/condor_log/",seedJobDirectory,seedOutDirectory,seedLogDirectory)
 
 for seedName in seedDirectory:
   if "Subseed" not in seedName and ".job" in seedName:
