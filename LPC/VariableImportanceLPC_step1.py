@@ -207,8 +207,8 @@ cutStrC = varsList.cutStr
 binary_str = "1" * len(varList)         # bitstring full of '1' 
 max_int = int(binary_str,2)             # integer corresponding to bitstring full of '1'
 corr_cut = 80                           # set this between 0 and 100
-maxSeeds = 100                          # maximum number of generated seeds
-numCorrSeed = 5                         # number of de-correlated seeds randomly chosen 
+maxSeeds = 120                          # maximum number of generated seeds
+numCorrSeed = 5                         # number of de-correlated seeds randomly chosen to submit
 count = 0                               # counts the number of jobs submitted
 
 # get the signal correlation matrix and the variable names, used in correlation options
