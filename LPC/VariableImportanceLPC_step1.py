@@ -135,17 +135,24 @@ def get_correlated_pairs(corrMatrix,corrCut,varNames):
         if len(correlated_pairs[i]) == 1: del correlated_pairs[i]
     return correlated_pairs
 
-def generate_uncorr_seeds(seed,correlated_pairs):
+def generate_uncorr_seeds(seed,numCorrSeed,correlated_pairs):
     new_seeds = []
     correlated_pairs_list = []
     for pair_key in correlated_pairs:
         correlated_pairs_list.append(correlated_pairs[pair_key])
-    correlation_combos = list(itertools.product(*correlated_pairs_list))
+    for pair in correlated_pairs_list:
+        seed = seed_replace(seed,0,pair)
+    correlation_combos = [list(set(combo)) for combo in list(itertools.product(*correlated_pairs_list))]
     for combo in correlation_combos:
-        new_seeds.append((seed_replace(seed,0,combo)))
-    return set(new_seeds)
+        new_seeds.append((seed_replace(seed,1,combo)))
+    new_seeds = list(set(new_seeds))
+    if len(new_seeds) > numCorrSeed:
+        random_selection = random.sample(range(0,len(new_seeds)),numCorrSeed)
+        return np.asarray(new_seeds)[random_selection]
+    else:
+        return np.asarray(new_seeds)
 
-def variable_inclusion(used_seeds,correlated_pairs,maxSeeds,count,options):
+def variable_inclusion(used_seeds,numCorrSeed,correlated_pairs,maxSeeds,count,options):
     count_arr = np.zeros(len(varList))      # holds count of input variable usage in seed generation
     # get a list of variables not included yet
     for seed in used_seeds:
@@ -162,7 +169,7 @@ def variable_inclusion(used_seeds,correlated_pairs,maxSeeds,count,options):
         for indx, entry in enumerate(seed_mask):
             if entry == True: index_mask.append(indx)
         NewSeed = seed_replace(bitstring=SeedStr,val=1,indices=index_mask)
-        gen_seeds = generate_uncorr_seeds(NewSeed,correlated_pairs)
+        gen_seeds = generate_uncorr_seeds(NewSeed,numCorrSeed,correlated_pairs)
         print("{} additional seeds generated based on Variable Inclusion...".format(len(gen_seeds)))
         for gen_seed in gen_seeds:
             used_seeds, count = submit_seed_job(int(gen_seed,2),used_seeds,maxSeeds,count,options)
@@ -201,6 +208,7 @@ binary_str = "1" * len(varList)         # bitstring full of '1'
 max_int = int(binary_str,2)             # integer corresponding to bitstring full of '1'
 corr_cut = 80                           # set this between 0 and 100
 maxSeeds = 100                          # maximum number of generated seeds
+numCorrSeed = 5                         # number of de-correlated seeds randomly chosen 
 count = 0                               # counts the number of jobs submitted
 
 # get the signal correlation matrix and the variable names, used in correlation options
@@ -221,13 +229,14 @@ correlated_pairs = get_correlated_pairs(sig_corr, corr_cut, varNames)
 while len(used_seeds) < maxSeeds:
     NewSeed = random.randint(0,int(binary_str,2))
     NewSeedStr = '{:0{}b}'.format(NewSeed,len(varList))
-    gen_seeds = generate_uncorr_seeds(NewSeedStr,correlated_pairs)
+    gen_seeds = generate_uncorr_seeds(NewSeedStr,numCorrSeed,correlated_pairs)
     for gen_seed in gen_seeds:
         var_count = gen_seed.count("1")
         if ( gen_seed not in used_seeds ) and ( var_count > 1 ) and ( len(used_seeds) < maxSeeds ):
             used_seeds, count = submit_seed_job(int(gen_seed,2),used_seeds,maxSeeds,count,options)
-
-used_seeds, count = variable_inclusion(used_seeds,correlated_pairs,maxSeeds,count,options)
+        if count > maxSeeds: break
+        
+used_seeds, count = variable_inclusion(used_seeds,numCorrSeed,correlated_pairs,maxSeeds,count,options)
 
 #variable_occurence(used_seeds, varNames)   # include if you want to see the frequency of variables considered in seeds
           
