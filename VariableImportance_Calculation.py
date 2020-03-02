@@ -23,7 +23,7 @@ def get_seeds(condor_dirs):
         print("Condor jobs used different number of input variables, cannot combine variable importance calculation.")
         sys.exit(0)
     else:
-        numVars = set(numVarsDir.values())
+        numVars = int(numVarsDir[condor_dir])
     for key in outFileDirectories:
         seedListDict[key] = []
         seedDict[key] = {}
@@ -118,5 +118,5 @@ def variable_importance(filePath="",outPath="",seedDict={},numVars=0,option=0):
 
 seedDict, numVars = get_seeds(condor_dirs)
 
-variable_importance(filePath,outPath,seedDict,numVars,0)
+variable_importance(outPath,seedDict,numVars,0)
 print("Saving results to {}".format(os.getcwd() + "/dataset/"))
