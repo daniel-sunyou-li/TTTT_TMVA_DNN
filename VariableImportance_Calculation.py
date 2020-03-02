@@ -4,6 +4,8 @@ import varsList
 import datetime
 import numpy as np
 
+option = 1 # 0 for traditional and 1 for correlation coefficient consideration
+
 condor_dirs = [ # if combining multiple results, add to this array, must have same variables (in order)
     "condor_log" 
 ]
