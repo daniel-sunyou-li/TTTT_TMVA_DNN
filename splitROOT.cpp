@@ -1,3 +1,4 @@
+// run by first making on lpc with: g++ `root-config --cflags` `root-config --libs` -o splitROOT.out splitROOT.cpp
 #include<iostream>
 #include<vector>
 #include "TTree.h"
