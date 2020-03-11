@@ -170,4 +170,6 @@ cutStr =  "( ( leptonPt_MultiLepCalc > 50 && isElectron == 1 ) || " + \
           "( theJetPt_JetSubCalc_PtOrdered[2] > 0 ) && " + \
           "( minDR_lepJet > 0.4 ) && " + \
           "( AK4HT > 510 ) && " + \
-          " DataPastTrigger == 1 && MCPastTrigger == 1 "
+          "( DataPastTrigger == 1 ) && ( MCPastTrigger == 1 ) && " +\
+          "( NJetsCSVwithSF_MultiLepCalc >= 2 ) &&" + \
+          "( NJets_JetSubCalc >= 4 )"
