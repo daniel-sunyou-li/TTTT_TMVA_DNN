@@ -160,6 +160,7 @@ varList['BigComb'] = [
 weightStr = "pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPrefiringProb_CommonCalc * " + \
             "(MCWeight_MultiLepCalc / abs(MCWeight_MultiLepCalc) )"
 
+# general cut, add selection based cuts in training scripts
 cutStr =  "( ( leptonPt_MultiLepCalc > 50 && isElectron == 1 ) || " + \
           "( leptonPt_MultiLepCalc > 50 && isMuon == 1 ) ) && " + \
           "( corr_met_MultiLepCalc > 60 ) && " + \
@@ -168,4 +169,5 @@ cutStr =  "( ( leptonPt_MultiLepCalc > 50 && isElectron == 1 ) || " + \
           "( theJetPt_JetSubCalc_PtOrdered[1] > 0 ) && " + \
           "( theJetPt_JetSubCalc_PtOrdered[2] > 0 ) && " + \
           "( minDR_lepJet > 0.4 ) && " + \
-          "( AK4HT > 510 )"
+          "( AK4HT > 510 ) && " + \
+          " DataPast == 1 && MCPastTrigger == 1 "
