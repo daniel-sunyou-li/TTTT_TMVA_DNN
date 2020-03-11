@@ -2,7 +2,7 @@
 
 str_xbitset=${1}
 eosUserName="dsunyou" # change me
-eosDir="FWLJMET102X_1lep2017_Oct2019_4t_02132020_step2/"
+eosDir="FWLJMET102X_1lep2017_Oct2019_4t_03032020_step2/"
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
