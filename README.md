@@ -62,8 +62,8 @@ When running variable importance on the LPC, we need to import the signal and ba
 
 In case there are issues with the tar file, then make adjustments to `TTTT_TMVA_DNN` and run the commands,
 
-`tar -zcvf CMSSW946.tgz ~/nobackup/CMSSW_9_4_6_patch1/`
-`xrdcp CMSSW946.tgz root://cmseos.fnal.gov//store/user/<EOS Username>/`
+    tar -zcvf CMSSW946.tgz ~/nobackup/CMSSW_9_4_6_patch1/
+    xrdcp CMSSW946.tgz root://cmseos.fnal.gov//store/user/<EOS Username>
 
 Make sure that the background samples specified (uncommented) in `varsList.py` are reflected in `LPC/VariableImportanceLPC_step2.sh`.
 
@@ -78,6 +78,7 @@ If you would like to change the generic unoptimized network architecture being t
 The variable importance analysis is run by the command:
 
     mkdir condor_log
+    voms-proxy-init --valid 192:00 -voms cms
     ./submit_VariableImportance.sh LPC # or BRUX
 
 which submits Condor jobs, each representing a different input subset to be trained.  The results and logs are stored in `condor_log` where the desired result is the ROC value, which is contained in the `.out` file.
