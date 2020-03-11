@@ -34,22 +34,22 @@ bkg = [
 
 '''
 bkg = [
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_trim_0.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_trim_0.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_trim_0.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_2_trim_0.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_3_trim_0.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_4_trim_0.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_5_trim_0.root",
-  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_trim_0.root",
-  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_trim_0.root",
-  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_trim_0.root",
-  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_trim_0.root",
-  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_trim_0.root",
-  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_trim_0.root",
-  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_trim_0.root",
-  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_trim_0.root",
-  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_trim_0.root"
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_trim_1.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_trim_1.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_trim_1.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_2_trim_1.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_3_trim_1.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_4_trim_1.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_5_trim_1.root",
+  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_trim_1.root",
+  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_trim_1.root",
+  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_trim_1.root",
+  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_trim_1.root",
+  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_trim_1.root",
+  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_trim_1.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_trim_1.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_trim_1.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_trim_1.root"
 ]
 '''
 
