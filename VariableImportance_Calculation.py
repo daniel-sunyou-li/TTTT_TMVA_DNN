@@ -19,7 +19,7 @@ def get_seeds(condor_dirs):
     numVars = 0
     for condor_dir in condor_dirs:
         fileDirectories[condor_dir] = os.listdir(os.getcwd() + "/" + condor_dir)
-        outFileDirectories[condor_dir] = [seedStr for seedStr in fileDirectory[condor_dir] if ".out" in seedStr]
+        outFileDirectories[condor_dir] = [seedStr for seedStr in fileDirectories[condor_dir] if ".out" in seedStr]
         numVarsDir[condor_dir] = int(outFileDirectories[condor_dir][0].split("vars_")[0].split("Keras_")[1])
     if len(set(numVarsDir.values())) > 1:
         print("Condor jobs used different number of input variables, cannot combine variable importance calculation.")
