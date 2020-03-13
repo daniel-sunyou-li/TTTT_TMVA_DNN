@@ -88,7 +88,7 @@ def variable_importance(seedDict={},numVars=0,option=0):
         for varIndx in importances:
             importance_stats[varIndx] = importance_stats[varIndx] / np.sqrt(normalization)
         varImportanceFile.write("\nImportance calculation:")
-        varImportanceFile.write("\nNormalization: {}".format(normalization))
+        varImportanceFile.write("\nNormalization: {}".format(1/np.sqrt(normalization)))
         varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<7} / {:<7}".format("Index","Variable Name","Freq.","Mean","RMS"))
     for varIndx in importance_stats:
         varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<7.4f} / {:<7.4f}".format(
@@ -101,7 +101,7 @@ def variable_importance(seedDict={},numVars=0,option=0):
     else:
         for indx in np.arange(numVars): normalization += importances[indx]
         varImportanceFile.write("\nImportance calculation:")
-        varImportanceFile.write("\nNormalization: {}".format(normalization))
+        varImportanceFile.write("\nNormalization: {}".format(1/normalization))
         varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<8}:".format("Index","Variable Name","Freq","Importance"))
         for indx in np.arange(numVars):
             varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<8.4f}".format(
