@@ -113,7 +113,10 @@ def variable_importance(seedDict={},numVars=0,option=0):
     varImportanceFile.close()
   
     if option == 1:
-        np.save("./dataset/ROC_hists_" + str(numVars) + "vars",importances)
+        importances_name = {}
+        for key in importances:
+            importances_name[varsList.varList["BigComb"][key][0]] = importances[key]
+        np.save("./dataset/ROC_hists_" + str(numVars) + "vars",importances_name)
   
 # Run the program  
 
