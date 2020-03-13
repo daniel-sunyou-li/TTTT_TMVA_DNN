@@ -58,7 +58,7 @@ def variable_importance(seedDict={},numVars=0,option=0):
     else:
         for indx in np.arange(numVars): importances[indx] = 0
     print("Calculating variable importance...")
-    varImportanceFile.write("\n{:<3}: {:<25} {:<12}".format("#","Seed","# Vars"))
+    varImportanceFile.write("\n{:<3}: {:<40} {:<10}".format("#","Seed","# Vars"))
     for key in seedDict:
         for indx,seed in enumerate(seedDict[key]):
             seed_long = long(seed)
@@ -84,9 +84,9 @@ def variable_importance(seedDict={},numVars=0,option=0):
         for varIndx in importances:
             if not importances[varIndx]: importances[varIndx] = [0]
             importance_stats[varIndx] = np.array( [np.mean(importances[varIndx]),np.std(importances[varIndx])] )
-            normalization += abs(importance_stats[varIndx][0])
+            normalization += (importance_stats[varIndx][0])**2
         for varIndx in importances:
-            importance_stats[varIndx] = importance_stats[varIndx] / normalization
+            importance_stats[varIndx] = importance_stats[varIndx] / np.sqrt(normalization)
         varImportanceFile.write("\nImportance calculation:")
         varImportanceFile.write("\nNormalization: {}".format(normalization))
         varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<7} / {:<7}".format("Index","Variable Name","Freq.","Mean","RMS"))
