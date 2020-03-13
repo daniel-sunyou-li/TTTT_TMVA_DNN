@@ -42,14 +42,13 @@ def variable_occurence(count_arr,seed):
         if variable == "1": count_arr[count] += 1
     return count_arr
 
-def variable_importance(filePath="",outPath="",seedDict={},numVars=0,option=0):
+def variable_importance(seedDict={},numVars=0,option=0):
     importances = {}
     count_arr = np.zeros(numVars)
-    numVars = numVars
     if option == 1:
-        varImportanceFile = open(outPath + "/dataset/VariableImportanceResults_" + str(numVars) + "vars_opt1.txt","w")
+        varImportanceFile = open("./dataset/VariableImportanceResults_" + str(numVars) + "vars_opt1.txt","w")
     else:
-        varImportanceFile = open(outPath + "/dataset/VariableImportanceResults_" + str(numVars) + "vars_opt0.txt","w")
+        varImportanceFile = open("./dataset/VariableImportanceResults_" + str(numVars) + "vars_opt0.txt","w")
     varImportanceFile.write("Number of Variables: {}, Date: {}".format(
         numVars,
         datetime.datetime.today().strftime("%Y-%m-%d")
@@ -66,13 +65,13 @@ def variable_importance(filePath="",outPath="",seedDict={},numVars=0,option=0):
             seed_str = "{:0{}b}".format(int(seed),int(numVars))
             count_arr = variable_occurence(count_arr,int(seed))
             varImportanceFile.write("\n{:<3}: {:<25} {:<12}".format(indx+1,seed,seed_str.count("1")))
-            for line in open(filePath + "Keras_" + str(numVars) + "vars_Seed_" + seed + ".out").readlines():
+            for line in open(key + "/Keras_" + str(numVars) + "vars_Seed_" + seed + ".out").readlines():
                 if "ROC-integral" in line: SROC = float(line[:-1].split(" ")[-1][:-1])
             for subseedOut in seedDict[key][seed]:
                 subseed = subseedOut.split("_Subseed_")[1].split(".out")[0]
                 subseed_long = long(subseed)
                 varIndx = numVars -  int( math.log( seed_long - subseed_long ) / 0.693147 ) - 1
-                for line in open(filePath + "Keras_" + str(numVars) + "vars_Seed_" + seed + "_Subseed_" + subseed + ".out").readlines():
+                for line in open(key + "/Keras_" + str(numVars) + "vars_Seed_" + seed + "_Subseed_" + subseed + ".out").readlines():
                     if "ROC-integral" in line:
                         SSROC = float(line[:-1].split(" ")[-1][:-1])
                         if option == 1:
@@ -114,11 +113,11 @@ def variable_importance(filePath="",outPath="",seedDict={},numVars=0,option=0):
     varImportanceFile.close()
   
     if option == 1:
-        np.save("ROC_hists_" + str(numVars) + "vars",importances)
+        np.save("./dataset/ROC_hists_" + str(numVars) + "vars",importances)
   
 # Run the program  
 
 seedDict, numVars = get_seeds(condor_dirs)
 
-variable_importance(outPath,seedDict,numVars,0)
+variable_importance(seedDict,numVars,0)
 print("Saving results to {}".format(os.getcwd() + "/dataset/"))
