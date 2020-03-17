@@ -23,7 +23,8 @@ BATCH_SIZE =        1028
 PATIENCE =          5
 outf_key =          "Keras"
 TEMPFILE =          "dataset/temp_file.txt"
-numVars =           len(varsList.varList["BigComb"])
+numVars =           len(varsList.varList["DNN"])
+WHICH =             "lpc"
 
 ######################################################
 ######################################################
@@ -34,7 +35,7 @@ numVars =           len(varsList.varList["BigComb"])
 ######################################################
 
 try: # retrieve command line options
-  shortopts   = "b:o:e" # possible command line options
+  shortopts   = "b:o:w:e" # possible command line options
   opts, args = getopt.getopt( sys.argv[1:], shortopts ) # associates command line inputs to variables
   
 except getopt.GetoptError: # output error if command line argument invalid
@@ -46,6 +47,7 @@ for opt, arg in opts:
     if opt in ('b'): BATCH_SIZE = int(arg)
     elif opt in ('e'): EPOCHS = int(arg)
     elif opt in ('o'): outf_key = str(arg)
+    elif opt in ('w'): WHICH = str(arg)
 
 ######################################################
 ######################################################
@@ -55,10 +57,10 @@ for opt, arg in opts:
 ######################################################
 ######################################################
 
-NSIG =        50000
-NSIG_TEST =   20000
-NBKG =        500000
-NBKG_TEST =   200000
+NSIG =        0
+NSIG_TEST =   0
+NBKG =        0
+NBKG_TEST =   0
 
 # Set cut and weight values
 weightStrC = varsList.weightStr
@@ -79,26 +81,29 @@ hist_list = []
 weightsList = []
 
 #print("Output file: dataset/weights/TMVAOpt_" + outf_key + ".root")
-inputDir =    varsList.inputDirLPC  # edit if not running on LPC
-outputfile =  TFile( "dataset/weights/TMVAOptimization_"+ str(numVars) +"vars.root", "RECREATE" )
+if WHICH == "brux":
+  inputDir = varsList.inputDirBrux
+else:
+  inputDir = varsList.inputDirLPC  # edit if not running on LPC
+outputfile = TFile( "dataset/weights/TMVAOptimization_"+ str(numVars) +"vars.root", "RECREATE" )
 
 #print("Input file: {}".format(INPUTFILE))
 
 loader = TMVA.DataLoader( "dataset/optimize_" + outf_key )
 
-for var in varsList.varList["BigComb"]:
+for var in varsList.varList["DNN"]:
   if var[0] == 'NJets_MultiLepCalc': loader.AddVariable(var[0],var[1],var[2],'I')
   else: loader.AddVariable(var[0],var[1],var[2],'F')
   
 # add signal to loader
-for i in range( len( varsList.sig ) ):
+for i in range( len( varsList.sig1 ) ):
   sig_list.append( TFile.Open( inputDir + varsList.sig[i] ) )
   sig_trees_list.append( sig_list[i].Get( "ljmet" ) )
   sig_trees_list[i].GetEntry(0)
   loader.AddSignalTree( sig_trees_list[i], 1 )
   
 # add background to loader
-for i in range( len( varsList.bkg ) ):
+for i in range( len( varsList.bkg1 ) ):
   bkg_list.append( TFile.Open( inputDir + varsList.bkg[i] ) )
   #print( inputDir + varsList.bkg[i] )
   bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
