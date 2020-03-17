@@ -47,6 +47,7 @@ def usage(): # conveys what command line arguments can be used for main()
   print(" ")
   print("Usage: python %s [options]" % sys.argv[0])
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
+  print("  -w | --where : where the script is being run (LPC or BRUX)")
   print("  -s | --seed : random seed for selecting variable (default: '%s')" %DEFAULT_SEED) 
   print("  -v | --verbose")
   print("  -? | --usage      : print this help message")
@@ -63,8 +64,9 @@ def checkRootVer():
       
 def main(): # runs the program
   try: # retrieve command line options
-    shortopts   = "o:v:s:h?" # possible command line options
+    shortopts   = "o:w:v:s:h?" # possible command line options
     longopts    = ["outputfile=",
+		   "where=",
                    "verbose",
 		   "seed=",
                    "help",
@@ -78,7 +80,8 @@ def main(): # runs the program
   
   myArgs = np.array([ # Stores the command line arguments    
     ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
-    ['-v','--verbose','verbose',        True],               
+    ['-v','--verbose','verbose',        True],
+    ['-w','--where','where',		"lpc"],
     ['-s','--seed','SeedN',             DEFAULT_SEED],        
   ])
   
@@ -97,9 +100,11 @@ def main(): # runs the program
   SeedN_index = np.where(myArgs[:,2] == 'SeedN')[0][0]
   outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
   verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
+  where_index = np.where(myArgs[:,2] == 'where')[0][0]
 
   seed = myArgs[SeedN_index,3]
-  varList = varsList.varList["BigComb"]
+  where = myArgs[where_index,3]
+  varList = varsList.varList["DNN"]
   var_length = len(varList)
 
   str_xbitset = '{:0{}b}'.format(long(myArgs[SeedN_index,3]),var_length)
@@ -128,9 +133,12 @@ def main(): # runs the program
   bkg_trees_list = []
   hist_list = []
   weightsList = []
- 
-  inputDir = varsList.inputDirCondor # edit-me if not running on FNAL LPC
   
+  if where == "brux":
+  	inputDir = varsList.inputDirBRUX 
+  else: 
+  	inputDir = varsList.inputDirCondor 
+	
   # Set up TMVA
   ROOT.TMVA.Tools.Instance()
   ROOT.TMVA.PyMethodBase.PyInitialize()
@@ -148,14 +156,14 @@ def main(): # runs the program
       else: loader.AddVariable( var[0], var[1], var[2], "F" )
   
   # add signals to loader
-  for i in range( len( varsList.sig ) ):
+  for i in range( len( varsList.sig0 ) ):
     sig_list.append( TFile.Open( inputDir + varsList.sig[i] ) )
     sig_trees_list.append( sig_list[i].Get( "ljmet" ) )
     sig_trees_list[i].GetEntry(0)
     loader.AddSignalTree( sig_trees_list[i] )
 
   # add backgrounds to loader
-  for i in range( len( varsList.bkg ) ):
+  for i in range( len( varsList.bkg0 ) ):
     bkg_list.append( TFile.Open( inputDir + varsList.bkg[i] ) )
     bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
     bkg_trees_list[i].GetEntry(0)
@@ -172,10 +180,10 @@ def main(): # runs the program
   mycutSig = TCut( cutStrS )
   mycutBkg = TCut( cutStrB )
 
-  NSIG =	50000
-  NSIG_TEST =	50000
-  NBKG =	500000
-  NBKG_TEST =	500000
+  NSIG =	0
+  NSIG_TEST =	0
+  NBKG =	0
+  NBKG_TEST =	0
 
   loader.PrepareTrainingAndTestTree(
     mycutSig, mycutBkg,
