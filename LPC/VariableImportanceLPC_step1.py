@@ -16,9 +16,10 @@ import varsList
 # methods
 
 def condor_job(SeedN="",SubSeedN="",count=0,options=['','',''],maxSeeds=0): # submits a single condor job
-    runDir = options[0]
-    condorDir = options[1]
-    numVars = options[2]
+    runDir      = options[0]
+    condorDir   = options[1]
+    numVars     = options[2]
+    eosDir      = options[3]
     SubmitSeedN = ""
     if SubSeedN == "": 
         fileName = "Keras_" + str(numVars) + "vars_Seed_" + str(SeedN)
@@ -27,9 +28,10 @@ def condor_job(SeedN="",SubSeedN="",count=0,options=['','',''],maxSeeds=0): # su
         fileName = "Keras_" + str(numVars) + "vars_Seed_" + str(SeedN) + "_Subseed_" + str(SubSeedN)
         SubmitSeedN = SubSeedN
     dict = {
-        "SubmitSeedN": SubmitSeedN,
-        "FILENAME": fileName,
-        "RUNDIR":runDir
+        "SubmitSeedN":  SubmitSeedN,
+        "FILENAME":     fileName,
+        "RUNDIR":       runDir,
+        "EOSDIR":       eosDir
     }
     jdfName = condorDir + "%(FILENAME)s.job"%dict
     jdf = open(jdfName, "w")
@@ -46,7 +48,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(SubmitSeedN)s
+Arguments = %(SubmitSeedN)s %(EOSDIR)s
 Queue 1"""%dict)
     jdf.close()
     os.chdir("%s/"%(condorDir))
@@ -198,7 +200,8 @@ used_seeds = []                         # stores which seeds have been used
 options = [                             # contains arguments for condor job submission functions
     os.getcwd(),
     os.getcwd() + "/condor_log/",
-    len(varList)
+    len(varList),
+    varList.inputDirEOS
 ]
 
 # variable parameters  
