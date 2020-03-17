@@ -80,7 +80,7 @@ def build_model(hidden, nodes, lrate, regulator, pattern, activation):
   model = Sequential()
   model.add(Dense(
       nodes,
-      input_dim = len(varsList.varList["BigComb"]),
+      input_dim = len(varsList.varList["DNN"]),
       kernel_initializer = 'glorot_normal',
       activation = activation
     )
@@ -157,7 +157,7 @@ def main(): # runs the program
   outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
   verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
 
-  varList = varsList.varList["BigComb"]
+  varList = varsList.varList["DNN"]
   numVars = len(varList)
   outf_key = str("Keras_" + str(numVars) + "vars") 
   myArgs[outfname_index,3] = "dataset/weights/TMVA_" + outf_key + ".root"
@@ -183,14 +183,14 @@ def main(): # runs the program
     else: loader.AddVariable(var[0],var[1],var[2],"F")
   
   # add signal files
-  for i in range( len( varsList.sig ) ):
+  for i in range( len( varsList.sig2 ) ):
     sig_list.append( TFile.Open( inputDir + varsList.sig[i] ) )
     sig_trees_list.append( sig_list[i].Get("ljmet") )
     sig_trees_list[i].GetEntry(0)
     loader.AddSignalTree( sig_trees_list[i] )
   
   # add background files
-  for i in range( len( varsList.bkg ) ):
+  for i in range( len( varsList.bkg2 ) ):
     bkg_list.append( TFile.Open( inputDir + varsList.bkg[i] ) )
     bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
     bkg_trees_list[i].GetEntry(0)
@@ -220,8 +220,8 @@ def main(): # runs the program
   # modify this when implementing hyper parameter optimization:
   model_name = 'TTTT_' + str(numVars) + 'vars_model.h5'
   
-  EPOCHS = 30
-  PATIENCE = 5
+  EPOCHS = 100
+  PATIENCE = 20
   
   # edit these based on hyper parameter optimization results
   HIDDEN = 3
