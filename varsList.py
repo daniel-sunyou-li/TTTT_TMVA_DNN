@@ -3,16 +3,33 @@
 #input variables
 varList = {}
 
-#inputDirBRUX =  "/mnt/hadoop/store/group/bruxljm/FWLJMET102X_1lep2017_Oct2019_4t_12122019_step2/nominal/"   # BRUX 2017 step 2 path
-inputDirBRUX =  "/mnt/hadoop/store/group/bruxljm/FWLJMET102X_1lep2017_Oct2019_4t_03032020_step2/nominal/"   # BRUX 2017 step 2 path
-inputDirLPC =   "~/nobackup/FWLJMET102X_1lep2017_Oct2019_4t_03032020_step2/"                                 # LPC 2017 step 2 path
-inputDirEOS =   "./FWLJMET102X_1lep2017_Oct2019_4t_03032020_step2/"                                         # LPC Remote Node 2017 step 2 path
-inputDirCondor = "./"
 
+step2Sample     = "FWLJMET102X_1lep2017_Oct2019_4t_03032020_step2"                   # sample name
+inputDirBRUX    =  "/mnt/hadoop/store/group/bruxljm/" + step2Sample + "/nominal/"    # Brown Linux path
+inputDirLPC     =   "~/nobackup/" + step2Sample + "/"                                # LHC Physics Center path
+inputDirEOS     =   "./" + step2Sample + "/"                                         # EOS storage path
+inputDirCondor  = "./"                                                               # Condor remote node path 
+
+# full signal sample
 sig = [
-  "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"   # 2017 step 2
+  "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"                         
 ]
 
+# signal sample partitioned into three equal parts
+# to be used in variable importance
+sig0 = [
+  "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_trim0.root"
+]
+# to be used in hyper parameter optimization
+sig1 = [
+  "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_trim1.root"
+]
+# to be used in full training
+sig2 = [
+  "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_trim2.root"
+]
+
+# full background samples
 bkg = [
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_hadd.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_hadd.root",
@@ -31,9 +48,25 @@ bkg = [
   "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_hadd.root",
   "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_hadd.root"
 ]
-
-'''
-bkg = [
+bkg0 = [
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_trim_0.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_trim_0.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_trim_0.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_2_trim_0.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_3_trim_0.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_4_trim_0.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_5_trim_0.root",
+  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_trim_0.root",
+  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_trim_0.root",
+  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_trim_0.root",
+  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_trim_0.root",
+  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_trim_0.root",
+  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_trim_0.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_trim_0.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_trim_0.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_trim_0.root"
+]
+bkg1 = [
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_trim_1.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_trim_1.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_trim_1.root",
@@ -51,11 +84,28 @@ bkg = [
   "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_trim_1.root",
   "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_trim_1.root"
 ]
-'''
+bkg2 = [
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_trim_2.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_trim_2.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_trim_2.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_2_trim_2.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_3_trim_2.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_4_trim_2.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_5_trim_2.root",
+  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_trim_2.root",
+  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_trim_2.root",
+  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_trim_2.root",
+  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_trim_2.root",
+  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_trim_2.root",
+  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_trim_2.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_trim_2.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_trim_2.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_trim_2.root"
+]
 
 #[<variable in trees>, <variable name for axes and titles>, <unit>]
 
-varList['BigComb'] = [
+varList['DNN'] = [
   ['AK4HTpMETpLepPt','S_{T}','GeV'],
   ['minMleppBjet','min[M(l,b)]','GeV'],
   ['mass_minBBdr','M(b,b) with min[#DeltaR(b,b)]','GeV'],
@@ -122,18 +172,18 @@ varList['BigComb'] = [
   ['NJetsTtagged','top multiplicity',''],
   ['NJetsWtagged','W multiplicity',''],
   ['NJetsCSVwithSF_JetSubCalc','bjet multiplicity',''],
-  ['topJet1Index_HOTTaggerCalc','',''],           # added HOT Tagger variables
-  ['topJet2Index_HOTTaggerCalc','',''],
-  ['topJet3Index_HOTTaggerCalc','',''],
-  ['topNAK4_HOTTaggerCalc','',''],
-  ['topNtops_HOTTaggerCalc','',''],
-  ['topDRmax_HOTTaggerCalc','max[#DeltaR(t,t)]',''],
-  ['topDThetaMax_HOTTaggerCalc','max[#DeltaTheta(t,t)]',''],
-  ['topDiscriminator_HOTTaggerCalc','',''],
-  ['topEta_HOTTaggerCalc','',''],
-  ['topMass_HOTTaggerCalc','','GeV'],
-  ['topPhi_HOTTaggerCalc','',''],
-  ['topPt_HOTTaggerCalc','','GeV'],
+  #['topJet1Index_HOTTaggerCalc','',''],           # added HOT Tagger variables
+  #['topJet2Index_HOTTaggerCalc','',''],           # these are low-level and are incorporated into NJets variables
+  #['topJet3Index_HOTTaggerCalc','',''],
+  #['topNAK4_HOTTaggerCalc','',''],
+  #['topNtops_HOTTaggerCalc','',''],
+  #['topDRmax_HOTTaggerCalc','max[#DeltaR(t,t)]',''],
+  #['topDThetaMax_HOTTaggerCalc','max[#DeltaTheta(t,t)]',''],
+  #['topDiscriminator_HOTTaggerCalc','',''],
+  #['topEta_HOTTaggerCalc','',''],
+  #['topMass_HOTTaggerCalc','','GeV'],
+  #['topPhi_HOTTaggerCalc','',''],
+  #['topPt_HOTTaggerCalc','','GeV'],
   ['HOTGoodTrijet1_mass','','GeV'],               # added more Trijet variables
   ['HOTGoodTrijet1_dijetmass','','GeV'],
   ['HOTGoodTrijet1_pTratio','',''],
@@ -144,36 +194,36 @@ varList['BigComb'] = [
   ['HOTGoodTrijet2_pTratio','',''],
   ['HOTGoodTrijet2_dRtridijet','',''],
   ['HOTGoodTrijet2_csvJetnotdijet','',''],
-  ['HOTGoodTrijet3_mass','','GeV'],
-  ['HOTGoodTrijet3_dijetmass','','GeV'],
-  ['HOTGoodTrijet3_pTratio','',''],
-  ['HOTGoodTrijet3_dRtridijet','',''],
-  ['HOTGoodTrijet3_csvJetnotdijet','',''],
-  ['HOTGoodTrijet4_mass','','GeV'],
-  ['HOTGoodTrijet4_dijetmass','','GeV'],
-  ['HOTGoodTrijet4_pTratio','',''],
-  ['HOTGoodTrijet4_dRtridijet','',''],
-  ['HOTGoodTrijet4_csvJetnotdijet','',''],
-  ['HOTBadTrijet1_mass','','GeV'],
-  ['HOTBadTrijet1_dijetmass','','GeV'],
-  ['HOTBadTrijet1_pTratio','',''],
-  ['HOTBadTrijet1_dRtridijet','',''],
-  ['HOTBadTrijet1_csvJetnotdijet','',''],
-  ['HOTBadTrijet2_mass','','GeV'],
-  ['HOTBadTrijet2_dijetmass','','GeV'],
-  ['HOTBadTrijet2_pTratio','',''],
-  ['HOTBadTrijet2_dRtridijet','',''],
-  ['HOTBadTrijet2_csvJetnotdijet','',''],
-  ['HOTBadTrijet3_mass','','GeV'],
-  ['HOTBadTrijet3_dijetmass','','GeV'],
-  ['HOTBadTrijet3_pTratio','',''],
-  ['HOTBadTrijet3_dRtridijet','',''],
-  ['HOTBadTrijet3_csvJetnotdijet','',''],
-  ['HOTBadTrijet4_mass','','GeV'],
-  ['HOTBadTrijet4_dijetmass','','GeV'],
-  ['HOTBadTrijet4_pTratio','',''],
-  ['HOTBadTrijet4_dRtridijet','',''],
-  ['HOTBadTrijet4_csvJetnotdijet','','']
+  #['HOTGoodTrijet3_mass','','GeV'],
+  #['HOTGoodTrijet3_dijetmass','','GeV'],
+  #['HOTGoodTrijet3_pTratio','',''],
+  #['HOTGoodTrijet3_dRtridijet','',''],
+  #['HOTGoodTrijet3_csvJetnotdijet','',''],
+  #['HOTGoodTrijet4_mass','','GeV'],
+  #['HOTGoodTrijet4_dijetmass','','GeV'],
+  #['HOTGoodTrijet4_pTratio','',''],
+  #['HOTGoodTrijet4_dRtridijet','',''],
+  #['HOTGoodTrijet4_csvJetnotdijet','',''],
+  #['HOTBadTrijet1_mass','','GeV'],
+  #['HOTBadTrijet1_dijetmass','','GeV'],
+  #['HOTBadTrijet1_pTratio','',''],
+  #['HOTBadTrijet1_dRtridijet','',''],
+  #['HOTBadTrijet1_csvJetnotdijet','',''],
+  #['HOTBadTrijet2_mass','','GeV'],
+  #['HOTBadTrijet2_dijetmass','','GeV'],
+  #['HOTBadTrijet2_pTratio','',''],
+  #['HOTBadTrijet2_dRtridijet','',''],
+  #['HOTBadTrijet2_csvJetnotdijet','',''],
+  #['HOTBadTrijet3_mass','','GeV'],
+  #['HOTBadTrijet3_dijetmass','','GeV'],
+  #['HOTBadTrijet3_pTratio','',''],
+  #['HOTBadTrijet3_dRtridijet','',''],
+  #['HOTBadTrijet3_csvJetnotdijet','',''],
+  #['HOTBadTrijet4_mass','','GeV'],
+  #['HOTBadTrijet4_dijetmass','','GeV'],
+  #['HOTBadTrijet4_pTratio','',''],
+  #['HOTBadTrijet4_dRtridijet','',''],
+  #['HOTBadTrijet4_csvJetnotdijet','','']
 ]
 
 weightStr = "pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPrefiringProb_CommonCalc * " + \
@@ -190,5 +240,5 @@ cutStr =  "( ( leptonPt_MultiLepCalc > 50 && isElectron == 1 ) || " + \
           "( minDR_lepJet > 0.4 ) && " + \
           "( AK4HT > 510 ) && " + \
           "( DataPastTrigger == 1 ) && ( MCPastTrigger == 1 ) && " +\
-          "( NJetsCSVwithSF_MultiLepCalc >= 2 ) &&" + \
-          "( NJets_JetSubCalc >= 4 )"
+          "( NJetsCSVwithSF_MultiLepCalc >= 2 ) &&" + \                   # vary this cut
+          "( NJets_JetSubCalc >= 4 )"                                     # vary this cut
