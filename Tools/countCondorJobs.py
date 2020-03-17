@@ -46,7 +46,7 @@ def count_jobs(condorPath,seedJobDirectory,seedOutDirectory,seedLogDirectory):
       failed_count, finished_count = count_job(condorPath,seedOut,seedLog,seedOutDirectory,failed_count,finished_count)
   return failed_count, finished_count
     
-seedDirectory = os.listdir(os.getcwd() + "/condor_log/")
+seedDirectory = os.listdir(os.getcwd() + "/../condor_log/")
 seedOutDirectory = [seedStr for seedStr in seedDirectory if ".out" in seedStr]
 seedLogDirectory = [seedStr for seedStr in seedDirectory if ".log" in seedStr]
 seedJobDirectory = [seedStr for seedStr in seedDirectory if ".job" in seedStr]
@@ -55,7 +55,7 @@ numVars = int(seedOutDirectory[0].split("vars_")[0].split("Keras_")[1])
 count_arr = np.zeros(numVars)
 
 total_count = sum(".job" in seedStr for seedStr in seedDirectory)
-failed_count, finished_count = count_jobs(os.getcwd()+"/condor_log/",seedJobDirectory,seedOutDirectory,seedLogDirectory)
+failed_count, finished_count = count_jobs(os.getcwd()+"/../condor_log/",seedJobDirectory,seedOutDirectory,seedLogDirectory)
 
 for seedName in seedDirectory:
   if "Subseed" not in seedName and ".job" in seedName:
