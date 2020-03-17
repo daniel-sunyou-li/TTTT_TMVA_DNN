@@ -152,9 +152,11 @@ from skopt.utils import use_named_args
 # Initialize some variables after reading in arguments
 outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
 verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
+where_index = np.where(myArgs[:,2] == 'where')[0][0]
 
 varList = varsList.varList["DNN"]
 numVars = len(varList)
+WHERE = myArgs[where_index,3]
 
 outf_key = str("Keras_" + str(numVars) + "vars")
 myArgs[outfname_index,3] = "dataset/weights/TMVAOptimization_" + str(numVars) + "vars.root"
@@ -231,10 +233,11 @@ def objective(**X):
   BATCH_SIZE = int(2 ** X["batch_power"])
   
   TEMP_NAME = 'dataset/temp_file.txt'
-  os.system("python TMVAClassification_Optimization.py -o {} -b {} -e {}".format(
+  os.system("python TMVAClassification_Optimization.py -o {} -b {} -e {} -w {}".format(
     outf_key,
     BATCH_SIZE,
-    EPOCHS
+    EPOCHS,
+    WHERE
   ))   
   
   while not os.path.exists(TEMP_NAME):    # wait until temp_file.txt is created after training
