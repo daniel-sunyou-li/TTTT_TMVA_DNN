@@ -22,9 +22,9 @@ EPOCHS =            10
 BATCH_SIZE =        1028
 PATIENCE =          5
 outf_key =          "Keras"
-TEMPFILE =          "dataset/temp_file.txt"
 numVars =           len(varsList.varList["DNN"])
 WHICH =             "lpc"
+optItr =            "0"
 
 ######################################################
 ######################################################
@@ -35,7 +35,7 @@ WHICH =             "lpc"
 ######################################################
 
 try: # retrieve command line options
-  shortopts   = "b:o:w:e" # possible command line options
+  shortopts   = "b:o:w:e:i" # possible command line options
   opts, args = getopt.getopt( sys.argv[1:], shortopts ) # associates command line inputs to variables
   
 except getopt.GetoptError: # output error if command line argument invalid
@@ -48,6 +48,7 @@ for opt, arg in opts:
     elif opt in ('e'): EPOCHS = int(arg)
     elif opt in ('o'): outf_key = str(arg)
     elif opt in ('w'): WHICH = str(arg)
+    elif opt in ('i'): optItr = str(arg)
 
 ######################################################
 ######################################################
@@ -160,6 +161,6 @@ factory.fMethodsMap.clear()
 
 outputfile.Close()
 
-tempfile = open(TEMPFILE,'w')
+tempfile = open("dataset/temp_file" + optItr + ".txt",'w')
 tempfile.write(str(ROC))
 tempfile.close()
