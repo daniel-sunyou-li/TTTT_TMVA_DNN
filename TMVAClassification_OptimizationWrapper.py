@@ -27,13 +27,7 @@ from keras.optimizers import Adam
 from keras import backend
 
 bruxUserName = "dli50"
-var_length = len(varsList.varList["BigComb"])
-
-# sys.path.insert(0, "/home/{}/.local/lib/python2.7/site-packages".format(bruxUserName)) # add if on BRUX, LPC adds path automatically
-
-from skopt import gp_minimize
-from skopt.space import Real, Integer, Categorical
-from skopt.utils import use_named_args
+var_length = len(varsList.varList["DNN"])
 
 os.system('bash')
 os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh')
@@ -51,6 +45,7 @@ def usage(): # conveys what command line arguments can be used for main()
   print("Usage: python %s [options]" % sys.argv[0])
   print("  -i | --inputfile  : name of input ROOT file (default: '%s')" % DEFAULT_INFNAME)
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
+  print("  -w | --where      : where the script is being run (LPC or BRUX)")
   print("  -v | --verbose")
   print("  -? | --usage      : print this help message")
   print("  -h | --help       : print this help message")
@@ -112,16 +107,19 @@ def build_custom_model(hidden, nodes, lrate, regulator, pattern, activation):
 ######################################################
 
 DEFAULT_OUTFNAME      = "dataset/weights/TMVA.root"
+DEFAULT_WHERE         = "lpc"
 
 myArgs = np.array([ # Stores the command line arguments
-  ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    #3
-  ['-v','--verbose','verbose',        True],                #4
+  ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
+  ['-v','--verbose','verbose',        True],                
+  ['-w','--where','where',            DEFAULT_WHERE]
 ])    
 
 try: # retrieve command line options
-  shortopts   = "k:l:o:vh?" # possible command line options
+  shortopts   = "k:l:w:o:vh?" # possible command line options
   longopts    = ["outputfile=",
                  "verbose",
+                 "where",
                  "help",
                  "usage"]
   opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
@@ -142,11 +140,20 @@ for opt, arg in opts:
     index_bkg = np.where(myArgs[:,2] == 'treeNameBkg')[0][0]
     myArgs[index_sig,3], myArgs[index_bkg,3] == treeSplit_(arg) # override signal, background tree
 
+# import scikit optimize
+
+if where == "brux":
+  sys.path.insert(0, "/home/{}/.local/lib/python2.7/site-packages".format(bruxUserName)) # add if on BRUX, LPC adds path automatically
+
+from skopt import gp_minimize
+from skopt.space import Real, Integer, Categorical
+from skopt.utils import use_named_args
+    
 # Initialize some variables after reading in arguments
 outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
 verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
 
-varList = varsList.varList["BigComb"]
+varList = varsList.varList["DNN"]
 numVars = len(varList)
 
 outf_key = str("Keras_" + str(numVars) + "vars")
@@ -167,7 +174,7 @@ if not os.path.exists('dataset/optimize_' + outf_key):
 
 ### Define some static model parameters
 
-EPOCHS =      10
+EPOCHS =      15
 PATIENCE =    5
 MODEL_NAME =  "dummy_opt_model.h5"
 TAG_NUM =     str(datetime.datetime.now().hour)
@@ -176,26 +183,26 @@ LOG_FILE =    open('dataset/optimize_' + outf_key + '/optimize_log_' + TAG + '.t
 
 ### Hyper parameter survey range
 
-HIDDEN =      [1,5]
+HIDDEN =      [1,4]
 NODES =       [var_length,var_length*10]
 PATTERN =     ['static', 'dynamic']
 BATCH_POW =   [7,11] # used as 2 ^ BATCH_POW
-LRATE =       [1e-4,1e-2]
+LRATE =       [1e-5,1e-2]
 REGULATOR =   ['none', 'dropout', 'normalization', 'both']
 ACTIVATION =  ['relu','softplus','elu']
 
 ### Optimization parameters
-NCALLS =      30
-NSTARTS =     10
+NCALLS =      50
+NSTARTS =     30
 
 space = [
-  Integer(HIDDEN[0],       HIDDEN[1],      name = "hidden_layers"),
-  Integer(NODES[0],        NODES[1],       name = "initial_nodes"),
-  Integer(BATCH_POW[0],    BATCH_POW[1],   name = "batch_power"),
-  Real(LRATE[0],           LRATE[1],       name = "learning_rate"),
-  Categorical(PATTERN,                     name = "node_pattern"),
-  Categorical(REGULATOR,                   name = "regulator"),
-  Categorical(ACTIVATION,                  name = "activation_function")
+  Integer(HIDDEN[0],       HIDDEN[1],                     name = "hidden_layers"),
+  Integer(NODES[0],        NODES[1],                      name = "initial_nodes"),
+  Integer(BATCH_POW[0],    BATCH_POW[1],                  name = "batch_power"),
+  Real(LRATE[0],           LRATE[1],       "log-uniform", name = "learning_rate"),
+  Categorical(PATTERN,                                    name = "node_pattern"),
+  Categorical(REGULATOR,                                  name = "regulator"),
+  Categorical(ACTIVATION,                                 name = "activation_function")
 ]
 
 ######################################################
@@ -285,8 +292,8 @@ def main():
   result_file = open('dataset/optimize_' + outf_key + '/params_' + TAG  + '.txt','w')
   result_file.write('TTTT TMVA DNN Hyper Parameter Optimization Parameters \n')
   result_file.write('Static Parameters:\n')
-  result_file.write(' Patience: {}'.format(PATIENCE))
-  result_file.write(' Epochs: {}'.format(EPOCHS))
+  result_file.write(' Patience: {}\n'.format(PATIENCE))
+  result_file.write(' Epochs: {}\n'.format(EPOCHS))
   result_file.write('Parameter Space:\n')
   result_file.write(' Hidden Layers: [{},{}]\n'.format(HIDDEN[0],HIDDEN[1]))
   result_file.write(' Initial Nodes: [{},{}]\n'.format(NODES[0],NODES[1]))
