@@ -232,20 +232,28 @@ def objective(**X):
  
   BATCH_SIZE = int(2 ** X["batch_power"])
   
-  TEMP_NAME = 'dataset/temp_file.txt'
-  os.system("python TMVAClassification_Optimization.py -o {} -b {} -e {} -w {}".format(
-    outf_key,
-    BATCH_SIZE,
-    EPOCHS,
-    WHERE
-  ))   
+  temp_names = []
+  "dataset/temp_file.txt"
+  ROCs = []
   
-  while not os.path.exists(TEMP_NAME):    # wait until temp_file.txt is created after training
-    time.sleep(1)
-    if os.path.exists(TEMP_NAME): continue
-
-  ROC = float(open(TEMP_NAME, 'r').read())
-  os.system("rm {}".format(TEMP_NAME))
+  for i in range(2):
+    temp_name = "dataset/temp_file" + str(i) ".txt"
+    temp_names.append(temp_name)
+    os.system("python TMVAClassification_Optimization.py -o {} -b {} -e {} -w {} -i {}".format(
+      outf_key,
+      BATCH_SIZE,
+      EPOCHS,
+      WHERE,
+      i
+    ))
+    while not os.path.exists(temp_name):
+      time.sleep(1)
+      if os.path.exists(temp_name): continue
+    ROC = float(open(temp_name, "r").read())
+    ROCs.append(ROC)
+    os.system("rm {}".format(temp_name))
+  ROC_mean = np.mean(ROCs)
+  ROC_std  = np.std(ROCs)
     
   # Reset the session
   del model
@@ -264,8 +272,9 @@ def objective(**X):
     str(np.around(ROC,5))
     )
   )
-  
-  return (1.0 - ROC) # since the optimizer tries to minimize this function and we want a larger ROC value
+  opt_metric = (1.0 - ROC_mean) + (ROC_std)**2
+  print("Optimization metric value obtained = {:.5f}".format(opt_metric))
+  return opt_metric # since the optimizer tries to minimize this function and we want a larger ROC value
 
 def main():
   checkRootVer() # check the ROOT version
