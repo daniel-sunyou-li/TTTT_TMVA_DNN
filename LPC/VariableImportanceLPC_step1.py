@@ -38,10 +38,10 @@ def condor_job(SeedN="",SubSeedN="",count=0,options=['','',''],maxSeeds=0): # su
 Executable = %(RUNDIR)s/LPC/VariableImportanceLPC_step2.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
-request_memory = 5 GB
+request_memory = 4.2 GB
 request_cpus = 4
 request_disk = 40 GB
-image_size = 5 GB
+image_size = 4 GB
 Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
@@ -193,7 +193,7 @@ TMVA.PyMethodBase.PyInitialize()
 
 # lists
 inputDir = varsList.inputDirLPC         # string for path to ljmet samples
-varList = varsList.varList["BigComb"]   # contains all the input variables
+varList = varsList.varList["DNN"]       # contains all the input variables
 used_seeds = []                         # stores which seeds have been used
 options = [                             # contains arguments for condor job submission functions
     os.getcwd(),
@@ -213,8 +213,8 @@ count = 0                               # counts the number of jobs submitted
 
 # get the signal correlation matrix and the variable names, used in correlation options
 sig_corr, varNames = get_correlation_matrix(
-    inputDir + varsList.sig[0],
-    inputDir + varsList.bkg[0],     # choose a random background sample since we only care about signal
+    inputDir + varsList.sig0[0],
+    inputDir + varsList.bkg0[0],     # choose a random background sample since we only care about signal
     weightStrC,
     TCut(cutStrC),
     varList
