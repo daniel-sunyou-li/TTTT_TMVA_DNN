@@ -20,5 +20,6 @@ then
   source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.16.00/x86_64-centos7-gcc48-opt/bin/thisroot.csh
   python TMVAClassification_OptimizationWrapper.py lpc $numVars
 else
-  echo Invalid or No Options Used. Need to include "host" and "number of variables". Example submission: "./submit_Optimization.sh lpc 20".
+  echo Invalid or No Options Used. Need to include "host" and "number of variables". 
+  echo Example submissions: "./submit_OptimizationWrapper.sh lpc 20" or "./submit_OptimizationWrapper.sh brux 20"
 fi
