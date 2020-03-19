@@ -1,13 +1,5 @@
 #!/usr/bin/env python
 
-######################################################
-######################################################
-######                                          ######
-######              S T A R T U P               ######
-######                                          ######
-######################################################
-######################################################
-
 import numpy as np
 import os, sys, shutil
 from subprocess import call
@@ -27,10 +19,71 @@ from keras.optimizers import Adam
 from keras import backend
 
 bruxUserName = "dli50"
-var_length = len(varsList.varList["DNN"])
+importancePath = os.getcwd() + "/dataset/"
 
 os.system('bash')
 os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh')
+
+DEFAULT_OUTFNAME      = "dataset/weights/TMVA.root"
+DEFAULT_NVARS         = 20
+DEFAULT_WHERE         = "lpc"
+DEFAULT_OPTION        = 1
+
+myArgs = np.array([ # Stores the command line arguments
+  ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
+  ['-v','--verbose','verbose',        True],                
+  ['-w','--where','where',            DEFAULT_WHERE],
+  ['-p','--option','option',          DEFAULT_OPTION],
+  ['-n','--nvars','nvars',            DEFAULT_NVARS]
+])    
+
+try: # retrieve command line options
+  shortopts   = "k:l:w:p:n:o:vh?" # possible command line options
+  longopts    = ["outputfile=",
+                 "verbose",
+                 "where",
+                 "option",
+                 "nvars",
+                 "help",
+                 "usage"]
+  opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
+  
+except getopt.GetoptError: # output error if command line argument invalid
+  print("ERROR: unknown options in argument %s" %sys.argv[1:])
+  usage()
+  sys.exit(1)
+for opt, arg in opts:
+  if opt in myArgs[:,0]:
+    index = np.where(myArgs[:,0] == opt)[0][0] # np.where returns a tuple of arrays
+    myArgs[index,3] = arg # override the variables with the command line argument
+  elif opt in myArgs[:,1]:
+    index = np.where(myArgs[:,1] == opt)[0][0] 
+    myArgs[index,3] = arg
+
+# import scikit optimize
+
+if where == "brux":
+  sys.path.insert(0, "/home/{}/.local/lib/python2.7/site-packages".format(bruxUserName)) # add if on BRUX, LPC adds path automatically
+
+from skopt import gp_minimize
+from skopt.space import Real, Integer, Categorical
+from skopt.utils import use_named_args
+    
+# Initialize some variables after reading in arguments
+outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
+verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
+where_index = np.where(myArgs[:,2] == 'where')[0][0]
+option_index = np.where(myArgs[:,2] == 'option')[0][0]
+nvars_index = np.where(myArgs[:,2] == 'nvars')[0][0]
+        
+option = myArgs[option_index,3]
+numVars = myArgs[nvars_index,3]
+WHERE = myArgs[where_index,3]
+        
+varList = getRankedInputs(os.getcwd() + "/dataset/",varsList.varList["DNN"],numVars,option)
+        
+outf_key = str("Keras_" + str(numVars) + "vars")
+myArgs[outfname_index,3] = "dataset/weights/TMVAOptimization_" + str(numVars) + "vars.root"
 
 ######################################################
 ######################################################
@@ -43,9 +96,10 @@ os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/s
 def usage(): # conveys what command line arguments can be used for main()
   print(" ")
   print("Usage: python %s [options]" % sys.argv[0])
-  print("  -i | --inputfile  : name of input ROOT file (default: '%s')" % DEFAULT_INFNAME)
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
+  print("  -p | --option     : variable importance option)
   print("  -w | --where      : where the script is being run (LPC or BRUX)")
+  print("  -n | --nvars      : number of input variables to use (in order)")
   print("  -v | --verbose")
   print("  -? | --usage      : print this help message")
   print("  -h | --help       : print this help message")
@@ -63,7 +117,7 @@ def build_custom_model(hidden, nodes, lrate, regulator, pattern, activation):
   model = Sequential()
   model.add(Dense(
       nodes,
-      input_dim = var_length,
+      input_dim = numVars,
       kernel_initializer = 'glorot_normal',
       activation = activation
     )
@@ -98,6 +152,29 @@ def build_custom_model(hidden, nodes, lrate, regulator, pattern, activation):
   )
   return model
 
+def getRankedInputs(importancePath,varList,numVars,option):
+  numVarsFull = len(varList)
+  variableList = []
+  valueList = []
+  start_reading = False
+  importanceFile = open(importancePath + "/VariableImportanceResults_" + str(numVarsFull) + "vars_opt" + str(option) + ".txt")
+    for line in importanceFile.readlines():
+      if start_reading == True:
+        content = line.split("/")
+        if option == 1:
+          variableList.append(content[0].split(".")[1].strip())
+          valueList.append(float(content[4].strip))
+        else:
+          variableList.append(content[0].split(".")[1].strip())
+          valueList.append(float(content[2].strip()))
+      if "Variable Name" in line: start_reading = True
+  
+  rankedValues, rankedVariables = zip(*sorted(zip(
+    valueList, variableList
+  )))
+  
+  return rankedVariables[0:numVars]
+
 ######################################################
 ######################################################
 ######                                          ######
@@ -106,60 +183,6 @@ def build_custom_model(hidden, nodes, lrate, regulator, pattern, activation):
 ######################################################
 ######################################################
 
-DEFAULT_OUTFNAME      = "dataset/weights/TMVA.root"
-DEFAULT_WHERE         = "lpc"
-
-myArgs = np.array([ # Stores the command line arguments
-  ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
-  ['-v','--verbose','verbose',        True],                
-  ['-w','--where','where',            DEFAULT_WHERE]
-])    
-
-try: # retrieve command line options
-  shortopts   = "k:l:w:o:vh?" # possible command line options
-  longopts    = ["outputfile=",
-                 "verbose",
-                 "where",
-                 "help",
-                 "usage"]
-  opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
-  
-except getopt.GetoptError: # output error if command line argument invalid
-  print("ERROR: unknown options in argument %s" %sys.argv[1:])
-  usage()
-  sys.exit(1)
-for opt, arg in opts:
-  if opt in myArgs[:,0]:
-    index = np.where(myArgs[:,0] == opt)[0][0] # np.where returns a tuple of arrays
-    myArgs[index,3] = arg # override the variables with the command line argument
-  elif opt in myArgs[:,1]:
-    index = np.where(myArgs[:,1] == opt)[0][0] 
-    myArgs[index,3] = arg
-  if opt in ('-t', '--inputtrees'): # handles assigning tree signal and background
-    index_sig = np.where(myArgs[:,2] == 'treeNameSig')[0][0]
-    index_bkg = np.where(myArgs[:,2] == 'treeNameBkg')[0][0]
-    myArgs[index_sig,3], myArgs[index_bkg,3] == treeSplit_(arg) # override signal, background tree
-
-# import scikit optimize
-
-if where == "brux":
-  sys.path.insert(0, "/home/{}/.local/lib/python2.7/site-packages".format(bruxUserName)) # add if on BRUX, LPC adds path automatically
-
-from skopt import gp_minimize
-from skopt.space import Real, Integer, Categorical
-from skopt.utils import use_named_args
-    
-# Initialize some variables after reading in arguments
-outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
-verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
-where_index = np.where(myArgs[:,2] == 'where')[0][0]
-
-varList = varsList.varList["DNN"]
-numVars = len(varList)
-WHERE = myArgs[where_index,3]
-
-outf_key = str("Keras_" + str(numVars) + "vars")
-myArgs[outfname_index,3] = "dataset/weights/TMVAOptimization_" + str(numVars) + "vars.root"
 
 # Create directory for hyper parameter optimization for # of input variables if it doesn't exit
 if not os.path.exists('dataset/optimize_' + outf_key):
@@ -186,7 +209,7 @@ LOG_FILE =    open('dataset/optimize_' + outf_key + '/optimize_log_' + TAG + '.t
 ### Hyper parameter survey range
 
 HIDDEN =      [1,4]
-NODES =       [var_length,var_length*10]
+NODES =       [numVars,numVars*10]
 PATTERN =     ['static', 'dynamic']
 BATCH_POW =   [7,11] # used as 2 ^ BATCH_POW
 LRATE =       [1e-5,1e-2]
