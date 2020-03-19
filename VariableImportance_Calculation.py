@@ -4,9 +4,8 @@ import varsList
 import datetime
 import numpy as np
 
-option = 1 # 0 for traditional and 1 for correlation coefficient consideration
-
-condor_dirs = [ # if combining multiple results, add to this array, must have same variables (in order)
+# if combining multiple results, add to this array, must have same variables (in order)
+condorDirs = [ 
     "condor_log" 
 ]
 
@@ -49,6 +48,8 @@ def variable_importance(seedDict={},numVars=0,option=0):
         varImportanceFile = open("./dataset/VariableImportanceResults_" + str(numVars) + "vars_opt1.txt","w")
     else:
         varImportanceFile = open("./dataset/VariableImportanceResults_" + str(numVars) + "vars_opt0.txt","w")
+    varImportanceFile.write("Weight: {}".format(varsList.weightStr))
+    varImportanceFile.write("Cut: {}".format(varsList.cut))
     varImportanceFile.write("Number of Variables: {}, Date: {}".format(
         numVars,
         datetime.datetime.today().strftime("%Y-%m-%d")
@@ -58,13 +59,13 @@ def variable_importance(seedDict={},numVars=0,option=0):
     else:
         for indx in np.arange(numVars): importances[indx] = 0
     print("Calculating variable importance...")
-    varImportanceFile.write("\n{:<3}: {:<40} {:<10}".format("#","Seed","# Vars"))
+    varImportanceFile.write("\n{:<3}: {:<{}} {:<10}".format("#","Seed",numVars+2,"# Vars"))
     for key in seedDict:
         for indx,seed in enumerate(seedDict[key]):
             seed_long = long(seed)
             seed_str = "{:0{}b}".format(int(seed),int(numVars))
             count_arr = variable_occurence(count_arr,int(seed))
-            varImportanceFile.write("\n{:<3}: {:<25} {:<12}".format(indx+1,seed,seed_str.count("1")))
+            varImportanceFile.write("\n{:<3}: {:<{}} {:<12}".format(indx+1,seed_str,numVars+2,seed_str.count("1")))
             for line in open(key + "/Keras_" + str(numVars) + "vars_Seed_" + seed + ".out").readlines():
                 if "ROC-integral" in line: SROC = float(line[:-1].split(" ")[-1][:-1])
             for subseedOut in seedDict[key][seed]:
@@ -83,44 +84,67 @@ def variable_importance(seedDict={},numVars=0,option=0):
     if option == 1:
         for varIndx in importances:
             if not importances[varIndx]: importances[varIndx] = [0]
-            importance_stats[varIndx] = np.array( [np.mean(importances[varIndx]),np.std(importances[varIndx])] )
-            normalization += (importance_stats[varIndx][0])**2
+            importance_stats[varIndx] = np.array( [np.mean(importances[varIndx]),
+                                                   np.std(importances[varIndx]),
+                                                   np.mean(importances[varIndx]) / np.std(importances[varIndx])
+                                                  ] )
+            normalization += (importance_stats[varIndx][2])**2
         for varIndx in importances:
             importance_stats[varIndx] = importance_stats[varIndx] / np.sqrt(normalization)
         varImportanceFile.write("\nImportance calculation:")
-        varImportanceFile.write("\nNormalization: {}".format(1/np.sqrt(normalization)))
-        varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<7} / {:<7}".format("Index","Variable Name","Freq.","Mean","RMS"))
+        varImportanceFile.write("\nNormalization: {:.3f}".format(1/np.sqrt(normalization)))
+        varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<7} / {:<7} / {:<11}".format(
+            "Index",
+            "Variable Name",
+            "Freq.",
+            "Mean",
+            "RMS",
+            "Importance"
+        ))
     for varIndx in importance_stats:
-        varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<7.4f} / {:<7.4f}".format(
+        varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<7.4f} / {:<7.4f} / {:<11.3f}".format(
             str(varIndx+1)+".",
-            varsList.varList["BigComb"][varIndx][0],
+            varsList.varList["DNN"][varIndx][0],
             count_arr[varIndx],
             importance_stats[varIndx][0],
-            importance_stats[varIndx][1]
+            importance_stats[varIndx][1],
+            importance_stats[varIndx][2]
         ))
     else:
         for indx in np.arange(numVars): normalization += importances[indx]
         varImportanceFile.write("\nImportance calculation:")
-        varImportanceFile.write("\nNormalization: {}".format(1/normalization))
+        varImportanceFile.write("\nNormalization: {}".format(1/abs(normalization)))
         varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<8}:".format("Index","Variable Name","Freq","Importance"))
         for indx in np.arange(numVars):
             varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<8.4f}".format(
                 str(indx+1)+".",
-                varsList.varList["BigComb"][indx][0],
+                varsList.varList["DNN"][indx][0],
                 count_arr[indx],
-                importances[indx] / normalization
+                importances[indx] / abs(normalization)
             ))
     varImportanceFile.close()
   
     if option == 1:
         importances_name = {}
         for key in importances:
-            importances_name[varsList.varList["BigComb"][key][0]] = importances[key]
+            importances_name[varsList.varList["DNN"][key][0]] = importances[key]
         np.save("./dataset/ROC_hists_" + str(numVars) + "vars",importances_name)
   
 # Run the program  
-
-seedDict, numVars = get_seeds(condor_dirs)
-
-variable_importance(seedDict,numVars,0)
-print("Saving results to {}".format(os.getcwd() + "/dataset/"))
+def main(condorDirs):
+    option = 0  # default option (0) to use traditional variable importance, modified variable importance use option = 1
+    if len(sys.argv) == 2:
+        option = sys.argv[1]
+    if option == 0:
+        print("Using option 0: traditional variable importance (sum of ROC differentials)")
+    elif option == 1:
+        print("Using option 1: modified variable importance (mean / RMS of ROC differentials)")
+    else:
+        print("Invalid option input. Please choose either \'0\' or \'1\'. Exiting Variable Importance calculation.")
+        sys.exit(0)
+    print("Using results from: {}".format(condorDirs))
+    seedDict, numVars = get_seeds(condorDirs)
+    variable_importance(seedDict, numVars, option)
+    print("Saving results to {}".format(os.getcwd() + "/dataset/"))
+    
+main(condorDirs)
