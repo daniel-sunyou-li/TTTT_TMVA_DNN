@@ -8,6 +8,7 @@ import time, datetime
 import getopt
 import ROOT
 from ROOT import TMVA, TFile, TTree, TCut, TRandom3, gSystem, gApplication, gROOT
+from TMVAClassification_Optimization import varList
 import varsList
 
 TMVA.Tools.Instance()
@@ -22,8 +23,8 @@ EPOCHS =            10
 BATCH_SIZE =        1028
 PATIENCE =          5
 outf_key =          "Keras"
-numVars =           len(varsList.varList["DNN"])
-WHICH =             "lpc"
+numVars =           len(varList)
+WHERE =             "lpc"
 optItr =            "0"
 
 ######################################################
@@ -47,7 +48,7 @@ for opt, arg in opts:
     if opt in ('b'): BATCH_SIZE = int(arg)
     elif opt in ('e'): EPOCHS = int(arg)
     elif opt in ('o'): outf_key = str(arg)
-    elif opt in ('w'): WHICH = str(arg)
+    elif opt in ('w'): WHERE = str(arg)
     elif opt in ('i'): optItr = str(arg)
 
 ######################################################
@@ -92,9 +93,9 @@ outputfile = TFile( "dataset/weights/TMVAOptimization_"+ str(numVars) +"vars.roo
 
 loader = TMVA.DataLoader( "dataset/optimize_" + outf_key )
 
-for var in varsList.varList["DNN"]:
-  if var[0] == 'NJets_MultiLepCalc': loader.AddVariable(var[0],var[1],var[2],'I')
-  else: loader.AddVariable(var[0],var[1],var[2],'F')
+for var in varList:
+  if var == 'NJets_MultiLepCalc': loader.AddVariable(var,"","","I")
+  else: loader.AddVariable(var,"","","F")
   
 # add signal to loader
 for i in range( len( varsList.sig1 ) ):
