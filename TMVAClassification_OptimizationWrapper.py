@@ -28,22 +28,25 @@ DEFAULT_OUTFNAME      = "dataset/weights/TMVA.root"
 DEFAULT_NVARS         = 20
 DEFAULT_WHERE         = "lpc"
 DEFAULT_OPTION        = 1
+DEFAULT_SMPSIZE       = 3
 
 myArgs = np.array([ # Stores the command line arguments
   ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
   ['-v','--verbose','verbose',        True],                
   ['-w','--where','where',            DEFAULT_WHERE],
+  ['-s','--smpsize','samplesize',     DEFAULT_SMPSIZE],
   ['-p','--option','option',          DEFAULT_OPTION],
   ['-n','--nvars','nvars',            DEFAULT_NVARS]
 ])    
 
 try: # retrieve command line options
-  shortopts   = "k:l:w:p:n:o:vh?" # possible command line options
+  shortopts   = "o:w:p:n:s:vh?" # possible command line options
   longopts    = ["outputfile=",
-                 "verbose",
-                 "where",
-                 "option",
-                 "nvars",
+                 "verbose=",
+                 "where=",
+                 "option=",
+                 "nvars=",
+                 "samplesize=",
                  "help",
                  "usage"]
   opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
@@ -75,10 +78,12 @@ verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
 where_index = np.where(myArgs[:,2] == 'where')[0][0]
 option_index = np.where(myArgs[:,2] == 'option')[0][0]
 nvars_index = np.where(myArgs[:,2] == 'nvars')[0][0]
+smpsize_index = np.where(myArgs[:,2] == 'samplesize')[0][0]
         
 option = myArgs[option_index,3]
 numVars = myArgs[nvars_index,3]
 WHERE = myArgs[where_index,3]
+SMPSIZE = myArgs[smpsize_index,3]
         
 varList = getRankedInputs(os.getcwd() + "/dataset/",varsList.varList["DNN"],numVars,option)
         
@@ -259,7 +264,7 @@ def objective(**X):
   "dataset/temp_file.txt"
   ROCs = []
   
-  for i in range(2):
+  for i in range(SMPSIZE):
     temp_name = "dataset/temp_file" + str(i) ".txt"
     temp_names.append(temp_name)
     os.system("python TMVAClassification_Optimization.py -o {} -b {} -e {} -w {} -i {}".format(
