@@ -4,7 +4,7 @@
 varList = {}
 
 
-step2Sample     = "FWLJMET102X_1lep2017_Oct2019_4t_03032020_step2"                   # sample name
+step2Sample     = "FWLJMET102X_1lep2017_Oct2019_4t_03202020_step2"                   # sample name
 inputDirBRUX    =  "/mnt/hadoop/store/group/bruxljm/" + step2Sample + "/nominal/"    # Brown Linux path
 inputDirLPC     =   "~/nobackup/" + step2Sample + "/"                                # LHC Physics Center path
 inputDirEOS     =   "./" + step2Sample + "/"                                         # EOS storage path
