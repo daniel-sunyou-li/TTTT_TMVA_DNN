@@ -3,6 +3,10 @@
 #input variables
 varList = {}
 
+# edit me 
+bruxUserName = "dli50"
+lpcUserName = "dsunyou"
+eosUserName = "dali"
 
 step2Sample     = "FWLJMET102X_1lep2017_Oct2019_4t_03202020_step2"                   # sample name
 inputDirBRUX    =  "/mnt/hadoop/store/group/bruxljm/" + step2Sample + "/nominal/"    # Brown Linux path
