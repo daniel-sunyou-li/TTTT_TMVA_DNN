@@ -9,21 +9,21 @@ import varsList
 bruxUserName = "dli50"
 eosUserName = "dali"
 bruxPath = "/mnt/hadoop/store/group/bruxljm/FWLJMET102X_1lep2017_Oct2019_4t_03032020_step2/nominal/"
-folderName = "FWLJMET102X_1lpe2017_Oct2019_4t_03032020_step2"
+folderName = varList.step2Sample
 
 # set-up the working area
 os.system("voms-proxy-init --rfc --voms cms")
-os.system("mkdir ~/nobackup/{}".format(folderName))
+os.system("mkdir ~/nobackup/{}".format(varList.step2Sample))
 
 # transfer files from BRUX to LPC
 # will need to input BRUX password
 
 for sample in (varsList.sig + varsList.bkg):
     os.system("scp -r {}@brux.hep.brown.edu:{}{} ~/nobackup/{}/".format(
-        bruxUserName,
-        bruxPath,
+        varsList.bruxUserName,
+        varsList.inputDirBRUX,
         sample,
-        folderName
+        varsList.step2Sample
     )
              )
 
@@ -33,8 +33,8 @@ os.system("./splitROOT.out")
     
 # make the eos directory
 os.system("eosmkdir /store/user/{}/{}".format(
-    eosUserName,
-    folderName
+    varsList.eosUserName,
+    varsList.step2Sample
     )
 )
 
@@ -42,9 +42,9 @@ samples0 = varsList.sig0 + varsList.bkg0
 
 for sample in samples0:
   os.system("xrdcp ~/nobackup/{}/{} root://cmseos.fnal.gov//store/user/{}/".format(
-    folderName,
+    varsList.step2Sample,
     sample,
-    eosUserName
+    varsList.eosUserName
   )
 )
 
@@ -55,7 +55,7 @@ os.system("tar -zcvf ~/nobackup/CMSSW946.tgz ~/nobackup/CMSSW_9_4_6_patch1/")
 # copy the framework to EOS 
 
 os.system("xrdcp ~/nobackup/CMSSW946.tgz root://cmseos.fnal.gov//store/user/{}".format(
-    eosUserName
+    varsList.eosUserName
   )
 )
 
