@@ -153,6 +153,8 @@ varList['DNN'] = [
   ['ratio_HTdHT4leadjets','HT/HT(4 leading jets)',''],
   ['csvJet3','DeepCSV(3rdPtJet)',''],
   ['csvJet4','DeepCSV(4thPtJet)',''],
+  ['firstcsvb_bb','DeepCSV(1stDeepCSVJet),'']
+  ['secondcsvb_bb','DeepCSV(2ndDeepCSVJet)',''],
   ['thirdcsvb_bb','DeepCSV(3rdDeepCSVJet)',''],
   ['fourthcsvb_bb','DeepCSV(4thDeepCSVJet)',''],
   ['NJets_JetSubCalc','AK4 jet multiplicity',''],
@@ -173,7 +175,7 @@ varList['DNN'] = [
   ['NJetsWtagged','W multiplicity',''],
   ['NJetsCSVwithSF_JetSubCalc','bjet multiplicity',''],
   #['topJet1Index_HOTTaggerCalc','',''],           # added HOT Tagger variables
-  #['topJet2Index_HOTTaggerCalc','',''],           # these are low-level and are incorporated into NJets variables
+  #['topJet2Index_HOTTaggerCalc','',''],           # these are low-level and are incorporated into trijet variables
   #['topJet3Index_HOTTaggerCalc','',''],
   #['topNAK4_HOTTaggerCalc','',''],
   #['topNtops_HOTTaggerCalc','',''],
@@ -204,29 +206,9 @@ varList['DNN'] = [
   #['HOTGoodTrijet4_pTratio','',''],
   #['HOTGoodTrijet4_dRtridijet','',''],
   #['HOTGoodTrijet4_csvJetnotdijet','',''],
-  #['HOTBadTrijet1_mass','','GeV'],
-  #['HOTBadTrijet1_dijetmass','','GeV'],
-  #['HOTBadTrijet1_pTratio','',''],
-  #['HOTBadTrijet1_dRtridijet','',''],
-  #['HOTBadTrijet1_csvJetnotdijet','',''],
-  #['HOTBadTrijet2_mass','','GeV'],
-  #['HOTBadTrijet2_dijetmass','','GeV'],
-  #['HOTBadTrijet2_pTratio','',''],
-  #['HOTBadTrijet2_dRtridijet','',''],
-  #['HOTBadTrijet2_csvJetnotdijet','',''],
-  #['HOTBadTrijet3_mass','','GeV'],
-  #['HOTBadTrijet3_dijetmass','','GeV'],
-  #['HOTBadTrijet3_pTratio','',''],
-  #['HOTBadTrijet3_dRtridijet','',''],
-  #['HOTBadTrijet3_csvJetnotdijet','',''],
-  #['HOTBadTrijet4_mass','','GeV'],
-  #['HOTBadTrijet4_dijetmass','','GeV'],
-  #['HOTBadTrijet4_pTratio','',''],
-  #['HOTBadTrijet4_dRtridijet','',''],
-  #['HOTBadTrijet4_csvJetnotdijet','','']
 ]
 
-weightStr = "pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPrefiringProb_CommonCalc * " + \
+weightStr = "triggerXSF * pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPrefiringProb_CommonCalc * " + \
             "(MCWeight_MultiLepCalc / abs(MCWeight_MultiLepCalc) )"
 
 # general cut, add selection based cuts in training scripts
@@ -239,6 +221,6 @@ cutStr =  "( ( leptonPt_MultiLepCalc > 50 && isElectron == 1 ) || " + \
           "( theJetPt_JetSubCalc_PtOrdered[2] > 0 ) && " + \
           "( minDR_lepJet > 0.4 ) && " + \
           "( AK4HT > 510 ) && " + \
-          "( DataPastTrigger == 1 ) && ( MCPastTrigger == 1 ) && " +\
+          "( DataPastTriggerX == 1 ) && ( MCPastTriggerX == 1 ) && " +\
           "( NJetsCSVwithSF_MultiLepCalc >= 2 ) &&" + \                   # vary this cut
           "( NJets_JetSubCalc >= 4 )"                                     # vary this cut
