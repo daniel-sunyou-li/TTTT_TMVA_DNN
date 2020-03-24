@@ -15,7 +15,7 @@ import varsList
 
 # methods
 
-def condor_job(SeedN="",SubSeedN="",count=0,options=['','',''],maxSeeds=0): # submits a single condor job
+def condor_job(SeedN="",SubSeedN="",count=0,options=['','','',''],maxSeeds=0): # submits a single condor job
     runDir      = options[0]
     condorDir   = options[1]
     numVars     = options[2]
@@ -75,7 +75,7 @@ def get_correlation_matrix(sigFile, bkgFile, weightStr, cutStr, varList): # gets
     loader = TMVA.DataLoader("dataset")
     for var in varList:
         if var[0] in "NJets_MultiLepCalc": loader.Addvariable( var[0], var[1], var[2], "I" )
-        else:                               loader.AddVariable( var[0], var[1], var[2], "F" )
+        else:                              loader.AddVariable( var[0], var[1], var[2], "F" )
         varNames.append(var[0])
     
     # open the root files
