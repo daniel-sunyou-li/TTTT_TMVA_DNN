@@ -2,7 +2,7 @@
 
 str_xbitset=${1}
 eosDir=${2}
-eosUserName="dali" # change me
+eosUserName=${3} # change me
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
