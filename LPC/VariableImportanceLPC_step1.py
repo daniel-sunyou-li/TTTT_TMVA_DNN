@@ -201,7 +201,7 @@ options = [                             # contains arguments for condor job subm
     os.getcwd(),
     os.getcwd() + "/condor_log/",
     len(varList),
-    varList.inputDirEOS
+    varsList.inputDirEOS
 ]
 
 # variable parameters  

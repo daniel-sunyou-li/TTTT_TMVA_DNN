@@ -8,12 +8,12 @@
 using namespace std;
 
 int n_split = 3;  // set at 3 for the three different steps for this analysis
-string in_path =  "~/nobackup/FWLJMET102X_1lep2017_Oct2019_4t_03032020_step2/";
-string out_path = "~/nobackup/FWLJMET102X_1lep2017_Oct2019_4t_03032020_step2/";
-cout << "Looking for samples in: " << in_path << endl;
-cout << "If samples are not in specified path, please edit the correct in_path." << endl;
-cout << "Writing new samples to: " << out_path << endl;
-vector<string> bkg = {
+
+string in_path =  "~/nobackup/FWLJMET102X_1lep2017_Oct2019_4t_03202020_step2/";
+string out_path = "~/nobackup/FWLJMET102X_1lep2017_Oct2019_4t_03202020_step2/";
+
+vector<string> samples = {
+  "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_hadd.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_hadd.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_hadd.root",
@@ -44,31 +44,35 @@ void split_file(string in_path, string sample, string out_path, int this_split, 
   // define some file parameters
   int n_entries = root_tree->GetEntriesFast();
   int split_entries = int ( n_entries / tot_split );
-  string split_name_str = out_path + sample.substr(0, sample.find("hadd")) + "trim_" + to_string(this_split) + ".root";
-  // build the trimmed root file
-  TFile split_file( split_name_str.c_str() , "recreate");
+  string split_name_str = sample.substr(0, sample.find("hadd")) + "split" + to_string(this_split) + ".root";
+  string split_name_path = out_path + split_name_str;
+  // build the split root file
+  TFile split_file( split_name_path.c_str() , "recreate");
   auto split_tree = root_tree->CloneTree(0);
-  // populate the trimmed root file
+  // populate the split root file
   for( int i = this_split*split_entries; i < ( this_split + 1 )*split_entries; ++i ){
     progress( split_name_str, i, n_entries );
     root_tree->GetEntry(i);
-    trim_tree->Fill();
+    split_tree->Fill();
   }
   cout << endl;
-  trim_file.Write();
-  // delete the old hadd file to save space
-  str command_str = "rm " + in_path + sample;
-  const char *command_ch = command_str.c_str();
-  system(command_ch);
+  split_file.Write();
 }
 
 int main(){
-  for( string bkg_sample : bkg ){
+  cout << "Looking for samples in: " << in_path << endl;
+  cout << "If samples are not in specified path, please edit the correct in_path." << endl;
+  cout << "Writing new samples to: " << out_path << endl;
+  for( string sample : samples ){
     for( int i = 0; i < n_split; ++i ){
-       split_file(in_path, bkg_sample, out_path, i, n_split);
+       split_file(in_path, sample, out_path, i, n_split);
+    // delete the old hadd file to save space
     }
+    string command_str = "rm " + in_path + sample;
+    const char *command_ch = command_str.c_str();
+    system(command_ch);
   }
-  cout << "Finished processing..." << endl;
+  cout << "Finished processing." << endl;
   
   return 0;
 }

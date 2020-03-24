@@ -9,9 +9,9 @@ lpcUserName = "dsunyou"
 eosUserName = "dali"
 
 step2Sample     = "FWLJMET102X_1lep2017_Oct2019_4t_03202020_step2"                   # sample name
-inputDirBRUX    =  "/mnt/hadoop/store/group/bruxljm/" + step2Sample + "/nominal/"    # Brown Linux path
-inputDirLPC     =   "~/nobackup/" + step2Sample + "/"                                # LHC Physics Center path
-inputDirEOS     =   "./" + step2Sample + "/"                                         # EOS storage path
+inputDirBRUX    = "/mnt/hadoop/store/group/bruxljm/" + step2Sample + "/nominal/"     # Brown Linux path
+inputDirLPC     = "~/nobackup/" + step2Sample + "/"                                  # LHC Physics Center path
+inputDirEOS     = step2Sample		                                             # EOS storage path
 inputDirCondor  = "./"                                                               # Condor remote node path 
 
 # full signal sample
@@ -157,7 +157,7 @@ varList['DNN'] = [
   ['ratio_HTdHT4leadjets','HT/HT(4 leading jets)',''],
   ['csvJet3','DeepCSV(3rdPtJet)',''],
   ['csvJet4','DeepCSV(4thPtJet)',''],
-  ['firstcsvb_bb','DeepCSV(1stDeepCSVJet),'']
+  ['firstcsvb_bb','DeepCSV(1stDeepCSVJet)',''],
   ['secondcsvb_bb','DeepCSV(2ndDeepCSVJet)',''],
   ['thirdcsvb_bb','DeepCSV(3rdDeepCSVJet)',''],
   ['fourthcsvb_bb','DeepCSV(4thDeepCSVJet)',''],
@@ -225,6 +225,6 @@ cutStr =  "( ( leptonPt_MultiLepCalc > 50 && isElectron == 1 ) || " + \
           "( theJetPt_JetSubCalc_PtOrdered[2] > 0 ) && " + \
           "( minDR_lepJet > 0.4 ) && " + \
           "( AK4HT > 510 ) && " + \
-          "( DataPastTriggerX == 1 ) && ( MCPastTriggerX == 1 ) && " +\
-          "( NJetsCSVwithSF_MultiLepCalc >= 2 ) &&" + \                   # vary this cut
-          "( NJets_JetSubCalc >= 4 )"                                     # vary this cut
+          "( DataPastTriggerX == 1 ) && ( MCPastTriggerX == 1 ) && " + \
+          "( NJetsCSVwithSF_MultiLepCalc >= 2 ) &&" + \
+          "( NJets_JetSubCalc >= 4 )"                                     
