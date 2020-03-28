@@ -8,7 +8,6 @@ import time, datetime
 import getopt
 import ROOT
 from ROOT import TMVA, TFile, TTree, TCut, TRandom3, gSystem, gApplication, gROOT
-from TMVAClassification_Optimization import varList
 import varsList
 
 TMVA.Tools.Instance()
@@ -23,9 +22,7 @@ EPOCHS =            10
 BATCH_SIZE =        1028
 PATIENCE =          5
 outf_key =          "Keras"
-numVars =           len(varList)
 WHERE =             "lpc"
-optItr =            "0"
 
 ######################################################
 ######################################################
@@ -36,20 +33,20 @@ optItr =            "0"
 ######################################################
 
 try: # retrieve command line options
-  shortopts   = "b:o:w:e:i" # possible command line options
+  shortopts   = "b:e:o:w:" # possible command line options
   opts, args = getopt.getopt( sys.argv[1:], shortopts ) # associates command line inputs to variables
   
 except getopt.GetoptError: # output error if command line argument invalid
   print("ERROR: unknown options in argument %s" %sys.argv[1:])
   usage()
   sys.exit(1)
-  
+
 for opt, arg in opts:
-    if opt in ('b'): BATCH_SIZE = int(arg)
-    elif opt in ('e'): EPOCHS = int(arg)
-    elif opt in ('o'): outf_key = str(arg)
-    elif opt in ('w'): WHERE = str(arg)
-    elif opt in ('i'): optItr = str(arg)
+    if ("b") in opt: BATCH_SIZE = int(arg)
+    elif ('e') in opt: EPOCHS = int(arg)
+    elif ('o') in opt: outf_key = str(arg)
+    elif ('w') in opt: WHERE = str(arg)
+
 
 ######################################################
 ######################################################
@@ -75,6 +72,7 @@ cutStrS = cutStrC
 cutStrB = cutStrC
 
 # Initialize some containers
+varList = []
 bkg_list = []
 sig_list = []
 bkg_trees_list = []
@@ -83,13 +81,22 @@ hist_list = []
 weightsList = []
 
 #print("Output file: dataset/weights/TMVAOpt_" + outf_key + ".root")
-if WHICH == "brux":
+if WHERE == "brux":
   inputDir = varsList.inputDirBrux
 else:
   inputDir = varsList.inputDirLPC  # edit if not running on LPC
-outputfile = TFile( "dataset/weights/TMVAOptimization_"+ str(numVars) +"vars.root", "RECREATE" )
 
 #print("Input file: {}".format(INPUTFILE))
+READ = False
+with open( "dataset/optimize_" + outf_key + "/varsListHPO.txt") as file:
+  for line in file.readlines():
+    if READ == True:
+      varList.append(str(line).strip())
+    if "Variable List:" in line: READ = True
+
+numVars = len(varList)
+
+outputfile = TFile( "dataset/weights/TMVAOptimization_"+ str(numVars) +"vars.root", "RECREATE" )
 
 loader = TMVA.DataLoader( "dataset/optimize_" + outf_key )
 
@@ -99,15 +106,15 @@ for var in varList:
   
 # add signal to loader
 for i in range( len( varsList.sig1 ) ):
-  sig_list.append( TFile.Open( inputDir + varsList.sig[i] ) )
+  sig_list.append( TFile.Open( inputDir + varsList.sig1[i] ) )
   sig_trees_list.append( sig_list[i].Get( "ljmet" ) )
   sig_trees_list[i].GetEntry(0)
   loader.AddSignalTree( sig_trees_list[i], 1 )
   
 # add background to loader
 for i in range( len( varsList.bkg1 ) ):
-  bkg_list.append( TFile.Open( inputDir + varsList.bkg[i] ) )
-  #print( inputDir + varsList.bkg[i] )
+  bkg_list.append( TFile.Open( inputDir + varsList.bkg1[i] ) )
+  #print( inputDir + varsList.bkg1[i] )
   bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
   bkg_trees_list[i].GetEntry(0)
     
@@ -162,6 +169,6 @@ factory.fMethodsMap.clear()
 
 outputfile.Close()
 
-tempfile = open("dataset/temp_file" + optItr + ".txt",'w')
+tempfile = open("dataset/temp_file.txt",'w')
 tempfile.write(str(ROC))
 tempfile.close()

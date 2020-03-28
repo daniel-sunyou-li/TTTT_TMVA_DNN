@@ -157,14 +157,14 @@ def main(): # runs the program
   
   # add signals to loader
   for i in range( len( varsList.sig0 ) ):
-    sig_list.append( TFile.Open( inputDir + varsList.sig[i] ) )
+    sig_list.append( TFile.Open( inputDir + varsList.sig0[i] ) )
     sig_trees_list.append( sig_list[i].Get( "ljmet" ) )
     sig_trees_list[i].GetEntry(0)
     loader.AddSignalTree( sig_trees_list[i] )
 
   # add backgrounds to loader
   for i in range( len( varsList.bkg0 ) ):
-    bkg_list.append( TFile.Open( inputDir + varsList.bkg[i] ) )
+    bkg_list.append( TFile.Open( inputDir + varsList.bkg0[i] ) )
     bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
     bkg_trees_list[i].GetEntry(0)
   

@@ -24,6 +24,14 @@ importancePath = os.getcwd() + "/dataset/"
 os.system('bash')
 os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh')
 
+######################################################
+######################################################
+######                                          ######
+######       R E A D   A R G U M E N T S        ######
+######                                          ######
+######################################################
+######################################################
+
 DEFAULT_OUTFNAME      = "dataset/weights/TMVA.root"
 DEFAULT_NVARS         = 20
 DEFAULT_WHERE         = "lpc"
@@ -34,19 +42,17 @@ myArgs = np.array([ # Stores the command line arguments
   ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
   ['-v','--verbose','verbose',        True],                
   ['-w','--where','where',            DEFAULT_WHERE],
-  ['-s','--smpsize','samplesize',     DEFAULT_SMPSIZE],
   ['-p','--option','option',          DEFAULT_OPTION],
   ['-n','--nvars','nvars',            DEFAULT_NVARS]
 ])    
 
 try: # retrieve command line options
-  shortopts   = "o:w:p:n:s:vh?" # possible command line options
+  shortopts   = "o:w:p:n:vh?" # possible command line options
   longopts    = ["outputfile=",
                  "verbose=",
                  "where=",
                  "option=",
                  "nvars=",
-                 "samplesize=",
                  "help",
                  "usage"]
   opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
@@ -63,31 +69,33 @@ for opt, arg in opts:
     index = np.where(myArgs[:,1] == opt)[0][0] 
     myArgs[index,3] = arg
 
-# import scikit optimize
-
-if where == "brux":
-  sys.path.insert(0, "/home/{}/.local/lib/python2.7/site-packages".format(bruxUserName)) # add if on BRUX, LPC adds path automatically
-
-from skopt import gp_minimize
-from skopt.space import Real, Integer, Categorical
-from skopt.utils import use_named_args
-    
 # Initialize some variables after reading in arguments
 outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
 verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
 where_index = np.where(myArgs[:,2] == 'where')[0][0]
 option_index = np.where(myArgs[:,2] == 'option')[0][0]
 nvars_index = np.where(myArgs[:,2] == 'nvars')[0][0]
-smpsize_index = np.where(myArgs[:,2] == 'samplesize')[0][0]
         
 option = myArgs[option_index,3]
-numVars = myArgs[nvars_index,3]
+numVars = int(myArgs[nvars_index,3])
 WHERE = myArgs[where_index,3]
-SMPSIZE = myArgs[smpsize_index,3]
-        
-varList = getRankedInputs(os.getcwd() + "/dataset/",varsList.varList["DNN"],numVars,option)
-        
+
+# import scikit optimize
+
+if WHERE == "brux":
+  sys.path.insert(0, "/home/{}/.local/lib/python2.7/site-packages".format(bruxUserName)) # add if on BRUX, LPC adds path automatically
+
+from skopt import gp_minimize
+from skopt.space import Real, Integer, Categorical
+from skopt.utils import use_named_args
+             
 outf_key = str("Keras_" + str(numVars) + "vars")
+
+# Create directory for hyper parameter optimization for # of input variables if it doesn't exit
+if not os.path.exists('dataset/optimize_' + outf_key):
+  os.mkdir('dataset/optimize_' + outf_key)
+  os.mkdir('dataset/optimize_' + outf_key + '/weights')
+
 myArgs[outfname_index,3] = "dataset/weights/TMVAOptimization_" + str(numVars) + "vars.root"
 
 ######################################################
@@ -102,7 +110,7 @@ def usage(): # conveys what command line arguments can be used for main()
   print(" ")
   print("Usage: python %s [options]" % sys.argv[0])
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
-  print("  -p | --option     : variable importance option)
+  print("  -p | --option     : variable importance option")
   print("  -w | --where      : where the script is being run (LPC or BRUX)")
   print("  -n | --nvars      : number of input variables to use (in order)")
   print("  -v | --verbose")
@@ -111,12 +119,12 @@ def usage(): # conveys what command line arguments can be used for main()
   print(" ")
 
 def checkRootVer():
-    if gROOT.GetVersionCode() >= 332288 and gROOT.GetVersionCode() < 332544:
-      print "*** You are running ROOT version 5.18, which has problems in PyROOT such that TMVA"
-      print "*** does not run properly (function calls with enums in the argument are ignored)."
-      print "*** Solution: either use CINT or a C++ compiled version (see TMVA/macros or TMVA/examples),"
-      print "*** or use another ROOT version (e.g., ROOT 5.19)."
-      sys.exit(1)
+  if gROOT.GetVersionCode() >= 332288 and gROOT.GetVersionCode() < 332544:
+    print "*** You are running ROOT version 5.18, which has problems in PyROOT such that TMVA"
+    print "*** does not run properly (function calls with enums in the argument are ignored)."
+    print "*** Solution: either use CINT or a C++ compiled version (see TMVA/macros or TMVA/examples),"
+    print "*** or use another ROOT version (e.g., ROOT 5.19)."
+    sys.exit(1)
    
 def build_custom_model(hidden, nodes, lrate, regulator, pattern, activation):
   model = Sequential()
@@ -157,42 +165,37 @@ def build_custom_model(hidden, nodes, lrate, regulator, pattern, activation):
   )
   return model
 
-def getRankedInputs(importancePath,varList,numVars,option):
+def getRankedInputs(importancePath,outPath,varList,numVars,option):
   numVarsFull = len(varList)
   variableList = []
   valueList = []
   start_reading = False
   importanceFile = open(importancePath + "/VariableImportanceResults_" + str(numVarsFull) + "vars_opt" + str(option) + ".txt")
-    for line in importanceFile.readlines():
-      if start_reading == True:
-        content = line.split("/")
-        if option == 1:
-          variableList.append(content[0].split(".")[1].strip())
-          valueList.append(float(content[4].strip))
-        else:
-          variableList.append(content[0].split(".")[1].strip())
-          valueList.append(float(content[2].strip()))
-      if "Variable Name" in line: start_reading = True
+  for line in importanceFile.readlines():
+    if start_reading == True:
+      content = line.split("/")
+      if option == 1:
+        variableList.append(content[0].split(".")[1].strip())
+        valueList.append(float(content[4].strip()))
+      else:
+        variableList.append(content[0].split(".")[1].strip())
+        valueList.append(float(content[2].strip()))
+    if "Variable Name" in line: start_reading = True
   
   rankedValues, rankedVariables = zip(*sorted(zip(
     valueList, variableList
   )))
-  
-  return rankedVariables[0:numVars]
+  if "varsListHPO.txt" in os.listdir(outPath): os.system("rm {}/varsListHPO.txt".format(outPath))
+  varsListHPO = open(outPath + "/varsListHPO.txt","w")
+  varsListHPO.write("Sum Variable Importance Significance = {}\n".format(np.sum(rankedValues[-numVars:])))
+  varsListHPO.write("Variable List:\n")
+  for variable in rankedVariables[-numVars:]:
+    varsListHPO.write("{}\n".format(variable))
+  varsListHPO.close()
+  return rankedVariables[-numVars:]
 
-######################################################
-######################################################
-######                                          ######
-######       R E A D   A R G U M E N T S        ######
-######                                          ######
-######################################################
-######################################################
-
-
-# Create directory for hyper parameter optimization for # of input variables if it doesn't exit
-if not os.path.exists('dataset/optimize_' + outf_key):
-  os.mkdir('dataset/optimize_' + outf_key)
-  os.mkdir('dataset/optimize_' + outf_key + '/weights')
+# new variable list with reduced size to be used in TMVAClassification_Optimization.py
+varList = getRankedInputs(os.getcwd() + "/dataset/",os.getcwd() + "/dataset/optimize_" + outf_key,varsList.varList["DNN"],int(numVars),int(option))
 
 ######################################################
 ######################################################
@@ -204,19 +207,19 @@ if not os.path.exists('dataset/optimize_' + outf_key):
 
 ### Define some static model parameters
 
-EPOCHS =      15
-PATIENCE =    5
-MODEL_NAME =  "dummy_opt_model.h5"
-TAG_NUM =     str(datetime.datetime.now().hour)
-TAG =         datetime.datetime.today().strftime('%m-%d') + '(' + TAG_NUM + ')'
-LOG_FILE =    open('dataset/optimize_' + outf_key + '/optimize_log_' + TAG + '.txt','w')
+EPOCHS		= "15"
+PATIENCE	= 5
+MODEL_NAME 	= "dummy_opt_model.h5"
+TAG_NUM 	= str(datetime.datetime.now().hour)
+TAG		= datetime.datetime.today().strftime('%m-%d') + '(' + TAG_NUM + ')'
+LOG_FILE 	= open('dataset/optimize_' + outf_key + '/optimize_log_' + TAG + '.txt','w')
 
 ### Hyper parameter survey range
 
-HIDDEN =      [1,4]
+HIDDEN =      [1,3]
 NODES =       [numVars,numVars*10]
 PATTERN =     ['static', 'dynamic']
-BATCH_POW =   [7,11] # used as 2 ^ BATCH_POW
+BATCH_POW =   [8,11] # used as 2 ^ BATCH_POW
 LRATE =       [1e-5,1e-2]
 REGULATOR =   ['none', 'dropout', 'normalization', 'both']
 ACTIVATION =  ['relu','softplus','elu']
@@ -258,30 +261,16 @@ def objective(**X):
   model.save( MODEL_NAME )
   model.summary()  
  
-  BATCH_SIZE = int(2 ** X["batch_power"])
-  
-  temp_names = []
-  "dataset/temp_file.txt"
-  ROCs = []
-  
-  for i in range(SMPSIZE):
-    temp_name = "dataset/temp_file" + str(i) ".txt"
-    temp_names.append(temp_name)
-    os.system("python TMVAClassification_Optimization.py -o {} -b {} -e {} -w {} -i {}".format(
-      outf_key,
-      BATCH_SIZE,
-      EPOCHS,
-      WHERE,
-      i
-    ))
-    while not os.path.exists(temp_name):
-      time.sleep(1)
-      if os.path.exists(temp_name): continue
-    ROC = float(open(temp_name, "r").read())
-    ROCs.append(ROC)
-    os.system("rm {}".format(temp_name))
-  ROC_mean = np.mean(ROCs)
-  ROC_std  = np.std(ROCs)
+  BATCH_SIZE = str(2 ** X["batch_power"])
+  commandString = "python TMVAClassification_Optimization.py -o {} -b {} -e {} -w {}".format(
+    outf_key,
+    BATCH_SIZE,
+    EPOCHS,
+    WHERE
+  )
+  os.system(commandString)  
+  temp_name = "dataset/temp_file.txt"
+  ROC = float(open(temp_name, "r").read())
     
   # Reset the session
   del model
@@ -300,8 +289,9 @@ def objective(**X):
     str(np.around(ROC,5))
     )
   )
-  opt_metric = (1.0 - ROC_mean) + (ROC_std)**2
+  opt_metric = (1.0 - ROC)
   print("Optimization metric value obtained = {:.5f}".format(opt_metric))
+  os.system("rm dataset/temp_file.txt")
   return opt_metric # since the optimizer tries to minimize this function and we want a larger ROC value
 
 def main():

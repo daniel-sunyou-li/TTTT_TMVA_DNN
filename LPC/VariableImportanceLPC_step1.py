@@ -15,11 +15,12 @@ import varsList
 
 # methods
 
-def condor_job(SeedN="",SubSeedN="",count=0,options=['','','',''],maxSeeds=0): # submits a single condor job
+def condor_job(SeedN="",SubSeedN="",count=0,options=['','','','',''],maxSeeds=0): # submits a single condor job
     runDir      = options[0]
     condorDir   = options[1]
     numVars     = options[2]
     eosDir      = options[3]
+    eosUserName = options[4]
     SubmitSeedN = ""
     if SubSeedN == "": 
         fileName = "Keras_" + str(numVars) + "vars_Seed_" + str(SeedN)
@@ -31,7 +32,8 @@ def condor_job(SeedN="",SubSeedN="",count=0,options=['','','',''],maxSeeds=0): #
         "SubmitSeedN":  SubmitSeedN,
         "FILENAME":     fileName,
         "RUNDIR":       runDir,
-        "EOSDIR":       eosDir
+        "EOSDIR":       eosDir,
+        "eosUserName":  eosUserName
     }
     jdfName = condorDir + "%(FILENAME)s.job"%dict
     jdf = open(jdfName, "w")
@@ -48,7 +50,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(SubmitSeedN)s %(EOSDIR)s
+Arguments = %(SubmitSeedN)s %(EOSDIR)s %(eosUserName)s
 Queue 1"""%dict)
     jdf.close()
     os.chdir("%s/"%(condorDir))
@@ -201,7 +203,8 @@ options = [                             # contains arguments for condor job subm
     os.getcwd(),
     os.getcwd() + "/condor_log/",
     len(varList),
-    varsList.inputDirEOS
+    varsList.inputDirEOS,
+    varsList.eosUserName
 ]
 
 # variable parameters  
@@ -210,7 +213,7 @@ cutStrC = varsList.cutStr
 binary_str = "1" * len(varList)         # bitstring full of '1' 
 max_int = int(binary_str,2)             # integer corresponding to bitstring full of '1'
 corr_cut = 80                           # set this between 0 and 100
-maxSeeds = 150                          # maximum number of generated seeds
+maxSeeds = 300                          # maximum number of generated seeds
 numCorrSeed = 5                         # number of de-correlated seeds randomly chosen to submit
 count = 0                               # counts the number of jobs submitted
 

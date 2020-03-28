@@ -227,4 +227,4 @@ cutStr =  "( ( leptonPt_MultiLepCalc > 50 && isElectron == 1 ) || " + \
           "( AK4HT > 510 ) && " + \
           "( DataPastTriggerX == 1 ) && ( MCPastTriggerX == 1 ) && " + \
           "( NJetsCSVwithSF_MultiLepCalc >= 2 ) &&" + \
-          "( NJets_JetSubCalc >= 4 )"                                     
+          "( NJets_JetSubCalc >= 6 )"                                     

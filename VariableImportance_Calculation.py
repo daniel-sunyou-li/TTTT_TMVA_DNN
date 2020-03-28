@@ -48,8 +48,8 @@ def variable_importance(seedDict={},numVars=0,option=0):
         varImportanceFile = open("./dataset/VariableImportanceResults_" + str(numVars) + "vars_opt1.txt","w")
     else:
         varImportanceFile = open("./dataset/VariableImportanceResults_" + str(numVars) + "vars_opt0.txt","w")
-    varImportanceFile.write("Weight: {}".format(varsList.weightStr))
-    varImportanceFile.write("Cut: {}".format(varsList.cut))
+    varImportanceFile.write("Weight: {}\n".format(varsList.weightStr))
+    varImportanceFile.write("Cut: {}\n".format(varsList.cutStr))
     varImportanceFile.write("Number of Variables: {}, Date: {}".format(
         numVars,
         datetime.datetime.today().strftime("%Y-%m-%d")
@@ -88,11 +88,9 @@ def variable_importance(seedDict={},numVars=0,option=0):
                                                    np.std(importances[varIndx]),
                                                    np.mean(importances[varIndx]) / np.std(importances[varIndx])
                                                   ] )
-            normalization += (importance_stats[varIndx][2])**2
         for varIndx in importances:
-            importance_stats[varIndx] = importance_stats[varIndx] / np.sqrt(normalization)
+            importance_stats[varIndx] = importance_stats[varIndx] 
         varImportanceFile.write("\nImportance calculation:")
-        varImportanceFile.write("\nNormalization: {:.3f}".format(1/np.sqrt(normalization)))
         varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<7} / {:<7} / {:<11}".format(
             "Index",
             "Variable Name",
@@ -101,14 +99,14 @@ def variable_importance(seedDict={},numVars=0,option=0):
             "RMS",
             "Importance"
         ))
-    for varIndx in importance_stats:
-        varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<7.4f} / {:<7.4f} / {:<11.3f}".format(
-            str(varIndx+1)+".",
-            varsList.varList["DNN"][varIndx][0],
-            count_arr[varIndx],
-            importance_stats[varIndx][0],
-            importance_stats[varIndx][1],
-            importance_stats[varIndx][2]
+        for varIndx in importance_stats:
+            varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<7.4f} / {:<7.4f} / {:<11.3f}".format(
+                str(varIndx+1)+".",
+                varsList.varList["DNN"][varIndx][0],
+                count_arr[varIndx],
+                importance_stats[varIndx][0],
+                importance_stats[varIndx][1],
+                importance_stats[varIndx][2]
         ))
     else:
         for indx in np.arange(numVars): normalization += importances[indx]
@@ -134,7 +132,7 @@ def variable_importance(seedDict={},numVars=0,option=0):
 def main(condorDirs):
     option = 0  # default option (0) to use traditional variable importance, modified variable importance use option = 1
     if len(sys.argv) == 2:
-        option = sys.argv[1]
+        option = int(sys.argv[1])
     if option == 0:
         print("Using option 0: traditional variable importance (sum of ROC differentials)")
     elif option == 1:
