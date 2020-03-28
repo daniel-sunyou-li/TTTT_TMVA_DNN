@@ -1,5 +1,6 @@
 # TTTT 2017 DNN Classifier using ROOT.TMVA #
-__Train a dense neural network to classify .ROOT samples as being either signal (TTTT) or background events.__
+__Train a dense neural network to classify .ROOT samples as being either signal (TTTT) or background events.__\
+__***Needs updating***__
 
 There are three general steps for this analysis:
   1.  _Input variable importance calculation_
