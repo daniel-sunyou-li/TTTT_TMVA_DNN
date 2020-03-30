@@ -22,15 +22,15 @@ sig = [
 # signal sample partitioned into three equal parts
 # to be used in variable importance
 sig0 = [
-  "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_split0.root"
+  sample.split("hadd")[0] + "split0.root" for sample in sig
 ]
 # to be used in hyper parameter optimization
 sig1 = [
-  "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_split1.root"
+  sample.split("hadd")[0] + "split1.root" for sample in sig
 ]
 # to be used in full training
 sig2 = [
-  "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_split2.root"
+  sample.split("hadd")[0] + "split2.root" for sample in sig
 ]
 
 # full background samples
@@ -53,58 +53,13 @@ bkg = [
   "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_hadd.root"
 ]
 bkg0 = [
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_split0.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_split0.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_split0.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_2_split0.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_3_split0.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_4_split0.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_5_split0.root",
-  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_split0.root",
-  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_split0.root",
-  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_split0.root",
-  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_split0.root",
-  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_split0.root",
-  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_split0.root",
-  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_split0.root",
-  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_split0.root",
-  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_split0.root"
+  sample.split("hadd")[0] + "split0.root" for sample in bkg
 ]
 bkg1 = [
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_split1.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_split1.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_split1.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_2_split1.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_3_split1.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_4_split1.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_5_split1.root",
-  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_split1.root",
-  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_split1.root",
-  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_split1.root",
-  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_split1.root",
-  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_split1.root",
-  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_split1.root",
-  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_split1.root",
-  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_split1.root",
-  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_split1.root"
+  sample.split("hadd")[0] + "split1.root" for sample in bkg
 ]
 bkg2 = [
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_split2.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_split2.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_split2.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_2_split2.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_3_split2.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_4_split2.root",
-  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_5_split2.root",
-  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_split2.root",
-  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_split2.root",
-  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_split2.root",
-  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_split2.root",
-  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_split2.root",
-  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_split2.root",
-  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_split2.root",
-  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_split2.root",
-  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_split2.root"
+  sample.split("hadd")[0] + "split2.root" for sample in bkg
 ]
 
 #[<variable in trees>, <variable name for axes and titles>, <unit>]
