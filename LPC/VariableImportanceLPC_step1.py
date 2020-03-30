@@ -217,6 +217,11 @@ maxSeeds = 300                          # maximum number of generated seeds
 numCorrSeed = 5                         # number of de-correlated seeds randomly chosen to submit
 count = 0                               # counts the number of jobs submitted
 
+# adjust seed generation if arguments are provided
+if len(sys.argv) > 1:
+    maxSeeds = int(sys.argv[1])
+    corr_cut = int(sys.argv[2])
+
 # get the signal correlation matrix and the variable names, used in correlation options
 sig_corr, varNames = get_correlation_matrix(
     inputDir + varsList.sig0[0],
