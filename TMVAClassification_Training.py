@@ -34,11 +34,7 @@ weightStrB = weightStrC # weight equation for Background
 # cut calculation equation
 cutStrC = varsList.cutStr
 cutStrS = cutStrC
-# cutStrS = cutStrC + 'eventNumBranch%3' ## edit this
 cutStrB = cutStrC
-
-# default command line arguments
-DEFAULT_OUTFNAME = "dataset/weights/TMVA.root" 	# this file to be read
 
 ######################################################
 ######################################################
@@ -51,10 +47,12 @@ DEFAULT_OUTFNAME = "dataset/weights/TMVA.root" 	# this file to be read
 def usage(): # conveys what command line arguments can be used for main()
   print(" ")
   print("Usage: python %s [options]" % sys.argv[0])
-  print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
+  print("  -o | --option     : Use 0 for default run, Use 1 for optimized run.")
   print("  -v | --verbose")
   print("  -? | --usage      : print this help message")
   print("  -h | --help       : print this help message")
+  print("  -d | --dataset    : dataset directory with Hyper Parameter Optimization Results")
+  print("  -w | --where      : where the script is being run (LPC or BRUX)")
   print(" ")
 
 def checkRootVer():
@@ -76,11 +74,11 @@ def treeSplit_(arg): # takes in the tree argument and splits into signal and bac
     sys.exit(1)
   return trees
 
-def build_model(hidden, nodes, lrate, regulator, pattern, activation):
+def build_model(hidden, nodes, lrate, regulator, pattern, activation, numVars):
   model = Sequential()
   model.add(Dense(
       nodes,
-      input_dim = len(varsList.varList["DNN"]),
+      input_dim = numVars,
       kernel_initializer = 'glorot_normal',
       activation = activation
     )
@@ -119,8 +117,10 @@ def main(): # runs the program
   checkRootVer() # check that ROOT version is correct
   
   try: # retrieve command line options
-    shortopts   = "o:v:h?" # possible command line options
-    longopts    = ["outputfile=",
+    shortopts   = "d:o:v:w:h?" # possible command line options
+    longopts    = ["dataset=",
+                   "option=",
+                   "where=",
                    "verbose",
                    "help",
                    "usage"]
@@ -132,14 +132,16 @@ def main(): # runs the program
     sys.exit(1)
   
   myArgs = np.array([ # Stores the command line arguments   
-    ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
-    ['-v','--verbose','verbose',        True],                
-  ])
+    ['-d','--dataset','dataset','dataset'],
+    ['-w','--where','where','lpc'],
+    ['-o','--option','option', 0],    
+    ['-v','--verbose','verbose', True]
+  ], dtype = "object")
   
   for opt, arg in opts:
     if opt in myArgs[:,0]:
       index = np.where(myArgs[:,0] == opt)[0][0] # np.where returns a tuple of arrays
-      myArgs[index,3] = arg # override the variables with the command line argument
+      myArgs[index,3] = str(arg) # override the variables with the command line argument
     elif opt in myArgs[:,1]:
       index = np.where(myArgs[:,1] == opt)[0][0] 
       myArgs[index,3] = arg
@@ -154,18 +156,42 @@ def main(): # runs the program
   sig_trees_list = []
   
   # Initialize some variables after reading in arguments
-  outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
+  option_index = np.where(myArgs[:,2] == 'option')[0][0]
+  dataset_index = np.where(myArgs[:,2] == 'dataset')[0][0]
   verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
+  where_index = np.where(myArgs[:,2] == 'where')[0][0]  
 
-  varList = varsList.varList["DNN"]
+  DATASETPATH = myArgs[dataset_index][3]
+  DATASET = DATASETPATH.split("/")[0]
+  OPTION = myArgs[option_index][3]
+  VERBOSE = myArgs[verbose_index][3]
+  WHERE = myArgs[where_index][3]
+  
+  if WHERE == "lpc":  
+    inputDir = varsList.inputDirLPC   
+  else:
+    inputDir = varsList.inputDirBRUX
+ 
+  if OPTION == "0":
+    print("Using Option 0: default varList")
+    varList = varsList.varList["DNN"]
+  
+  elif OPTION == "1":
+    print("Using Option 1: selected data from {}".format(DATASETPATH))
+    varsListHPO = open( DATASETPATH + "/varsListHPO.txt", "r" ).readlines()
+    varList = []
+    START = False
+    for line in varsListHPO:
+      if START == True:
+        varList.append(str(line.strip()))
+      if "Variable List:" in line:
+        START = True
+
   numVars = len(varList)
   outf_key = str("Keras_" + str(numVars) + "vars") 
-  myArgs[outfname_index,3] = "dataset/weights/TMVA_" + outf_key + ".root"
-  
-  
-  outputfile = TFile( myArgs[outfname_index,3], "RECREATE" )
-  inputDir = varsList.inputDirLPC     # edit-me if not running on FNAL LPC, see varsList.py for options
-  
+  OUTF_NAME = DATASET + "/weights/TMVA_" + outf_key + ".root"
+  outputfile = TFile( OUTF_NAME, "RECREATE" )
+
   # initialize and set-up TMVA factory
   
   factory = TMVA.Factory( "Training", outputfile,
@@ -176,22 +202,27 @@ def main(): # runs the program
   
   # initialize and set-up TMVA loader
   
-  loader = TMVA.DataLoader( "dataset" )
+  loader = TMVA.DataLoader( DATASET )
   
-  for var in varList:
-    if var[0] == "NJets_MultiLepCalc": loader.AddVariable(var[0],var[1],var[2],'I')
-    else: loader.AddVariable(var[0],var[1],var[2],"F")
-  
+  if OPTION == "0":
+    for var in varList:
+      if var[0] == "NJets_MultiLepCalc": loader.AddVariable(var[0],var[1],var[2],'I')
+      else: loader.AddVariable(var[0],var[1],var[2],"F")
+  if OPTION == "1":
+    for var in varList:
+      if var == "NJets_MultiLepCalc": loader.AddVariable(var,"","","I")
+      else: loader.AddVariable(var,"","","F")
+ 
   # add signal files
   for i in range( len( varsList.sig2 ) ):
-    sig_list.append( TFile.Open( inputDir + varsList.sig[i] ) )
+    sig_list.append( TFile.Open( inputDir + varsList.sig2[i] ) )
     sig_trees_list.append( sig_list[i].Get("ljmet") )
     sig_trees_list[i].GetEntry(0)
     loader.AddSignalTree( sig_trees_list[i] )
   
   # add background files
   for i in range( len( varsList.bkg2 ) ):
-    bkg_list.append( TFile.Open( inputDir + varsList.bkg[i] ) )
+    bkg_list.append( TFile.Open( inputDir + varsList.bkg2[i] ) )
     bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
     bkg_trees_list[i].GetEntry(0)
     
@@ -216,7 +247,13 @@ def main(): # runs the program
 ######                                          ######
 ######################################################
 ######################################################
-  
+  HIDDEN=0
+  NODES=0
+  LRATE=0.
+  PATTERN=""
+  REGULATOR=""
+  ACTIVATION=""
+  BATCH_SIZE=0 
   # modify this when implementing hyper parameter optimization:
   model_name = 'TTTT_' + str(numVars) + 'vars_model.h5'
   
@@ -224,21 +261,37 @@ def main(): # runs the program
   PATIENCE = 20
   
   # edit these based on hyper parameter optimization results
-  HIDDEN = 3
-  NODES = 100
-  LRATE = 0.01
-  PATTERN = 'static'
-  REGULATOR = 'none'
-  ACTIVATION = 'relu'
-  BATCH_SIZE = 256
-  
+  if OPTION == "0":
+    HIDDEN = 3
+    NODES = 100
+    LRATE = 0.01
+    PATTERN = 'static'
+    REGULATOR = 'none'
+    ACTIVATION = 'relu'
+    BATCH_SIZE = 256
+  if OPTION == "1":
+    datasetDir = os.listdir(DATASETPATH)
+    for file in datasetDir:
+      if "params" in file: optFileName = file
+    optFile = open(DATASETPATH + "/" + optFileName,"r").readlines()
+    START = False
+    for line in optFile:
+      if START == True:
+        if "Hidden" in line: HIDDEN = int(line.split(":")[1].strip())
+        if "Initial" in line: NODES = int(line.split(":")[1].strip())
+        if "Batch" in line: BATCH_SIZE = 2**int(line.split(":")[1].strip())
+        if "Learning" in line: LRATE = float(line.split(":")[1].strip())
+        if "Pattern" in line: PATTERN = str(line.split(":")[1].strip())
+        if "Regulator" in line: REGULATOR = str(line.split(":")[1].strip())
+        if "Activation" in line: ACTIVATION = str(line.split(":")[1].strip())
+      if "Optimized Parameters:" in line: START = True
   kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + model_name + \
                  ':SaveBestOnly=true' + \
                  ':NumEpochs=' + str(EPOCHS) + \
                  ':BatchSize=' + str(BATCH_SIZE) + \
                  ':TriesEarlyStopping=' + str(PATIENCE)
   
-  model = build_model(HIDDEN,NODES,LRATE,REGULATOR,PATTERN,ACTIVATION)
+  model = build_model(HIDDEN,NODES,LRATE,REGULATOR,PATTERN,ACTIVATION,numVars)
   model.save( model_name )
   model.summary()
   
@@ -257,8 +310,11 @@ def main(): # runs the program
   
   print("Finished training in " + str((time.time() - START_TIME) / 60.0) + " minutes.")
   
-  ROC = factory.GetROCIntegral( 'dataset', 'PyKeras')
+  ROC = factory.GetROCIntegral( DATASET, 'PyKeras')
   print('ROC value is: {}'.format(ROC))
+  if OPTION == "1":
+   varsListHPOtxt = open(DATASETPATH + "varsListHPO.txt","a")
+   varsListHPOtxt.write("ROC Value: {}".format(ROC))
 
 main()
 os.system('exit') 
