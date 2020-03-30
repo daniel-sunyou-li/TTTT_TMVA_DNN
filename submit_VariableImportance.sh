@@ -14,10 +14,20 @@ source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.16.00/x86_64-centos7-gcc48-opt
 
 if [ $host == 'BRUX' ] || [ $host == 'brux' ] || [ $host == 'Brux' ] 
 then
-  python ./BRUX/VariableImportanceBRUX_step1.py $seeds $corrCut # running on BRUX clusters
+  if [ $seeds == '' ] || [ $corrCut == '' ]
+  then
+    python ./BRUX/VariableImportanceBRUX_step1.py # running on BRUX clusters
+  else
+    python ./BRUX/VariableImportanceBRUX_step1.py $seeds $corrCut
+  fi
 elif [ $host == 'LPC' ] || [ $host == 'lpc' ] || [ $host == 'Lpc' ]
 then
-  python ./LPC/VariableImportanceLPC_step1.py $seeds $corrCut # running on LPC clusters, use this if input variables > 20
+  if [ $seeds == '' ] || [ $corrCut == '' ]
+  then
+    python ./LPC/VariableImportanceLPC_step1.py # running on LPC clusters, use this if input variables > 20 
+  else
+    python ./LPC/VariableImportanceLPC_step1.py $seeds $corrCut
+  fi
 else
   echo Invalid or No Option Used. Submit as "./submit_VariableImportance.sh BRUX 100 80" or "./submit_VariableImportance.sh LPC 100 80".
 fi
