@@ -14,7 +14,7 @@ if varsList.step2Sample not in os.listdir(lpcHomeDir): os.system("mkdir {}{}".fo
 
 # transfer files from BRUX to LPC
 # will need to input BRUX password
-
+'''
 print("Transferring files from {} to {}...".format(
     varsList.bruxUserName + "@brux.hep.brown.edu:" + varsList.inputDirBRUX,
     lpcHomeDir + varsList.step2Sample
@@ -46,23 +46,18 @@ print("Splitting ROOT files...")
 if "splitROOT.out" in os.listdir(os.getcwd() + "/Tools/"): os.system("rm {}/Tools/splitROOT.out".format(os.getcwd()))
 os.system("g++ `root-config --cflags` `root-config --libs` -o ./Tools/splitROOT.out ./Tools/splitROOT.cpp")
 os.system("./Tools/splitROOT.out")
-    
-# make the eos directory
-os.system("eosmkdir /store/user/{}/{}/".format(
-    varsList.eosUserName,
-    varsList.step2Sample
-    )
-)
-
+'''
 samples0 = varsList.sig0 + varsList.bkg0
 
 for sample in samples0:
-  os.system("xrdcp {}{}/{} root://cmseos.fnal.gov//store/user/{}/{}".format(
+  print("Transferring {} to EOS...".format(sample))
+  os.system("xrdcp {}/{}/{} root://cmseos.fnal.gov//store/user/{}/{}/{}".format(
     lpcHomeDir,
     varsList.step2Sample,
     sample,
     varsList.eosUserName,
-    varsList.step2Sample
+    varsList.step2Sample,
+    sample
   )
 )
 

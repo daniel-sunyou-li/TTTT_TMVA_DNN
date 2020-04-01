@@ -213,7 +213,7 @@ cutStrC = varsList.cutStr
 binary_str = "1" * len(varList)         # bitstring full of '1' 
 max_int = int(binary_str,2)             # integer corresponding to bitstring full of '1'
 corr_cut = 80                           # set this between 0 and 100
-maxSeeds = 300                          # maximum number of generated seeds
+maxSeeds = 5                           # maximum number of generated seeds
 numCorrSeed = 5                         # number of de-correlated seeds randomly chosen to submit
 count = 0                               # counts the number of jobs submitted
 

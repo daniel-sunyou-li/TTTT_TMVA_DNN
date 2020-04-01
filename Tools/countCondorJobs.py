@@ -52,7 +52,7 @@ seedOutDirectory = [seedStr for seedStr in seedDirectory if ".out" in seedStr]
 seedLogDirectory = [seedStr for seedStr in seedDirectory if ".log" in seedStr]
 seedJobDirectory = [seedStr for seedStr in seedDirectory if ".job" in seedStr]
 
-numVars = int(seedOutDirectory[0].split("vars_")[0].split("Keras_")[1])
+numVars = int(seedLogDirectory[0].split("vars_")[0].split("Keras_")[1])
 count_arr = np.zeros(numVars)
 
 total_count = sum(".job" in seedStr for seedStr in seedDirectory)
