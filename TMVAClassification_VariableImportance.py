@@ -48,6 +48,7 @@ def usage(): # conveys what command line arguments can be used for main()
   print("Usage: python %s [options]" % sys.argv[0])
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
   print("  -w | --where : where the script is being run (LPC or BRUX)")
+  print("  -y | --year : production year of sample (2017 or 2018)")
   print("  -s | --seed : random seed for selecting variable (default: '%s')" %DEFAULT_SEED) 
   print("  -v | --verbose")
   print("  -? | --usage      : print this help message")
@@ -64,9 +65,10 @@ def checkRootVer():
       
 def main(): # runs the program
   try: # retrieve command line options
-    shortopts   = "o:w:v:s:h?" # possible command line options
+    shortopts   = "o:w:y:v:s:h?" # possible command line options
     longopts    = ["outputfile=",
 		   "where=",
+		   "year=",
                    "verbose",
 		   "seed=",
                    "help",
@@ -82,6 +84,7 @@ def main(): # runs the program
     ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
     ['-v','--verbose','verbose',        True],
     ['-w','--where','where',		"lpc"],
+    ['-y','--year','year',		2017],
     ['-s','--seed','SeedN',             DEFAULT_SEED],        
   ])
   
@@ -101,9 +104,11 @@ def main(): # runs the program
   outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
   verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
   where_index = np.where(myArgs[:,2] == 'where')[0][0]
+  year_inedx = np.where(myArgs[:,2] == 'year')[0][0]
 
   seed = myArgs[SeedN_index,3]
   where = myArgs[where_index,3]
+  year = int(myArgs[year_index,3])
   varList = varsList.varList["DNN"]
   var_length = len(varList)
 
@@ -135,9 +140,15 @@ def main(): # runs the program
   weightsList = []
   
   if where == "brux":
-  	inputDir = varsList.inputDirBRUX 
+	if year == 2017:
+  		inputDir = varsList.inputDirBRUX2017
+	elif year == 2018:
+		inputDir = varsList.inputDirBRUX2018
   else: 
-  	inputDir = varsList.inputDirCondor 
+	if year == 2017:
+		inputDir = varsList.inputDirCondor2017
+	elif year == 2018:
+		inputDir = varsList.inputDirCondor2018
 	
   # Set up TMVA
   ROOT.TMVA.Tools.Instance()
@@ -156,22 +167,40 @@ def main(): # runs the program
       else: loader.AddVariable( var[0], var[1], var[2], "F" )
   
   # add signals to loader
-  for i in range( len( varsList.sig0 ) ):
-    sig_list.append( TFile.Open( inputDir + varsList.sig0[i] ) )
-    sig_trees_list.append( sig_list[i].Get( "ljmet" ) )
-    sig_trees_list[i].GetEntry(0)
-    loader.AddSignalTree( sig_trees_list[i] )
-
+  if year == 2017:
+		for i in range( len( varsList.sig2017_0 ) ):
+	    sig_list.append( TFile.Open( inputDir + varsList.sig2017_0[i] ) )
+	    sig_trees_list.append( sig_list[i].Get( "ljmet" ) )
+	    sig_trees_list[i].GetEntry(0)
+	    loader.AddSignalTree( sig_trees_list[i] )
+	elif year == 2018:
+		for i in range( len( varsList.sig2018_0 ) ):
+			sig_list.append( TFile.Open( inputDir + varsList.sig2018_0[i] ) )
+			sig_trees_list.append( sig_list[i].Get( "ljmet" ) )
+			sig_trees_list[i].GetEntry(0)
+			loader.AddSignalTree( sig_trees_list[i] )
+	
   # add backgrounds to loader
-  for i in range( len( varsList.bkg0 ) ):
-    bkg_list.append( TFile.Open( inputDir + varsList.bkg0[i] ) )
-    bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
-    bkg_trees_list[i].GetEntry(0)
-  
-    if bkg_trees_list[i].GetEntries() == 0:
-      continue
-    loader.AddBackgroundTree( bkg_trees_list[i] )
+	if year == 2017:
+		for i in range( len( varsList.bkg2017_0 ) ):
+			bkg_list.append( TFile.Open( inputDir + varsList.bkg2017_0[i] ) )
+			bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
+			bkg_trees_list[i].GetEntry(0)
 
+			if bkg_trees_list[i].GetEntries() == 0:
+				continue
+			loader.AddBackgroundTree( bkg_trees_list[i] )
+			
+  elif year == 2018:
+		for i in range( len( varsList.bkg2018_0 ) ):
+			bkg_list.append( TFile.Open( inputDir + varsList.bkg2018_0[i] ) )
+			bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
+			bkg_trees_list[i].GetEntry(0)
+
+			if bkg_trees_list[i].GetEntries() == 0:
+				continue
+			loader.AddBackgroundTree( bkg_trees_list[i] )
+			
   # set signal and background weights 
   loader.SetSignalWeightExpression( weightStrS )
   loader.SetBackgroundWeightExpression( weightStrB )
