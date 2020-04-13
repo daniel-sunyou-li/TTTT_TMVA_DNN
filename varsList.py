@@ -8,33 +8,53 @@ bruxUserName = "dli50"
 lpcUserName = "dsunyou"
 eosUserName = "dali"
 
-step2Sample     = "FWLJMET102X_1lep2017_Oct2019_4t_03202020_step2"                   # sample name
-inputDirBRUX    = "/mnt/hadoop/store/group/bruxljm/" + step2Sample + "/nominal/"     # Brown Linux path
-inputDirLPC     = "~/nobackup/" + step2Sample + "/"                                  # LHC Physics Center path
-inputDirEOS     = step2Sample		                                             # EOS storage path
-inputDirCondor  = "./"                                                               # Condor remote node path 
+step2Sample2017   = "FWLJMET102X_1lep2017_Oct2019_4t_03202020_step2"                    # current 2017 sample
+step2Sample2018   = "FWLJMET102X_1lep2018_Oct2019_4t_03302020_step2"                    # current 2018 sample
+inputDirBRUX2017  = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2017 + "/nominal/"  # Brown Linux path
+inputDirBRUX2018  = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2018 + "/nominal/"  
+inputDirLPC2017   = "~/nobackup/" + step2Sample2017 + "/"                               # LHC Physics Center path
+inputDirEOS2017   = step2Sample2017		                                                  # EOS storage path
+inputDirLPC2018   = "~/nobackup/" + step2Sample2018 + "/"                               
+inputDirEOS2018   = step2Sample2018		                                                  
+inputDirCondor    = "./"                                                                # Condor remote node path 
 
 # full signal sample
-sig = [
+sig2017 = [
   "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"                         
+]
+
+sig2018 = [
+  "TTTT_TuneCP5_13TeV-amcatnlo-pythia8_hadd.root" 
 ]
 
 # signal sample partitioned into three equal parts
 # to be used in variable importance
-sig0 = [
-  sample.split("hadd")[0] + "split0.root" for sample in sig
+sig2017_0 = [
+  sample.split("hadd")[0] + "split0.root" for sample in sig2017
 ]
 # to be used in hyper parameter optimization
-sig1 = [
-  sample.split("hadd")[0] + "split1.root" for sample in sig
+sig2017_1 = [
+  sample.split("hadd")[0] + "split1.root" for sample in sig2017
 ]
 # to be used in full training
-sig2 = [
-  sample.split("hadd")[0] + "split2.root" for sample in sig
+sig2017_2 = [
+  sample.split("hadd")[0] + "split2.root" for sample in sig2017
+]
+
+sig2018_0 = [
+  sample.split("hadd")[0] + "split0.root" for sample in sig2018
+]
+# to be used in hyper parameter optimization
+sig2018_1 = [
+  sample.split("hadd")[0] + "split1.root" for sample in sig2018
+]
+# to be used in full training
+sig2018_2 = [
+  sample.split("hadd")[0] + "split2.root" for sample in sig2018
 ]
 
 # full background samples
-bkg = [
+bkg2017 = [
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_hadd.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_hadd.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_hadd.root",
@@ -52,14 +72,41 @@ bkg = [
   "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_hadd.root",
   "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_hadd.root"
 ]
-bkg0 = [
-  sample.split("hadd")[0] + "split0.root" for sample in bkg
+
+bkg2018 = [
+  "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT0Njet0_ttbb_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT0Njet0_ttcc_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT0Njet0_ttjj_2_hadd.root",
+  "TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_ttbb_hadd.root",
+  "TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_ttcc_hadd.root",
+  "TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_ttjj_hadd.root",
+  "TTToHadronic_TuneCP5_13TeV-powheg-pythia8_ttbb_hadd.root",
+  "TTToHadronic_TuneCP5_13TeV-powheg-pythia8_ttcc_hadd.root",
+  "TTToHadronic_TuneCP5_13TeV-powheg-pythia8_ttjj_hadd.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_13TeV-powheg-pythia8_ttbb_hadd.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_13TeV-powheg-pythia8_ttcc_hadd.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_13TeV-powheg-pythia8_ttjj_hadd.root"
 ]
-bkg1 = [
-  sample.split("hadd")[0] + "split1.root" for sample in bkg
+
+bkg2017_0 = [
+  sample.split("hadd")[0] + "split0.root" for sample in bkg2017
 ]
-bkg2 = [
-  sample.split("hadd")[0] + "split2.root" for sample in bkg
+bkg2017_1 = [
+  sample.split("hadd")[0] + "split1.root" for sample in bkg2017
+]
+bkg2017_2 = [
+  sample.split("hadd")[0] + "split2.root" for sample in bkg2017
+]
+
+bkg2018_0 = [
+  sample.split("hadd")[0] + "split0.root" for sample in bkg2017
+]
+bkg12018_1 = [
+  sample.split("hadd")[0] + "split1.root" for sample in bkg2017
+]
+bkg2018_2 = [
+  sample.split("hadd")[0] + "split2.root" for sample in bkg2017
 ]
 
 #[<variable in trees>, <variable name for axes and titles>, <unit>]
@@ -103,16 +150,16 @@ varList['DNN'] = [
   ['PtFifthJet','5^{th} jet p_{T}','GeV'],
   ['mass_minLLdr','M(j,j) with min[#DeltaR(j,j)], j #neq b','GeV'],
   ['mass_maxBBmass','max[M(b,b)]','GeV'],
-  ['deltaR_lepMinMlj','#DeltaR(l,j) with min M(l, j)',''],
+  #['deltaR_lepMinMlj','#DeltaR(l,j) with min M(l, j)',''],
   ['deltaPhi_lepJetInMinMljet','#DeltaPhi(l,j) with min M(l, j)',''],
-  ['deltaR_lepMinMlb','#DeltaR(l,b) with min M(l, b)',''],
+  #['deltaR_lepMinMlb','#DeltaR(l,b) with min M(l, b)',''],
   ['deltaPhi_lepbJetInMinMlb','#DeltaPhi(l,b) with min M(l, b)',''],
   ['M_allJet_W','M(allJets, leptoninc W)','GeV'],
   ['HT_bjets','HT(bjets)','GeV'],
   ['ratio_HTdHT4leadjets','HT/HT(4 leading jets)',''],
   ['csvJet3','DeepCSV(3rdPtJet)',''],
   ['csvJet4','DeepCSV(4thPtJet)',''],
-  ['firstcsvb_bb','DeepCSV(1stDeepCSVJet)',''],
+  #['firstcsvb_bb','DeepCSV(1stDeepCSVJet)',''],
   ['secondcsvb_bb','DeepCSV(2ndDeepCSVJet)',''],
   ['thirdcsvb_bb','DeepCSV(3rdDeepCSVJet)',''],
   ['fourthcsvb_bb','DeepCSV(4thDeepCSVJet)',''],
@@ -121,10 +168,10 @@ varList['DNN'] = [
   ['Sphericity','Sphericity','Sphericity'],
   ['Aplanarity','Aplanarity','Aplanarity'],
   ['mass_lepJJ_minJJdr','M(l,jj) with min[#DeltaR(j,j)], j #neq b','GeV'],
-  ['deltaR_lepBJets0','#DeltaR(l,b_{1})',''],
+  #['deltaR_lepBJets0','#DeltaR(l,b_{1})',''],
   ['minDR_lepJet','min[#DeltaR(l,j)]',''],
-  ['mass_maxBBpt','M(b,b) with max[p_{T}(b,b)]','GeV'],
-  ['mass_lepBB_minBBdr','M(l,bb) with min[#DeltaR(b,b)]','GeV'],
+  #['mass_maxBBpt','M(b,b) with max[p_{T}(b,b)]','GeV'],
+  #['mass_lepBB_minBBdr','M(l,bb) with min[#DeltaR(b,b)]','GeV'],
   ['BDTtrijet1','trijet1 discriminator',''],
   ['BDTtrijet2','trijet2 discriminator',''],
   ['BDTtrijet3','trijet3 discriminator',''],
@@ -132,7 +179,7 @@ varList['DNN'] = [
   ['NresolvedTops1pFake','resolvedTop multiplicity',''],
   ['NJetsTtagged','top multiplicity',''],
   ['NJetsWtagged','W multiplicity',''],
-  ['NJetsCSVwithSF_JetSubCalc','bjet multiplicity',''],
+  ['NJetsCSVwithSF_MultiLepCalc','bjet multiplicity',''],
   #['topJet1Index_HOTTaggerCalc','',''],           # added HOT Tagger variables
   #['topJet2Index_HOTTaggerCalc','',''],           # these are low-level and are incorporated into trijet variables
   #['topJet3Index_HOTTaggerCalc','',''],
