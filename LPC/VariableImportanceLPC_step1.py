@@ -35,13 +35,13 @@ def condor_job(SeedN="",SubSeedN="",count=0,options=['','','','','',''],axSeeds=
         "RUNDIR":       runDir,
         "EOSDIR":       eosDir,
         "eosUserName":  eosUserName
-        "year":         year,
+        "YEAR":         year,
     }
     jdfName = condorDir + "%(FILENAME)s.job"%dict
     jdf = open(jdfName, "w")
     jdf.write(
 """universe = vanilla
-Executable = %(RUNDIR)s/LPC/VariableImportanceLPC_step2.sh
+Executable = %(RUNDIR)s/LPC/VariableImportanceLPC_step2_%(YEAR)s.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 request_memory = 4.2 GB
@@ -52,7 +52,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(SubmitSeedN)s %(EOSDIR)s %(eosUserName)s %(year)s
+Arguments = %(SubmitSeedN)s %(EOSDIR)s %(eosUserName)s
 Queue 1"""%dict)
     jdf.close()
     os.chdir("%s/"%(condorDir))
