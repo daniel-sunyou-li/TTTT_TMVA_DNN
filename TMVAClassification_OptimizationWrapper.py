@@ -35,6 +35,7 @@ os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/s
 DEFAULT_OUTFNAME      = "dataset/weights/TMVA.root"
 DEFAULT_NVARS         = 20
 DEFAULT_WHERE         = "lpc"
+DEFAULT_YEAR          = 2017
 DEFAULT_OPTION        = 1
 DEFAULT_SMPSIZE       = 3
 
@@ -42,15 +43,17 @@ myArgs = np.array([ # Stores the command line arguments
   ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
   ['-v','--verbose','verbose',        True],                
   ['-w','--where','where',            DEFAULT_WHERE],
+  ['-y','--year','year',              DEFAULT_YEAR],
   ['-p','--option','option',          DEFAULT_OPTION],
   ['-n','--nvars','nvars',            DEFAULT_NVARS]
 ])    
 
 try: # retrieve command line options
-  shortopts   = "o:w:p:n:vh?" # possible command line options
+  shortopts   = "o:w:y:p:n:vh?" # possible command line options
   longopts    = ["outputfile=",
                  "verbose=",
                  "where=",
+                 "year=",
                  "option=",
                  "nvars=",
                  "help",
@@ -73,16 +76,18 @@ for opt, arg in opts:
 outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
 verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
 where_index = np.where(myArgs[:,2] == 'where')[0][0]
+year_index = np.where(myArgs[:,2] == 'year')[0][0]
 option_index = np.where(myArgs[:,2] == 'option')[0][0]
 nvars_index = np.where(myArgs[:,2] == 'nvars')[0][0]
         
 option = myArgs[option_index,3]
 numVars = int(myArgs[nvars_index,3])
-WHERE = myArgs[where_index,3]
+where = myArgs[where_index,3]
+year = int(myArgs[year_index,3])
 
 # import scikit optimize
 
-if WHERE == "brux":
+if where == "brux":
   sys.path.insert(0, "/home/{}/.local/lib/python2.7/site-packages".format(bruxUserName)) # add if on BRUX, LPC adds path automatically
 
 from skopt import gp_minimize
@@ -112,6 +117,7 @@ def usage(): # conveys what command line arguments can be used for main()
   print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
   print("  -p | --option     : variable importance option")
   print("  -w | --where      : where the script is being run (LPC or BRUX)")
+  print("  -y | --year       : production year (2017 or 2018)")
   print("  -n | --nvars      : number of input variables to use (in order)")
   print("  -v | --verbose")
   print("  -? | --usage      : print this help message")
@@ -262,11 +268,12 @@ def objective(**X):
   model.summary()  
  
   BATCH_SIZE = str(2 ** X["batch_power"])
-  commandString = "python TMVAClassification_Optimization.py -o {} -b {} -e {} -w {}".format(
+  commandString = "python TMVAClassification_Optimization.py -o {} -b {} -e {} -w {} -y {}".format(
     outf_key,
     BATCH_SIZE,
     EPOCHS,
-    WHERE
+    where,
+    year
   )
   os.system(commandString)  
   temp_name = "dataset/temp_file.txt"
