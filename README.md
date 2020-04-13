@@ -1,4 +1,4 @@
-# TTTT 2017 DNN Classifier using ROOT.TMVA #
+# TTTT DNN Classifier using ROOT.TMVA #
 __Train a dense neural network to classify .ROOT samples as being either signal (TTTT) or background events.__\
 __***Needs updating***__
 
