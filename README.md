@@ -75,9 +75,9 @@ The variable importance analysis is run by the command:
 
     mkdir condor_log
     voms-proxy-init --valid 192:00 -voms cms
-    ./submit_VariableImportance.sh LPC 100 80 
+    ./submit_VariableImportance.sh LPC 2017 100 80 
 
-which submits Condor jobs for training the networks, each representing a different input subset to be trained.  The first argument is to specify which server the script is being run out of; the second argument specifies the number of "seeds" being generated; and the third argument specifies the correlation coefficient cut.  
+which submits Condor jobs for training the networks, each representing a different input subset to be trained.  The first argument is to specify which server the script is being run out of; the second argument specifies which production year samples to use; the third argument specifies the number of "seeds" being generated; and the fourth argument specifies the correlation coefficient cut.  
 * A seed is a binary string with a character length equal to the number of input variables considered.  A value of `1` indicates that the variable should be included as an input to the network and a `0` is to exclude the variable. The total number of Condor jobs relates to the number of seeds by roughly: `# Jobs ~ # Seeds + 0.5 * # Seeds * # Variables`.
 
 The results and logs are stored in `condor_log` where the desired result is the ROC value, which is contained in the `.out` file. 
