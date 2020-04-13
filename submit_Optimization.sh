@@ -21,5 +21,5 @@ then
   python TMVAClassification_OptimizationWrapper.py -w lpc -n $numVars -o $option -y $year
 else
   echo Invalid or No Options Used. Need to include "host" and "number of variables". 
-  echo Example submissions: "./submit_OptimizationWrapper.sh lpc 20 1" or "./submit_OptimizationWrapper.sh brux 20 0"
+  echo Example submissions: "./submit_OptimizationWrapper.sh lpc 2017 20 1" or "./submit_OptimizationWrapper.sh brux 2018 20 0"
 fi
