@@ -15,12 +15,13 @@ import varsList
 
 # methods
 
-def condor_job(SeedN="",SubSeedN="",count=0,options=['','','','',''],maxSeeds=0): # submits a single condor job
+def condor_job(SeedN="",SubSeedN="",count=0,options=['','','','','',''],axSeeds=0): # submits a single condor job
     runDir      = options[0]
     condorDir   = options[1]
     numVars     = options[2]
     eosDir      = options[3]
     eosUserName = options[4]
+    year        = options[5]
     SubmitSeedN = ""
     if SubSeedN == "": 
         fileName = "Keras_" + str(numVars) + "vars_Seed_" + str(SeedN)
@@ -34,6 +35,7 @@ def condor_job(SeedN="",SubSeedN="",count=0,options=['','','','',''],maxSeeds=0)
         "RUNDIR":       runDir,
         "EOSDIR":       eosDir,
         "eosUserName":  eosUserName
+        "year":         year,
     }
     jdfName = condorDir + "%(FILENAME)s.job"%dict
     jdf = open(jdfName, "w")
@@ -50,7 +52,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(SubmitSeedN)s %(EOSDIR)s %(eosUserName)s
+Arguments = %(SubmitSeedN)s %(EOSDIR)s %(eosUserName)s %(year)s
 Queue 1"""%dict)
     jdf.close()
     os.chdir("%s/"%(condorDir))
@@ -200,11 +202,12 @@ inputDir = varsList.inputDirLPC         # string for path to ljmet samples
 varList = varsList.varList["DNN"]       # contains all the input variables
 used_seeds = []                         # stores which seeds have been used
 options = [                             # contains arguments for condor job submission functions
-    os.getcwd(),
-    os.getcwd() + "/condor_log/",
-    len(varList),
-    varsList.inputDirEOS,
-    varsList.eosUserName
+    os.getcwd(),                        # running/working directory
+    os.getcwd() + "/condor_log/",       # condor job result directory
+    len(varList),                       # number of input variables
+    varsList.inputDirEOS,               # EOS directory
+    varsList.eosUserName,               # EOS User name
+    int(sys.argv[1])                    # production year
 ]
 
 # variable parameters  
@@ -213,23 +216,34 @@ cutStrC = varsList.cutStr
 binary_str = "1" * len(varList)         # bitstring full of '1' 
 max_int = int(binary_str,2)             # integer corresponding to bitstring full of '1'
 corr_cut = 80                           # set this between 0 and 100
-maxSeeds = 5                           # maximum number of generated seeds
+maxSeeds = 5                            # maximum number of generated seeds
 numCorrSeed = 5                         # number of de-correlated seeds randomly chosen to submit
 count = 0                               # counts the number of jobs submitted
+sig_corr = None                         # will hold signal correlation matrix
+varNames = None                         # list of input variable names
 
-# adjust seed generation if arguments are provided
-if len(sys.argv) > 1:
-    maxSeeds = int(sys.argv[1])
-    corr_cut = int(sys.argv[2])
+# adjust seed generation if seed and cut arguments are provided
+if len(sys.argv) > 2:
+    maxSeeds = int(sys.argv[2])
+    corr_cut = int(sys.argv[3])
 
 # get the signal correlation matrix and the variable names, used in correlation options
-sig_corr, varNames = get_correlation_matrix(
-    inputDir + varsList.sig0[0],
-    inputDir + varsList.bkg0[0],     # choose a random background sample since we only care about signal
-    weightStrC,
-    TCut(cutStrC),
-    varList
-)
+if year == 2017:
+    sig_corr, varNames = get_correlation_matrix(
+        inputDir + varsList.sig2017_0[0],
+        inputDir + varsList.bkg2017_0[0],     # choose a random background sample since we only care about signal
+        weightStrC,
+        TCut(cutStrC),
+        varList
+    )
+elif year == 2018:
+    sig_corr, varNames = get_correlation_matrix(
+        inputDir + varsList.sig2018_0[0],
+        inputDir + varsList.bkg2018_0[0],     # choose a random background sample since we only care about signal
+        weightStrC,
+        TCut(cutStrC),
+        varList
+    )
 
 print("Using {} inputs...".format(len(varNames)))
 
