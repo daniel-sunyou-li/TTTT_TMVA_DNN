@@ -1,8 +1,9 @@
 #!/bin/sh
 
 host=${1}
-numVars=${2}
-option=${3}
+year=${2}
+numVars=${3}
+option=${4}
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
@@ -12,12 +13,12 @@ eval `scramv1 runtime -sh`
 source /cvmfs/sft.cern.ch/lcg/contrib/gcc/7.3.0/x86_64-centos7-gcc7-opt/setup.sh
 source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.16.00/x86_64-centos7-gcc48-opt/bin/thisroot.sh
 
-if [ $host == 'BRUX' ] || [ $host == 'brux' ] || [ $host == 'Brux' ]
+if [ $host == 'BRUX' ] || [ $host == 'brux' ] || [ $host == 'Brux' ] && [ [ $year = '2017' ] || [ $year = '2018' ] ]
 then
-  python TMVAClassification_OptimizationWrapper -w brux -n $numVars -o $option
-elif [ $host == 'LPC' ] || [ $host == 'lpc' ] || [ $host == 'Lpc' ]
+  python TMVAClassification_OptimizationWrapper -w brux -n $numVars -o $option -y $year
+elif [ $host == 'LPC' ] || [ $host == 'lpc' ] || [ $host == 'Lpc' ] && [ [ $year = '2017' ] || [ $year = '2018' ] ]
 then
-  python TMVAClassification_OptimizationWrapper.py -w lpc -n $numVars -o $option
+  python TMVAClassification_OptimizationWrapper.py -w lpc -n $numVars -o $option -y $year
 else
   echo Invalid or No Options Used. Need to include "host" and "number of variables". 
   echo Example submissions: "./submit_OptimizationWrapper.sh lpc 20 1" or "./submit_OptimizationWrapper.sh brux 20 0"
