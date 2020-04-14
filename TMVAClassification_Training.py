@@ -53,6 +53,7 @@ def usage(): # conveys what command line arguments can be used for main()
   print("  -h | --help       : print this help message")
   print("  -d | --dataset    : dataset directory with Hyper Parameter Optimization Results")
   print("  -w | --where      : where the script is being run (LPC or BRUX)")
+  print("  -y | --year       : production year (2017 or 2018)")
   print(" ")
 
 def checkRootVer():
@@ -117,10 +118,11 @@ def main(): # runs the program
   checkRootVer() # check that ROOT version is correct
   
   try: # retrieve command line options
-    shortopts   = "d:o:v:w:h?" # possible command line options
+    shortopts   = "d:o:v:w:y:h?" # possible command line options
     longopts    = ["dataset=",
                    "option=",
                    "where=",
+                   "year=",
                    "verbose",
                    "help",
                    "usage"]
@@ -134,6 +136,7 @@ def main(): # runs the program
   myArgs = np.array([ # Stores the command line arguments   
     ['-d','--dataset','dataset','dataset'],
     ['-w','--where','where','lpc'],
+    ['-y','--year','year',2017],
     ['-o','--option','option', 0],    
     ['-v','--verbose','verbose', True]
   ], dtype = "object")
@@ -159,18 +162,26 @@ def main(): # runs the program
   option_index = np.where(myArgs[:,2] == 'option')[0][0]
   dataset_index = np.where(myArgs[:,2] == 'dataset')[0][0]
   verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
-  where_index = np.where(myArgs[:,2] == 'where')[0][0]  
+  where_index = np.where(myArgs[:,2] == 'where')[0][0]
+  year_index = np.where(myArgs[:,2] == 'year')[0][0]
 
   DATASETPATH = myArgs[dataset_index][3]
   DATASET = DATASETPATH.split("/")[0]
   OPTION = myArgs[option_index][3]
   VERBOSE = myArgs[verbose_index][3]
   WHERE = myArgs[where_index][3]
+  YEAR = myArgs[year_index][3]
   
-  if WHERE == "lpc":  
-    inputDir = varsList.inputDirLPC   
+  if WHERE == "lpc":
+    if YEAR == 2017:
+      inputDir = varsList.inputDirLPC2017
+    elif YEAR == 2018:
+      inputDir = varsList.inputDirLPC2018
   else:
-    inputDir = varsList.inputDirBRUX
+    if YEAR == 2017:
+      inputDir = varsList.inputDirBRUX2017
+    elif YEAR == 2018:
+      inputDir = varsList.inputDirBRUX2018
  
   if OPTION == "0":
     print("Using Option 0: default varList")
@@ -214,21 +225,40 @@ def main(): # runs the program
       else: loader.AddVariable(var,"","","F")
  
   # add signal files
-  for i in range( len( varsList.sig2 ) ):
-    sig_list.append( TFile.Open( inputDir + varsList.sig2[i] ) )
-    sig_trees_list.append( sig_list[i].Get("ljmet") )
-    sig_trees_list[i].GetEntry(0)
-    loader.AddSignalTree( sig_trees_list[i] )
+  if YEAR == 2017:
+    for i in range( len( varsList.sig2017_2 ) ):
+      sig_list.append( TFile.Open( inputDir + varsList.sig2017_2[i] ) )
+      sig_trees_list.append( sig_list[i].Get("ljmet") )
+      sig_trees_list[i].GetEntry(0)
+      loader.AddSignalTree( sig_trees_list[i] )
+      
+  elif YEAR == 2018:
+    for i in range( len( varsList.sig2018_2 ) ):
+      sig_list.append( TFile.Open( inputDir + varsList.sig2018_2[i] ) )
+      sig_trees_list.append( sig_list[i].Get("ljmet") )
+      sig_trees_list[i].GetEntry(0)
+      loader.AddSignalTree( sig_trees_list[i] )
   
   # add background files
-  for i in range( len( varsList.bkg2 ) ):
-    bkg_list.append( TFile.Open( inputDir + varsList.bkg2[i] ) )
-    bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
-    bkg_trees_list[i].GetEntry(0)
-    
-    if bkg_trees_list[i].GetEntries() == 0:
-      continue
-    loader.AddBackgroundTree( bkg_trees_list[i] )
+  if YEAR == 2017:
+    for i in range( len( varsList.bkg2017_2 ) ):
+      bkg_list.append( TFile.Open( inputDir + varsList.bkg2017_2[i] ) )
+      bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
+      bkg_trees_list[i].GetEntry(0)
+
+      if bkg_trees_list[i].GetEntries() == 0:
+        continue
+      loader.AddBackgroundTree( bkg_trees_list[i] )
+
+  elif YEAR == 2018:
+    for i in range( len( varsList.bkg2018_2 ) ):
+      bkg_list.append( TFile.Open( inputDir + varsList.bkg2018_2[i] ) )
+      bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
+      bkg_trees_list[i].GetEntry(0)
+
+      if bkg_trees_list[i].GetEntries() == 0:
+        continue
+      loader.AddBackgroundTree( bkg_trees_list[i] )
   
   loader.SetSignalWeightExpression( weightStrS )
   loader.SetBackgroundWeightExpression( weightStrB )
