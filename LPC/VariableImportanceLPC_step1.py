@@ -15,7 +15,7 @@ import varsList
 
 # methods
 
-def condor_job(SeedN="",SubSeedN="",count=0,options=['','','','','',''],axSeeds=0): # submits a single condor job
+def condor_job(SeedN="",SubSeedN="",count=0,options=['','','','','',''],maxSeeds=0): # submits a single condor job
     runDir      = options[0]
     condorDir   = options[1]
     numVars     = options[2]
