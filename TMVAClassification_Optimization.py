@@ -17,13 +17,14 @@ os.environ['KERAS_BACKEND'] = 'tensorflow'
 os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh')
 
 # Define some variables defaults
-MODEL_NAME =        "dummy_opt_model.h5"
-EPOCHS =            10
-BATCH_SIZE =        1028
-PATIENCE =          5
-outf_key =          "Keras"
-where =             "lpc"
-year =              2017
+modelName = "dummy_opt_model.h5"
+epochs =    10
+batchSize = 2**8
+patience =  5
+outf_key =  "Keras"
+where =     "lpc"
+year =      2017
+dataset =   "dataset"
 
 ######################################################
 ######################################################
@@ -34,7 +35,7 @@ year =              2017
 ######################################################
 
 try: # retrieve command line options
-  shortopts   = "b:e:o:w:" # possible command line options
+  shortopts   = "b:e:o:w:d:" # possible command line options
   opts, args = getopt.getopt( sys.argv[1:], shortopts ) # associates command line inputs to variables
   
 except getopt.GetoptError: # output error if command line argument invalid
@@ -43,11 +44,12 @@ except getopt.GetoptError: # output error if command line argument invalid
   sys.exit(1)
 
 for opt, arg in opts:
-    if ("b") in opt: BATCH_SIZE = int(arg)
-    elif ('e') in opt: EPOCHS = int(arg)
-    elif ('o') in opt: outf_key = str(arg)
-    elif ('w') in opt: where = str(arg)
-    elif ('y') in opt: year = str(arg)
+    if ("b") in opt: batchSize = int(arg)
+    elif ("e") in opt: epochs = int(arg)
+    elif ("o") in opt: outf_key = str(arg)
+    elif ("w") in opt: where = str(arg)
+    elif ("y") in opt: year = str(arg)
+    elif ("d") in opt: dataset = str(arg)
 
 
 ######################################################
@@ -96,7 +98,7 @@ else:
 
 #print("Input file: {}".format(INPUTFILE))
 READ = False
-with open( "dataset/optimize_" + outf_key + "/varsListHPO.txt") as file:
+with open( dataset + "/optimize_" + outf_key + "/varsListHPO.txt") as file:
   for line in file.readlines():
     if READ == True:
       varList.append(str(line).strip())
@@ -104,13 +106,12 @@ with open( "dataset/optimize_" + outf_key + "/varsListHPO.txt") as file:
 
 numVars = len(varList)
 
-outputfile = TFile( "dataset/weights/TMVAOptimization_"+ str(numVars) +"vars.root", "RECREATE" )
+outputfile = TFile( dataset + "/weights/TMVAOptimization_"+ str(numVars) +"vars.root", "RECREATE" )
 
-loader = TMVA.DataLoader( "dataset/optimize_" + outf_key )
+loader = TMVA.DataLoader( dataset + "/optimize_" + outf_key )
 
 for var in varList:
-  if var == 'NJets_MultiLepCalc': loader.AddVariable(var,"","","I")
-  else: loader.AddVariable(var,"","","F")
+  loader.AddVariable(var,"","","F")
   
 # add signal to loader
 if year == 2017:
@@ -168,11 +169,11 @@ factory = TMVA.Factory(
 
 (TMVA.gConfig().GetIONames()).fWeightFileDir = '/weights'
 
-kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + MODEL_NAME +\
+kerasSetting = '!H:!V:VarTransform=G:FilenameModel=' + modelName +\
                ':SaveBestOnly=true' +\
-               ':NumEpochs=' + str(EPOCHS) +\
-               ':BatchSize=' + str(BATCH_SIZE) +\
-               ':TriesEarlyStopping=' + str(PATIENCE)
+               ':NumEpochs=' + str(epochs) +\
+               ':BatchSize=' + str(batchSize) +\
+               ':TriesEarlyStopping=' + str(patience)
   
 factory.BookMethod(
   loader,
@@ -185,13 +186,13 @@ factory.TrainAllMethods()
 factory.TestAllMethods()
 factory.EvaluateAllMethods()
   
-ROC = factory.GetROCIntegral( 'dataset/optimize_' + outf_key, 'PyKeras' )
+ROC = factory.GetROCIntegral( dataset + "/optimize_" + outf_key, "PyKeras" )
   
 factory.DeleteAllMethods()
 factory.fMethodsMap.clear()
 
 outputfile.Close()
 
-tempfile = open("dataset/temp_file.txt",'w')
+tempfile = open(dataset + "/temp_file.txt", "w")
 tempfile.write(str(ROC))
 tempfile.close()
