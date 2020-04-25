@@ -18,9 +18,6 @@ from keras.layers import BatchNormalization
 from keras.optimizers import Adam
 from keras import backend
 
-bruxUserName = "dli50"
-importancePath = os.getcwd() + "/dataset/"
-
 os.system('bash')
 os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh')
 
@@ -32,32 +29,33 @@ os.system('source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/s
 ######################################################
 ######################################################
 
-DEFAULT_OUTFNAME      = "dataset/weights/TMVA.root"
+DEFAULT_DATASET       = "dataset"
 DEFAULT_NVARS         = 20
 DEFAULT_WHERE         = "lpc"
 DEFAULT_YEAR          = 2017
 DEFAULT_OPTION        = 1
-DEFAULT_SMPSIZE       = 3
 
-myArgs = np.array([ # Stores the command line arguments
-  ['-o','--outputfile','outfname',    DEFAULT_OUTFNAME],    
+myArgs = np.array([ # Stores the command line arguments 
   ['-v','--verbose','verbose',        True],                
   ['-w','--where','where',            DEFAULT_WHERE],
   ['-y','--year','year',              DEFAULT_YEAR],
-  ['-p','--option','option',          DEFAULT_OPTION],
+  ['-o','--option','option',          DEFAULT_OPTION],
+  ['-d','--dataset','dataset',        DEFAULT_DATASET],
   ['-n','--nvars','nvars',            DEFAULT_NVARS]
 ])    
 
 try: # retrieve command line options
-  shortopts   = "o:w:y:p:n:vh?" # possible command line options
-  longopts    = ["outputfile=",
+  shortopts   = "w:y:o:d:n:vh?" # possible command line options
+  longopts    = [
                  "verbose=",
                  "where=",
                  "year=",
                  "option=",
+                 "dataset=",
                  "nvars=",
                  "help",
-                 "usage"]
+                 "usage"
+  ]
   opts, args = getopt.getopt( sys.argv[1:], shortopts, longopts ) # associates command line inputs to variables
   
 except getopt.GetoptError: # output error if command line argument invalid
@@ -73,17 +71,18 @@ for opt, arg in opts:
     myArgs[index,3] = arg
 
 # Initialize some variables after reading in arguments
-outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
 verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
 where_index = np.where(myArgs[:,2] == 'where')[0][0]
 year_index = np.where(myArgs[:,2] == 'year')[0][0]
 option_index = np.where(myArgs[:,2] == 'option')[0][0]
 nvars_index = np.where(myArgs[:,2] == 'nvars')[0][0]
+dataset_index = np.where(myArgs[:,2] == 'dataset')[0][0]
         
 option = myArgs[option_index,3]
 numVars = int(myArgs[nvars_index,3])
 where = myArgs[where_index,3]
 year = int(myArgs[year_index,3])
+dataset = str(myArgs[dataset_index,3])
 
 # import scikit optimize
 
@@ -97,11 +96,9 @@ from skopt.utils import use_named_args
 outf_key = str("Keras_" + str(numVars) + "vars")
 
 # Create directory for hyper parameter optimization for # of input variables if it doesn't exit
-if not os.path.exists('dataset/optimize_' + outf_key):
-  os.mkdir('dataset/optimize_' + outf_key)
-  os.mkdir('dataset/optimize_' + outf_key + '/weights')
-
-myArgs[outfname_index,3] = "dataset/weights/TMVAOptimization_" + str(numVars) + "vars.root"
+if not os.path.exists(dataset + "/optimize_" + outf_key):
+  os.mkdir(dataset + "/optimize_" + outf_key)
+  os.mkdir(dataset + "/optimize_" + outf_key + "/weights")
 
 ######################################################
 ######################################################
@@ -114,8 +111,8 @@ myArgs[outfname_index,3] = "dataset/weights/TMVAOptimization_" + str(numVars) + 
 def usage(): # conveys what command line arguments can be used for main()
   print(" ")
   print("Usage: python %s [options]" % sys.argv[0])
-  print("  -o | --outputfile : name of output ROOT file containing results (default: '%s')" % DEFAULT_OUTFNAME)
-  print("  -p | --option     : variable importance option")
+  print("  -o | --option     : variable importance option")
+  print("  -d | --dataset    : directory containing variable importance results")
   print("  -w | --where      : where the script is being run (LPC or BRUX)")
   print("  -y | --year       : production year (2017 or 2018)")
   print("  -n | --nvars      : number of input variables to use (in order)")
@@ -201,7 +198,7 @@ def getRankedInputs(importancePath,outPath,varList,numVars,option):
   return rankedVariables[-numVars:]
 
 # new variable list with reduced size to be used in TMVAClassification_Optimization.py
-varList = getRankedInputs(os.getcwd() + "/dataset/",os.getcwd() + "/dataset/optimize_" + outf_key,varsList.varList["DNN"],int(numVars),int(option))
+varList = getRankedInputs(os.getcwd() + "/" + dataset, os.getcwd() + "/" + dataset + "/optimize_" + outf_key,varsList.varList["DNN"],int(numVars),int(option))
 
 ######################################################
 ######################################################
@@ -213,12 +210,12 @@ varList = getRankedInputs(os.getcwd() + "/dataset/",os.getcwd() + "/dataset/opti
 
 ### Define some static model parameters
 
-EPOCHS		= "15"
-PATIENCE	= 5
-MODEL_NAME 	= "dummy_opt_model.h5"
-TAG_NUM 	= str(datetime.datetime.now().hour)
-TAG		= datetime.datetime.today().strftime('%m-%d') + '(' + TAG_NUM + ')'
-LOG_FILE 	= open('dataset/optimize_' + outf_key + '/optimize_log_' + TAG + '.txt','w')
+epochs		  = "15"
+patience	  = 5
+modelName  	= "dummy_opt_model.h5"
+tagNum   	  = str(datetime.datetime.now().hour)
+tag		      = datetime.datetime.today().strftime('%m-%d') + '(' + tagNum + ')'
+logFile 	  = open(dataset + "/optimize_" + outf_key + "/optimize_log_" + tag + ".txt","w")
 
 ### Hyper parameter survey range
 
@@ -264,16 +261,17 @@ def objective(**X):
     pattern =       X["node_pattern"],
     activation =    X["activation_function"]
   )
-  model.save( MODEL_NAME )
+  model.save( modelName )
   model.summary()  
  
-  BATCH_SIZE = str(2 ** X["batch_power"])
-  commandString = "python TMVAClassification_Optimization.py -o {} -b {} -e {} -w {} -y {}".format(
+  batchSize = str(2 ** X["batch_power"])
+  commandString = "python TMVAClassification_Optimization.py -o {} -b {} -e {} -w {} -y {} -d {}".format(
     outf_key,
-    BATCH_SIZE,
-    EPOCHS,
+    batchSize,
+    epochs,
     where,
-    year
+    year,
+    dataset
   )
   os.system(commandString)  
   temp_name = "dataset/temp_file.txt"
@@ -285,11 +283,11 @@ def objective(**X):
   backend.reset_uids()
   
   # Record the optimization iteration
-  LOG_FILE.write('{:7}, {:7}, {:7}, {:7}, {:9}, {:14}, {:10}, {:7}\n'.format(
+  logFile.write('{:7}, {:7}, {:7}, {:7}, {:9}, {:14}, {:10}, {:7}\n'.format(
     str(X["hidden_layers"]),
     str(X["initial_nodes"]),
     str(np.around(X["learning_rate"],5)),
-    str(BATCH_SIZE),
+    str(batchSize),
     str(X["node_pattern"]),
     str(X["regulator"]),
     str(X["activation_function"]),
@@ -305,7 +303,7 @@ def main():
   checkRootVer() # check the ROOT version
  
   start_time = time.time()
-  LOG_FILE.write('{:7}, {:7}, {:7}, {:7}, {:9}, {:14}, {:10}, {:7}\n'.format(
+  logFile.write('{:7}, {:7}, {:7}, {:7}, {:9}, {:14}, {:10}, {:7}\n'.format(
       'Hidden',
       'Nodes',
       'Rate',
@@ -326,11 +324,11 @@ def main():
   LOG_FILE.close()
 
   print("Writing optimized parameter log to: dataset/optimize_" + outf_key)
-  result_file = open('dataset/optimize_' + outf_key + '/params_' + TAG  + '.txt','w')
+  result_file = open('dataset/optimize_' + outf_key + '/params_' + tag  + '.txt','w')
   result_file.write('TTTT TMVA DNN Hyper Parameter Optimization Parameters \n')
   result_file.write('Static Parameters:\n')
-  result_file.write(' Patience: {}\n'.format(PATIENCE))
-  result_file.write(' Epochs: {}\n'.format(EPOCHS))
+  result_file.write(' Patience: {}\n'.format(patience))
+  result_file.write(' Epochs: {}\n'.format(epochs))
   result_file.write('Parameter Space:\n')
   result_file.write(' Hidden Layers: [{},{}]\n'.format(HIDDEN[0],HIDDEN[1]))
   result_file.write(' Initial Nodes: [{},{}]\n'.format(NODES[0],NODES[1]))
