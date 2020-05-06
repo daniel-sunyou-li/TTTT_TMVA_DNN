@@ -215,7 +215,7 @@ varList['DNN'] = [
 ]
 
 weightStr = "triggerXSF * pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPrefiringProb_CommonCalc * " + \
-            "(MCWeight_MultiLepCalc / abs(MCWeight_MultiLepCalc) )"
+            "(MCWeight_MultiLepCalc / abs(MCWeight_MultiLepCalc) ) * xsecEff"
 
 # general cut, add selection based cuts in training scripts
 cutStr =  "( ( leptonPt_MultiLepCalc > 50 && isElectron == 1 ) || " + \
