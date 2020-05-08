@@ -8,8 +8,8 @@ bruxUserName = "dli50"
 lpcUserName = "dsunyou"
 eosUserName = "dali"
 
-step2Sample2017   = "FWLJMET102X_1lep2017_Oct2019_4t_03202020_step2"                    # current 2017 sample
-step2Sample2018   = "FWLJMET102X_1lep2018_Oct2019_4t_03302020_step2"                    # current 2018 sample
+step2Sample2017   = "FWLJMET102X_1lep2017_Oct2019_4t_05072020_step2"                    # current 2017 sample
+step2Sample2018   = "FWLJMET102X_1lep2018_Oct2019_4t_05072020_step2"                    # current 2018 sample
 inputDirBRUX2017  = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2017 + "/nominal/"  # Brown Linux path
 inputDirBRUX2018  = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2018 + "/nominal/"  
 inputDirLPC2017   = "~/nobackup/" + step2Sample2017 + "/"                               # LHC Physics Center path
@@ -55,6 +55,8 @@ sig2018_2 = [
 
 # full background samples
 bkg2017 = [
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttb1_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttb2_hadd.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttbb_hadd.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttcc_hadd.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_hadd.root",
@@ -62,28 +64,52 @@ bkg2017 = [
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_3_hadd.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_4_hadd.root",
   "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT0Njet0_ttjj_5_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT500Njet9_tt1b_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT500Njet9_tt2b_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT500Njet9_ttbb_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT500Njet9_ttcc_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_PSweights_13TeV-powheg-pythia8_HT500Njet9_ttjj_hadd.root",
+  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_tt1b_hadd.root",
+  "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_tt2b_hadd.root",
   "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_hadd.root",
   "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_hadd.root",
   "TTTo2L2Nu_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_hadd.root",
+  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_tt1b_hadd.root",
+  "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_tt2b_hadd.root",
   "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_hadd.root",
   "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_hadd.root",
   "TTToHadronic_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_hadd.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_tt1b_hadd.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_tt2b_hadd.root",
   "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttbb_hadd.root",
   "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttcc_hadd.root",
   "TTToSemiLepton_HT500Njet9_TuneCP5_PSweights_13TeV-powheg-pythia8_ttjj_hadd.root"
 ]
 
 bkg2018 = [
+  "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT0Njet0_tt1b_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT0Njet0_tt2b_hadd.root",
   "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT0Njet0_ttbb_hadd.root",
   "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT0Njet0_ttcc_hadd.root",
   "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_hadd.root",
   "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT0Njet0_ttjj_2_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT500Njet9_tt1b_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT500Njet9_tt2b_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT500Njet9_ttbb_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT500Njet9_ttcc_hadd.root",
+  "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT500Njet9_ttjj_hadd.root",
+  "TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_tt1b_hadd.root",
+  "TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_tt2b_hadd.root",
   "TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_ttbb_hadd.root",
   "TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_ttcc_hadd.root",
   "TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_ttjj_hadd.root",
+  "TTToHadronic_TuneCP5_13TeV-powheg-pythia8_tt1b_hadd.root",
+  "TTToHadronic_TuneCP5_13TeV-powheg-pythia8_tt2b_hadd.root",
   "TTToHadronic_TuneCP5_13TeV-powheg-pythia8_ttbb_hadd.root",
   "TTToHadronic_TuneCP5_13TeV-powheg-pythia8_ttcc_hadd.root",
   "TTToHadronic_TuneCP5_13TeV-powheg-pythia8_ttjj_hadd.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_13TeV-powheg-pythia8_tt1b_hadd.root",
+  "TTToSemiLepton_HT500Njet9_TuneCP5_13TeV-powheg-pythia8_tt2b_hadd.root",
   "TTToSemiLepton_HT500Njet9_TuneCP5_13TeV-powheg-pythia8_ttbb_hadd.root",
   "TTToSemiLepton_HT500Njet9_TuneCP5_13TeV-powheg-pythia8_ttcc_hadd.root",
   "TTToSemiLepton_HT500Njet9_TuneCP5_13TeV-powheg-pythia8_ttjj_hadd.root"
@@ -144,22 +170,22 @@ varList['DNN'] = [
   ['MT2bb','MT2bb','GeV'],
   ['mass_lepBJet0','M(l,b_{1})','GeV'],
   ['mass_lepBJet_mindr','M(l,b) with min[#DeltaR(l,b)]','GeV'],
-  #['secondJetPt','p_{T}(j_{2})','GeV'],
+  ['secondJetPt','p_{T}(j_{2})','GeV'],
   ['fifthJetPt','p_{T}(j_{5})','GeV'],
   ['sixthJetPt','p_{T}(j_{6})','GeV'],
   ['PtFifthJet','5^{th} jet p_{T}','GeV'],
   ['mass_minLLdr','M(j,j) with min[#DeltaR(j,j)], j #neq b','GeV'],
   ['mass_maxBBmass','max[M(b,b)]','GeV'],
-  #['deltaR_lepMinMlj','#DeltaR(l,j) with min M(l, j)',''],
+  ['deltaR_lepJetInMinMljet','#DeltaR(l,j) with min M(l, j)',''],
   ['deltaPhi_lepJetInMinMljet','#DeltaPhi(l,j) with min M(l, j)',''],
-  #['deltaR_lepMinMlb','#DeltaR(l,b) with min M(l, b)',''],
+  ['deltaR_lepbJetInMinMlb','#DeltaR(l,b) with min M(l, b)',''],
   ['deltaPhi_lepbJetInMinMlb','#DeltaPhi(l,b) with min M(l, b)',''],
   ['M_allJet_W','M(allJets, leptoninc W)','GeV'],
   ['HT_bjets','HT(bjets)','GeV'],
   ['ratio_HTdHT4leadjets','HT/HT(4 leading jets)',''],
   ['csvJet3','DeepCSV(3rdPtJet)',''],
   ['csvJet4','DeepCSV(4thPtJet)',''],
-  #['firstcsvb_bb','DeepCSV(1stDeepCSVJet)',''],
+  ['firstcsvb_bb','DeepCSV(1stDeepCSVJet)',''],
   ['secondcsvb_bb','DeepCSV(2ndDeepCSVJet)',''],
   ['thirdcsvb_bb','DeepCSV(3rdDeepCSVJet)',''],
   ['fourthcsvb_bb','DeepCSV(4thDeepCSVJet)',''],
@@ -167,11 +193,7 @@ varList['DNN'] = [
   ['HT_2m','HTwoTwoPtBjets','GeV'],
   ['Sphericity','Sphericity','Sphericity'],
   ['Aplanarity','Aplanarity','Aplanarity'],
-  ['mass_lepJJ_minJJdr','M(l,jj) with min[#DeltaR(j,j)], j #neq b','GeV'],
-  #['deltaR_lepBJets0','#DeltaR(l,b_{1})',''],
   ['minDR_lepJet','min[#DeltaR(l,j)]',''],
-  #['mass_maxBBpt','M(b,b) with max[p_{T}(b,b)]','GeV'],
-  #['mass_lepBB_minBBdr','M(l,bb) with min[#DeltaR(b,b)]','GeV'],
   ['BDTtrijet1','trijet1 discriminator',''],
   ['BDTtrijet2','trijet2 discriminator',''],
   ['BDTtrijet3','trijet3 discriminator',''],
@@ -180,38 +202,18 @@ varList['DNN'] = [
   ['NJetsTtagged','top multiplicity',''],
   ['NJetsWtagged','W multiplicity',''],
   ['NJetsCSVwithSF_MultiLepCalc','bjet multiplicity',''],
-  #['topJet1Index_HOTTaggerCalc','',''],           # added HOT Tagger variables
-  #['topJet2Index_HOTTaggerCalc','',''],           # these are low-level and are incorporated into trijet variables
-  #['topJet3Index_HOTTaggerCalc','',''],
-  #['topNAK4_HOTTaggerCalc','',''],
-  #['topNtops_HOTTaggerCalc','',''],
-  #['topDRmax_HOTTaggerCalc','max[#DeltaR(t,t)]',''],
-  #['topDThetaMax_HOTTaggerCalc','max[#DeltaTheta(t,t)]',''],
-  #['topDiscriminator_HOTTaggerCalc','',''],
-  #['topEta_HOTTaggerCalc','',''],
-  #['topMass_HOTTaggerCalc','','GeV'],
-  #['topPhi_HOTTaggerCalc','',''],
-  #['topPt_HOTTaggerCalc','','GeV'],
-  ['HOTGoodTrijet1_mass','','GeV'],               # added more Trijet variables
+  ['HOTGoodTrijet1_mass','','GeV'],               # Trijet variables
   ['HOTGoodTrijet1_dijetmass','','GeV'],
   ['HOTGoodTrijet1_pTratio','',''],
   ['HOTGoodTrijet1_dRtridijet','',''],
   ['HOTGoodTrijet1_csvJetnotdijet','',''],
+  ['HOTGoodTrijet1_dRtrijetJetnotdijet','',''],
   ['HOTGoodTrijet2_mass','','GeV'],
   ['HOTGoodTrijet2_dijetmass','','GeV'],
   ['HOTGoodTrijet2_pTratio','',''],
   ['HOTGoodTrijet2_dRtridijet','',''],
   ['HOTGoodTrijet2_csvJetnotdijet','',''],
-  #['HOTGoodTrijet3_mass','','GeV'],
-  #['HOTGoodTrijet3_dijetmass','','GeV'],
-  #['HOTGoodTrijet3_pTratio','',''],
-  #['HOTGoodTrijet3_dRtridijet','',''],
-  #['HOTGoodTrijet3_csvJetnotdijet','',''],
-  #['HOTGoodTrijet4_mass','','GeV'],
-  #['HOTGoodTrijet4_dijetmass','','GeV'],
-  #['HOTGoodTrijet4_pTratio','',''],
-  #['HOTGoodTrijet4_dRtridijet','',''],
-  #['HOTGoodTrijet4_csvJetnotdijet','',''],
+  ['HOTGoodTrijet2_dRtrijetJetnotdijet','','']
 ]
 
 weightStr = "triggerXSF * pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPrefiringProb_CommonCalc * " + \
