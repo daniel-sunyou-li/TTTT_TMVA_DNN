@@ -34,7 +34,7 @@ def condor_job(SeedN="",SubSeedN="",count=0,options=['','','','','',''],maxSeeds
         "FILENAME":     fileName,
         "RUNDIR":       runDir,
         "EOSDIR":       eosDir,
-        "eosUserName":  eosUserName
+        "eosUserName":  eosUserName,
         "YEAR":         year,
     }
     jdfName = condorDir + "%(FILENAME)s.job"%dict
@@ -44,10 +44,9 @@ def condor_job(SeedN="",SubSeedN="",count=0,options=['','','','','',''],maxSeeds
 Executable = %(RUNDIR)s/LPC/VariableImportanceLPC_step2_%(YEAR)s.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
-request_memory = 4.2 GB
-request_cpus = 4
-request_disk = 40 GB
-image_size = 4 GB
+request_memory = 3.5 GB
+request_cpus = 2
+image_size = 3.5 GB
 Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
@@ -57,7 +56,7 @@ Queue 1"""%dict)
     jdf.close()
     os.chdir("%s/"%(condorDir))
     os.system("condor_submit %(FILENAME)s.job"%dict)
-    os.system("sleep 0.5")
+    os.system("sleep 0.25")
     os.chdir("%s"%(runDir))
     
     count += 1
@@ -198,16 +197,26 @@ TMVA.Tools.Instance()
 TMVA.PyMethodBase.PyInitialize()
 
 # lists
-inputDir = varsList.inputDirLPC         # string for path to ljmet samples
+year = int(sys.argv[1])
+inputDirLPC, inputDirEOS, step2Sample = None, None, None
+if year == 2017: 
+  inputDirLPC = varsList.inputDirLPC2017
+  inputDirEOS = varsList.inputDirEOS2017
+  step2Sample = varsList.step2Sample2017
+elif year == 2018: 
+  inputDirLPC = varsList.inputDirLPC2018
+  inputDirEOS = varsList.inputDirEOS2018
+  step2Sample = varsList.step2Sample2017
+
 varList = varsList.varList["DNN"]       # contains all the input variables
 used_seeds = []                         # stores which seeds have been used
 options = [                             # contains arguments for condor job submission functions
     os.getcwd(),                        # running/working directory
     os.getcwd() + "/condor_log/",       # condor job result directory
     len(varList),                       # number of input variables
-    varsList.inputDirEOS,               # EOS directory
+    inputDirEOS,                        # EOS directory
     varsList.eosUserName,               # EOS User name
-    int(sys.argv[1])                    # production year
+    year                                # production year
 ]
 
 # variable parameters  
@@ -216,7 +225,7 @@ cutStrC = varsList.cutStr
 binary_str = "1" * len(varList)         # bitstring full of '1' 
 max_int = int(binary_str,2)             # integer corresponding to bitstring full of '1'
 corr_cut = 80                           # set this between 0 and 100
-maxSeeds = 5                            # maximum number of generated seeds
+maxSeeds = 1                            # maximum number of generated seeds
 numCorrSeed = 5                         # number of de-correlated seeds randomly chosen to submit
 count = 0                               # counts the number of jobs submitted
 sig_corr = None                         # will hold signal correlation matrix
@@ -230,16 +239,16 @@ if len(sys.argv) > 2:
 # get the signal correlation matrix and the variable names, used in correlation options
 if year == 2017:
     sig_corr, varNames = get_correlation_matrix(
-        inputDir + varsList.sig2017_0[0],
-        inputDir + varsList.bkg2017_0[0],     # choose a random background sample since we only care about signal
+        os.getcwd() + "/" + step2Sample + "/" + varsList.sig2017_0[0],
+        os.getcwd() + "/" + step2Sample + "/" + varsList.bkg2017_0[0],     # choose a random background sample since we only care about signal
         weightStrC,
         TCut(cutStrC),
         varList
     )
 elif year == 2018:
     sig_corr, varNames = get_correlation_matrix(
-        inputDir + varsList.sig2018_0[0],
-        inputDir + varsList.bkg2018_0[0],     # choose a random background sample since we only care about signal
+        os.getcwd() + "/" + step2Sample + "/" + varsList.sig2018_0[0],
+        os.getcwd() + "/" + step2Sample + "/" + varsList.bkg2018_0[0],     # choose a random background sample since we only care about signal
         weightStrC,
         TCut(cutStrC),
         varList

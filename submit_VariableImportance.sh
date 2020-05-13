@@ -13,17 +13,14 @@ eval `scramv1 runtime -sh`
 source /cvmfs/sft.cern.ch/lcg/contrib/gcc/7.3.0/x86_64-centos7-gcc7-opt/setup.sh
 source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.16.00/x86_64-centos7-gcc48-opt/bin/thisroot.sh
 
-if [ $host = 'BRUX' ] || [ $host = 'brux' ] || [ $host = 'Brux' ] && [ [ $year = '2017' ] || [ $year = '2018' ] ]
-then
-  if [ $seeds = '' ] || [ $corrCut = '' ]
+if [ $host = 'BRUX' ] || [ $host = 'brux' ] || [ $host = 'Brux' ]; then
+  if [ $seeds = '' ] || [ $corrCut = '' ]; then
     python ./BRUX/VariableImportanceBRUX_step1.py $year # running on BRUX clusters
   else
     python ./BRUX/VariableImportanceBRUX_step1.py $year $seeds $corrCut
   fi
-elif [ $host = 'LPC' ] || [ $host = 'lpc' ] || [ $host = 'Lpc' ] && [ [ $year = '2017' ] || [ $year = '2018' ] ]
-then
-  if [ $seeds = '' ] || [ $corrCut = '' ]
-  then
+elif [ $host = 'LPC' ] || [ $host = 'lpc' ] || [ $host = 'Lpc' ]; then
+  if [ $seeds = '' ] || [ $corrCut = '' ]; then
     python ./LPC/VariableImportanceLPC_step1.py $year # running on LPC clusters, use this if input variables > 20 
   else
     python ./LPC/VariableImportanceLPC_step1.py $year $seeds $corrCut

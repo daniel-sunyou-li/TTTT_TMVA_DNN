@@ -50,7 +50,7 @@ def variable_importance(seedDict={},numVars=0,option=0):
         varImportanceFile = open("./dataset/VariableImportanceResults_" + str(numVars) + "vars_opt0.txt","w")
     varImportanceFile.write("Weight: {}\n".format(varsList.weightStr))
     varImportanceFile.write("Cut: {}\n".format(varsList.cutStr))
-    varImportanceFile.write("Number of Variables: {}, Date: {}".format(
+    varImportanceFile.write("Number of Variables: {}, Date: {}\n".format(
         numVars,
         datetime.datetime.today().strftime("%Y-%m-%d")
     ))
@@ -59,13 +59,13 @@ def variable_importance(seedDict={},numVars=0,option=0):
     else:
         for indx in np.arange(numVars): importances[indx] = 0
     print("Calculating variable importance...")
-    varImportanceFile.write("\n{:<3}: {:<{}} {:<10}".format("#","Seed",numVars+2,"# Vars"))
+    #varImportanceFile.write("{:<3}: {:<{}} {:<10}".format("#","Seed",numVars+2,"# Vars"))
     for key in seedDict:
         for indx,seed in enumerate(seedDict[key]):
             seed_long = long(seed)
             seed_str = "{:0{}b}".format(int(seed),int(numVars))
             count_arr = variable_occurence(count_arr,int(seed))
-            varImportanceFile.write("\n{:<3}: {:<{}} {:<12}".format(indx+1,seed_str,numVars+2,seed_str.count("1")))
+            #varImportanceFile.write("\n{:<3}: {:<{}} {:<12}".format(indx+1,seed_str,numVars+2,seed_str.count("1")))
             for line in open(key + "/Keras_" + str(numVars) + "vars_Seed_" + seed + ".out").readlines():
                 if "ROC-integral" in line: SROC = float(line[:-1].split(" ")[-1][:-1])
             for subseedOut in seedDict[key][seed]:

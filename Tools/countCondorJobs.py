@@ -64,9 +64,9 @@ for seedName in seedDirectory:
     count_arr = variable_occurence(count_arr,seed)
     
 # display variable frequency 
-print("{:<3} {:<32} {:<6}".format("#","Variable Name","Count"))
+print("{:<3} {:<40} {:<6}".format("#","Variable Name","Count"))
 for i in range(numVars):
-  print("{:<3} {:<32} {:<6}".format(str(i)+".",varsList.varList["DNN"][i][0],int(count_arr[i])))
+  print("{:<3} {:<40} {:<6}".format(str(i)+".",varsList.varList["DNN"][i][0],int(count_arr[i])))
 
 # display job status
 print("Finished condor jobs: {} / {}, {:.2f}%".format(

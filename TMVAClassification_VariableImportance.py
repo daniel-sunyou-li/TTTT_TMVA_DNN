@@ -104,7 +104,7 @@ def main(): # runs the program
   outfname_index = np.where(myArgs[:,2] == 'outfname')[0][0]
   verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]
   where_index = np.where(myArgs[:,2] == 'where')[0][0]
-  year_inedx = np.where(myArgs[:,2] == 'year')[0][0]
+  year_index = np.where(myArgs[:,2] == 'year')[0][0]
 
   seed = myArgs[SeedN_index,3]
   where = myArgs[where_index,3]
@@ -114,7 +114,7 @@ def main(): # runs the program
 
   str_xbitset = '{:0{}b}'.format(long(myArgs[SeedN_index,3]),var_length)
   nVars = str_xbitset.count('1')
-  outf_key = str( "DNN_" + str(nVars) + "vars" )
+  outf_key =  "DNN_" + str(nVars) + "vars"
   myArgs[outfname_index,3] = "dataset/weights/TMVA_" + outf_key + ".root"   
   
   print( "Seed: {}".format(str_xbitset) )
@@ -145,11 +145,8 @@ def main(): # runs the program
 	elif year == 2018:
 		inputDir = varsList.inputDirBRUX2018
   else: 
-	if year == 2017:
-		inputDir = varsList.inputDirCondor2017
-	elif year == 2018:
-		inputDir = varsList.inputDirCondor2018
-	
+	inputDir = varsList.inputDirCondor
+		
   # Set up TMVA
   ROOT.TMVA.Tools.Instance()
   ROOT.TMVA.PyMethodBase.PyInitialize()
@@ -168,38 +165,35 @@ def main(): # runs the program
   
   # add signals to loader
   if year == 2017:
-		for i in range( len( varsList.sig2017_0 ) ):
-	    sig_list.append( TFile.Open( inputDir + varsList.sig2017_0[i] ) )
-	    sig_trees_list.append( sig_list[i].Get( "ljmet" ) )
-	    sig_trees_list[i].GetEntry(0)
-	    loader.AddSignalTree( sig_trees_list[i] )
-	elif year == 2018:
-		for i in range( len( varsList.sig2018_0 ) ):
-			sig_list.append( TFile.Open( inputDir + varsList.sig2018_0[i] ) )
-			sig_trees_list.append( sig_list[i].Get( "ljmet" ) )
-			sig_trees_list[i].GetEntry(0)
-			loader.AddSignalTree( sig_trees_list[i] )
+    for i in range( len( varsList.sig2017_0 ) ):
+      sig_list.append( TFile.Open( inputDir + varsList.sig2017_0[i] ) )
+      sig_trees_list.append( sig_list[i].Get( "ljmet" ) )
+      sig_trees_list[i].GetEntry(0)
+      loader.AddSignalTree( sig_trees_list[i] )
+  elif year == 2018:
+    for i in range( len( varsList.sig2018_0 ) ):
+      sig_list.append( TFile.Open( inputDir + varsList.sig2018_0[i] ) )
+      sig_trees_list.append( sig_list[i].Get( "ljmet" ) )
+      sig_trees_list[i].GetEntry(0)
+      loader.AddSignalTree( sig_trees_list[i] )
 	
   # add backgrounds to loader
-	if year == 2017:
-		for i in range( len( varsList.bkg2017_0 ) ):
-			bkg_list.append( TFile.Open( inputDir + varsList.bkg2017_0[i] ) )
-			bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
-			bkg_trees_list[i].GetEntry(0)
-
-			if bkg_trees_list[i].GetEntries() == 0:
-				continue
-			loader.AddBackgroundTree( bkg_trees_list[i] )
+  if year == 2017:
+    for i in range( len( varsList.bkg2017_0 ) ):
+      bkg_list.append( TFile.Open( inputDir + varsList.bkg2017_0[i] ) )
+      bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
+      bkg_trees_list[i].GetEntry(0)
+      if bkg_trees_list[i].GetEntries() == 0: continue
+      loader.AddBackgroundTree( bkg_trees_list[i] )
 			
   elif year == 2018:
-		for i in range( len( varsList.bkg2018_0 ) ):
-			bkg_list.append( TFile.Open( inputDir + varsList.bkg2018_0[i] ) )
-			bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
-			bkg_trees_list[i].GetEntry(0)
+    for i in range( len( varsList.bkg2018_0 ) ):
+      bkg_list.append( TFile.Open( inputDir + varsList.bkg2018_0[i] ) )
+      bkg_trees_list.append( bkg_list[i].Get( "ljmet" ) )
+      bkg_trees_list[i].GetEntry(0)
 
-			if bkg_trees_list[i].GetEntries() == 0:
-				continue
-			loader.AddBackgroundTree( bkg_trees_list[i] )
+      if bkg_trees_list[i].GetEntries() == 0: continue
+      loader.AddBackgroundTree( bkg_trees_list[i] )
 			
   # set signal and background weights 
   loader.SetSignalWeightExpression( weightStrS )
