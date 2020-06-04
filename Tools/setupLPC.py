@@ -8,7 +8,7 @@ import varsList
 
 # set-up the working area
 lpcHomeDir = os.path.expanduser("~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/")
-'''
+
 os.system("voms-proxy-init --rfc --voms cms")
 
 # compile the sample splitting c++ script
@@ -89,7 +89,7 @@ for year in ["2017","2018"]: # only include the years you want
         varsList.eosUserName + "/" + step2Sample + "/"
         )
     )
-'''
+
 # tar the CMSSW framework
 if "CMSSW946.tgz" in os.listdir(lpcHomeDir):
     print("Deleting existing CMSSW946.tgz...")
