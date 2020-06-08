@@ -2,7 +2,7 @@
 
 # this will take a while since it has to copy files from BRUX to FNAL and then split the files and finally copy them to EOS
 
-import os, sys
+import os, sys, getpass, pexpect
 sys.path.insert(0, "../TTTT_TMVA_DNN")
 import varsList
 
@@ -18,6 +18,10 @@ os.system("g++ `root-config --cflags` `root-config --libs` -o ./Tools/splitROOT.
 
 # transfer files from BRUX to LPC
 # will need to input BRUX password
+
+#Get BRUX password
+print "Password for " + varsList.bruxUserName + "@brux.hep.brown.edu"
+brux_pwd = getpass.getpass("Password: ")
 
 # setup parameters that will differ between 2017 and 2018 samples
 step2Sample  = None
@@ -54,14 +58,17 @@ for year in ["2017","2018"]: # only include the years you want
     for sample in samples:
         if sample not in os.listdir("{}{}".format(lpcHomeDir,step2Sample)):
             print("Transferring {}...".format(sample))
-	    os.system("scp -r {}@brux.hep.brown.edu:{}{} {}{}".format(
+	    child = pexpect.spawn("scp -r {}@brux.hep.brown.edu:{}{} {}{}".format(
                 varsList.bruxUserName,
                 inputDirBRUX,
                 sample,
 	        lpcHomeDir,
                 step2Sample
-            )
-                      )
+            ))
+            child.expect(varsList.bruxUserName + "@brux.hep.brown.edu's password: ")
+            child.sendline(brux_pwd)
+            child.interact()
+
         else: print("{} has been transferred. Proceeding to next sample...".format(sample))
         
 # prevent the setup from proceeding if not all samples are present
