@@ -15,10 +15,10 @@ cd ./CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN
 
 SIG=""
 BKG=""
-if [ $year == "2017" ]; then
+if [ $year = "2017" ]; then
     SIG=`python -c 'import sys; sys.path.insert(0, "../TTTT_TMVA_DNN"); import varsList; print(" ".join(varsList.sig2017_0));'`
     BKG=`python -c 'import sys; sys.path.insert(0, "../TTTT_TMVA_DNN"); import varsList; print(" ".join(varsList.bkg2017_0));'`
-elif [ $year == "2018" ]; then
+elif [ $year = "2018" ]; then
      SIG=`python -c 'import sys; sys.path.insert(0, "../TTTT_TMVA_DNN"); import varsList; print(" ".join(varsList.sig2018_0));'`
      BKG=`python -c 'import sys; sys.path.insert(0, "../TTTT_TMVA_DNN"); import varsList; print(" ".join(varsList.bkg2018_0));'`
 fi
