@@ -137,7 +137,7 @@ def eos_transfer(years = ["2017", "2018"]):
         os.system("eosmkdir root://cmseos.fnal.gov//store/user/{}".format(varsList.eosUserName + "/" + dir + "/"))
         
         # transfer one of the split samples to EOS
-        print("[   ] Transferring {} to EOS...".format(sample))
+        print "[   ] Transferring to EOS..."
         os.system("xrdcp {}*split0.root root://cmseos.fnal.gov//store/user/{}".format(
                      "./" + dir + "/",
                      varsList.eosUserName + "/" + dir + "/"
