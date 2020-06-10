@@ -3,13 +3,37 @@ import glob, os, sys
 import getopt
 import math
 
+if len(sys.argv) == 1:
+    print("Error: Supply sample year: VariableImportanceLPC_resubmit.py year [condor_log]")
+    sys.exit(1)
+
+year = sys.argv[1]
+condor_folder = "condor_log" if len(sys.argv) < 3 else sys.argv[2]
+
+# The template for condor jobs
+CONDOR_TEMPLATE = """universe = vanilla
+Executable = %(RUNDIR)s/LPC/VariableImportanceLPC_step2.sh
+Should_Transfer_Files = YES
+WhenToTransferOutput = ON_EXIT
+request_memory = %(REQMEM)s
+request_cpus = 2
+image_size = 3.5 GB
+Output = %(FILENAME)s.out
+Error = %(FILENAME)s.err
+Log = %(FILENAME)s.log
+Notification = Never
+Arguments = %(SubmitSeedN)s %(EOSDIR)s %(eosUserName)s $(YEAR)s
+Queue 1"""
+
 sys.path.insert(0, "../TTTT_TMVA_DNN")
 import varsList
 
-def condorJob(SeedN="",SubSeedN="",count=0,options=['','','']): # submits a single condor job
-    runDir = options[0]
+def condorJob(SeedN="", SubSeedN="", count=0, options=['', '', ''], memory="3.5 GB"): # submits a single condor job
+    runDir =    options[0]
     condorDir = options[1]
-    numVars = options[2]
+    numVars =   options[2]
+
+    fileName = ""
     SubmitSeedN = ""
     if SubSeedN == "": 
         fileName = "Keras_" + str(numVars) + "vars_Seed_" + str(SeedN)
@@ -17,31 +41,20 @@ def condorJob(SeedN="",SubSeedN="",count=0,options=['','','']): # submits a sing
     else: 
         fileName = "Keras_" + str(numVars) + "vars_Seed_" + str(SeedN) + "_Subseed_" + str(SubSeedN)
         SubmitSeedN = SubSeedN
-    dict = {
+        
+    job_spec = {
         "RUNDIR": runDir,           # run directory
         "SubmitSeedN": SubmitSeedN,
-        "FILENAME": fileName
+        "FILENAME": fileName,
+        "REQMEM": memory,
+        "YEAR": year
     }
-    jdfName = condorDir + "%(FILENAME)s.job"%dict
+    jdfName = condorDir + "%(FILENAME)s.job"%job_spec
     jdf = open(jdfName, "w")
-    jdf.write(
-"""universe = vanilla
-Executable = %(RUNDIR)s/LPC/VariableImportanceLPC_step2.sh
-Should_Transfer_Files = YES
-WhenToTransferOutput = ON_EXIT
-request_memory = 4.2 GB
-request_cpus = 4
-request_disk = 40 GB
-image_size = 4 GB
-Output = %(FILENAME)s.out
-Error = %(FILENAME)s.err
-Log = %(FILENAME)s.log
-Notification = Never
-Arguments = %(RUNDIR)s %(METHOD)s %(TAG)s %(SubmitSeedN)s
-Queue 1"""%dict)
+    jdf.write(CONDOR_TEMPLATE%job_spec)
     jdf.close()
     os.chdir("%s/"%(condorDir))
-    os.system("condor_submit %(FILENAME)s.job"%dict)
+    os.system("condor_submit %(FILENAME)s.job"%job_spec)
     os.system("sleep 0.5")
     os.chdir("%s"%(runDir))
     
@@ -51,32 +64,35 @@ Queue 1"""%dict)
     
 options = [
     os.getcwd(),
-    os.getcwd() + "/condor_log/",
-    len(varsList.varList["BigComb"])
+    os.getcwd() + "/" + condor_folder + "/",
+    len(varsList.varList["DNN"])
 ]
 
 # checks if job was removed by scheduler (false)
-def check_one(seedOut,seedOutDirectory):
-    if seedOut in seedOutDirectory: return True
-    else: return False
+def check_one(seedOut, seedOutDirectory):
+    if seedOut in seedOutDirectory:
+        return True
+    else:
+        return False
 
 # checks if condor job is done running (true)
-def check_two(condorPath,seedLog):
+def check_two(condorPath, seedLog):
     condorJobDone = False
     for line in open(condorPath + seedLog).readlines():
         if "005 (" or "009 (" in line: 
             condorJobDone = True
         elif "006 (" or "000 (" or "001 (" in line:
             condorJobDone = False
-        else: condorJobDone = True
+        else:
+            condorJobDone = True
     return condorJobDone
 
 # check if ROC-integral is in .out file
-def check_three(condorPath,seedOut):
-    isROC = False
+def check_three(condorPath, seedOut):
     for line in open(condorPath + seedOut).readlines():
-        if "ROC-Integral" in line: isROC = True
-    return isROC
+        if "ROC-Integral" in line:
+            return True
+    return False
 
 finished_count = 0
 count = 0
@@ -98,11 +114,12 @@ for seed in seedList:
     subSeedArr = glob.glob(options[1] + "Keras_" + str(options[2]) + "vars_Seed_" + seed + "_Subseed_*.out")
     seedDict[seed] = subSeedArr
 
-maxSeed = str(int("1"*options[2],2))
+maxSeed = str(int("1" * options[2], 2))
 formSize = max(len(maxSeed) + 1, 8)     # print formatting setting
 seedDictNum = sum([len(x) for x in seedDict.values()])
-print("Total seeds: {}, Total subseeds: {}".format(len(seedList),seedDictNum))
-print("{:{}}{:{}}{:10}".format("Seed",formSize,"Subseed",formSize,".out Size (b)"))
+print("Total seeds: {}, Total subseeds: {}".format(len(seedList), seedDictNum))
+print("{:{}}{:{}}{:10}".format("Seed", formSize, "Subseed", formSize, ".out Size (b)"))
+
 # resubmit the seed jobs that failed
 for seed in seedDict:
     fileName = "Keras_" + str(options[2]) + "vars_Seed_" + seed
@@ -110,12 +127,12 @@ for seed in seedDict:
     seedLog = fileName + ".log"
     seedJob = fileName + ".job"
     
-    if check_three(options[1],seedOut) == False:    # checks if ROC-integral is present
-        if check_two(options[1],seedLog) == True:   # checks if job finished running
-            if check_one(seedOut,seedOutDirectory): # checks if the .out file was produced
+    if check_three(options[1], seedOut) == False:    # checks if ROC-integral is present
+        if check_two(options[1], seedLog) == True:   # checks if job finished running
+            if check_one(seedOut, seedOutDirectory): # checks if the .out file was produced
                 fileSize = os.stat(options[1] + fileName + ".out").st_size
-                print("{:<{}}{:<{}}{:<10}".format(seed,formSize,"",formSize,fileSize))
-                count = condorJob(SeedN=seed,count=count,options=options)
+                print("{:<{}}{:<{}}{:<10}".format(seed, formSize, "", formSize, fileSize))
+                count = condorJob(SeedN=seed, count=count, options=options)
                 
     for subSeed in seedDict[seed]:
         fileName = "Keras_" + str(options[2]) + "vars_Seed_" + seed + "_Subseed_" + subSeed
@@ -124,16 +141,16 @@ for seed in seedDict:
         subSeedLog = fileName + ".log"
         subSeedJob = fileName + ".job"
         
-        if check_three(options[1],subSeedOut) == False:
-            if check_two(options[1],subSeedLog) == True:
-                if check_one(subSeedOut,seedDict[seed]):
+        if check_three(options[1], subSeedOut) == False:
+            if check_two(options[1], subSeedLog) == True:
+                if check_one(subSeedOut, seedDict[seed]):
                     fileSize = os.stat(options[1] + fileName + ".out").st_size
-                    print("{:<{}}{:<{}}{:<10}".format(seed,formSize,subSeed,formSize,fileSize))
-                    count = condorJob(SeedN=subSeed,count=count,options=options)
+                    print("{:<{}}{:<{}}{:<10}".format(seed, formSize, subSeed, formSize, fileSize))
+                    count = condorJob(SeedN=subSeed, count=count, options=options)
         
 
 total_seeds = len(seedList) + seedDictNum
 percent_done = ( float(finished_count) / float(total_seeds) ) * 100
 print("___________________")
-print("{} out of {} ({:.2f}%) Jobs Done".format(finished_count,total_seeds,percent_done))
+print("{} out of {} ({:.2f}%) Jobs Done".format(finished_count, total_seeds, percent_done))
 print("{} Jobs Resubmitted.".format(count))
