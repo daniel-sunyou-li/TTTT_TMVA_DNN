@@ -7,6 +7,8 @@ if len(sys.argv) == 1:
     print("Error: Supply sample year: VariableImportanceLPC_resubmit.py year [condor_log]")
     sys.exit(1)
 
+#Args ...resubmit.py year [condor_log]
+
 year = sys.argv[1]
 condor_folder = "condor_log" if len(sys.argv) < 3 else sys.argv[2]
 

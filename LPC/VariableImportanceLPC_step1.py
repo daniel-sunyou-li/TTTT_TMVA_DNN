@@ -57,7 +57,7 @@ def condor_job(SeedN="", SubSeedN="", count=0, options=['','','','','',''], maxS
     
     jdfName = condorDir + "%(FILENAME)s.job"%job_spec
     jdf = open(jdfName, "w")
-    jdf.write(%job_spec)
+    jdf.write(CONDOR_TEMPLATE%job_spec)
     jdf.close()
     
     os.chdir("%s/"%(condorDir))
@@ -196,7 +196,6 @@ def variable_occurence(used_seeds, varNames):
     for indx, varName in enumerate(varNames):
         print("{:32}: {:3}".format(len(used_seeds)))
           
-os.system("bash")
 os.system("source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh")
 
 TMVA.Tools.Instance()
@@ -221,7 +220,7 @@ used_seeds = []                         # stores which seeds have been used
 weightStrC = varsList.weightStr
 cutStrC = varsList.cutStr
 binary_str = "1" * len(varList)         # bitstring full of '1' 
-max_int = int(binary_str, 2)             # integer corresponding to bitstring full of '1'
+max_int = int(binary_str, 2)            # integer corresponding to bitstring full of '1'
 corr_cut = 80                           # set this between 0 and 100
 maxSeeds = 1                            # maximum number of generated seeds
 numCorrSeed = 5                         # number of de-correlated seeds randomly chosen to submit
@@ -238,7 +237,7 @@ if len(sys.argv) > 2:
     if len(sys.argv) > 4:
         condor_folder = sys.argv[4]
 
-#Args are ...step1.py year maxSeeds corr_cut condor_folder
+#Args are ...step1.py year maxSeeds corr_cut [condor_folder]
         
 options = [                             # contains arguments for condor job submission functions
     os.getcwd(),                        # running/working directory
@@ -267,6 +266,9 @@ elif year == 2018:
         TCut(cutStrC),
         varList
     )
+else:
+    print "Invalid year specified."
+    sys.exit(1)
 
 print("Using {} inputs...".format(len(varNames)))
 
