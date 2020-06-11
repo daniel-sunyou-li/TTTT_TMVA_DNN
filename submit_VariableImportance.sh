@@ -5,8 +5,9 @@ host="LPC"
 year="2017"
 seeds="500"
 corrCut="80"
+condor_folder="condor_log"
 
-while getopts ":h:y:s:c:" opt; do
+while getopts ":h:y:s:c:f:" opt; do
     case $opt in
         h)
             host=$OPTARG
@@ -19,6 +20,9 @@ while getopts ":h:y:s:c:" opt; do
             ;;
         c)
             corrCut=$OPTARG
+            ;;
+        f)
+            condor_folder=$OPTARG
             ;;
         \?)
             echo "Invalid option: -$OPTARG"
@@ -41,7 +45,7 @@ fi
 host=`echo "$host" | tr '[:upper:]' '[:lower:]'`
 
 #Verify before submit
-echo "Continue sumbitting $seeds seeds from $year with cut at $corrCut on $host servers?"
+echo "Continue sumbitting $seeds seeds from $year with cut at $corrCut on $host servers to save to $condor_folder?"
 read -p "Yes/No: " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -60,15 +64,7 @@ source /cvmfs/sft.cern.ch/lcg/contrib/gcc/7.3.0/x86_64-centos7-gcc7-opt/setup.sh
 source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.16.00/x86_64-centos7-gcc48-opt/bin/thisroot.sh
 
 if [ $host = 'brux' ]; then
-  if [ $seeds = '' ] || [ $corrCut = '' ]; then
-    python ./BRUX/VariableImportanceBRUX_step1.py $year # running on BRUX clusters
-  else
-    python ./BRUX/VariableImportanceBRUX_step1.py $year $seeds $corrCut
-  fi
+    python ./BRUX/VariableImportanceBRUX_step1.py $year $seeds $corrCut $condor_folder
 elif [ $host = 'lpc' ]; then
-  if [ $seeds = '' ] || [ $corrCut = '' ]; then
-    python ./LPC/VariableImportanceLPC_step1.py $year # running on LPC clusters, use this if input variables > 20 
-  else
-    python ./LPC/VariableImportanceLPC_step1.py $year $seeds $corrCut
-  fi
+    python ./LPC/VariableImportanceLPC_step1.py $year $seeds $corrCut $condor_folder
 fi

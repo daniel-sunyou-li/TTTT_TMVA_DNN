@@ -4,9 +4,9 @@
 varList = {}
 
 # edit me 
-bruxUserName = "dli50"
-lpcUserName = "dsunyou"
-eosUserName = "dali"
+bruxUserName = "afurman2"
+lpcUserName = "afurman"
+eosUserName = "afurman"
 
 step2Sample2017   = "FWLJMET102X_1lep2017_Oct2019_4t_05072020_step2"                    # current 2017 sample
 step2Sample2018   = "FWLJMET102X_1lep2018_Oct2019_4t_05072020_step2"                    # current 2018 sample
@@ -231,4 +231,4 @@ cutStr =  "( ( leptonPt_MultiLepCalc > 50 && isElectron == 1 ) || " + \
           "( AK4HT > 510 ) && " + \
           "( DataPastTriggerX == 1 ) && ( MCPastTriggerX == 1 ) && " + \
           "( NJetsCSVwithSF_MultiLepCalc >= 2 ) &&" + \
-          "( NJets_JetSubCalc >= 4 )"                                     
+          "( NJets_JetSubCalc >= 6 )"                                     
