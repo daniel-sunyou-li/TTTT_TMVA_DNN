@@ -7,7 +7,7 @@ import varsList
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-f", "--folder", help="The condor log folder.")
+parser.add_argument("-f", "--folder", default="condor_log", help="The condor log folder.")
 parser.add_argument("-v", "--verbose", action="store_true", help="Show more output.")
 args = parser.parse_args()
 
