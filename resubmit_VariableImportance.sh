@@ -40,7 +40,7 @@ echo "Continue resubmitting from $condor_folder using $year data on $host server
 read -p "Yes/No: " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Usage: -h (server) -y (year) -s (n. seeds) -c (corr. cut)" 
+    echo "Usage: -h (server) -y (year) -f (condor folder)" 
     exit 1
 fi
 
@@ -61,3 +61,5 @@ elif [ $host == 'lpc' ]; then
 else
   echo Invalid or No Option Used. Submit as "./resubmit_VariableImportance.sh -h (BRUX or LPC) -y (year) -f (condor folder)"
 fi
+
+echo "Finished."

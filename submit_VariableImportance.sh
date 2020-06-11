@@ -49,7 +49,7 @@ echo "Continue sumbitting $seeds seeds from $year with cut at $corrCut on $host 
 read -p "Yes/No: " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Usage: -h (server) -y (year) -s (n. seeds) -c (corr. cut)" 
+    echo "Usage: -h (server) -y (year) -s (n. seeds) -c (corr. cut) -f (condor folder)" 
     exit 1
 fi
 
@@ -68,3 +68,5 @@ if [ $host = 'brux' ]; then
 elif [ $host = 'lpc' ]; then
     python ./LPC/VariableImportanceLPC_step1.py $year $seeds $corrCut $condor_folder
 fi
+
+echo "Finished."

@@ -8,6 +8,7 @@ import ROOT
 import itertools
 from ROOT import TMVA, TFile, TTree, TCut
 from ROOT import gSystem, gApplication, gROOT
+from subprocess import check_output
 
 sys.path.insert(0, "../TTTT_TMVA_DNN")
 
@@ -195,6 +196,24 @@ def variable_occurence(used_seeds, varNames):
             if variable == "1": count_arr[indx] += 1
     for indx, varName in enumerate(varNames):
         print("{:32}: {:3}".format(len(used_seeds)))
+
+#Check VOMS
+def check_voms():
+    # Returns True if the VOMS proxy is already running
+    print "Checking VOMS"
+    try:
+        check_output("voms-proxy-info", shell=True)
+        print "[OK ] VOMS found"
+        return True
+    except:
+        return False
+    
+def voms_init():
+    #Initialize the VOMS proxy if it is not already running
+    if not check_voms():
+        print "Initializing VOMS"
+        os.system("voms-proxy-init --rfc --voms cms")
+        print "VOMS initialized"
           
 os.system("source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh")
 
@@ -205,13 +224,13 @@ TMVA.PyMethodBase.PyInitialize()
 year = int(sys.argv[1])
 inputDirLPC, inputDirEOS, step2Sample = None, None, None
 if year == 2017: 
-  inputDirLPC = varsList.inputDirLPC2017
-  inputDirEOS = varsList.inputDirEOS2017
-  step2Sample = varsList.step2Sample2017
+    inputDirLPC = varsList.inputDirLPC2017
+    inputDirEOS = varsList.inputDirEOS2017
+    step2Sample = varsList.step2Sample2017
 elif year == 2018: 
-  inputDirLPC = varsList.inputDirLPC2018
-  inputDirEOS = varsList.inputDirEOS2018
-  step2Sample = varsList.step2Sample2017
+    inputDirLPC = varsList.inputDirLPC2018
+    inputDirEOS = varsList.inputDirEOS2018
+    step2Sample = varsList.step2Sample2017
 
 varList = varsList.varList["DNN"]       # contains all the input variables
 used_seeds = []                         # stores which seeds have been used
@@ -273,6 +292,8 @@ else:
 print("Using {} inputs...".format(len(varNames)))
 
 # submit jobs
+
+voms_init()
 
 correlated_pairs = get_correlated_pairs(sig_corr, corr_cut, varNames)
 

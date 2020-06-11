@@ -96,6 +96,24 @@ def check_three(condorPath, seedOut):
             return True
     return False
 
+#Check VOMS
+def check_voms():
+    # Returns True if the VOMS proxy is already running
+    print "Checking VOMS"
+    try:
+        check_output("voms-proxy-info", shell=True)
+        print "[OK ] VOMS found"
+        return True
+    except:
+        return False
+    
+def voms_init():
+    #Initialize the VOMS proxy if it is not already running
+    if not check_voms():
+        print "Initializing VOMS"
+        os.system("voms-proxy-init --rfc --voms cms")
+        print "VOMS initialized"
+
 finished_count = 0
 count = 0
 
@@ -121,6 +139,8 @@ formSize = max(len(maxSeed) + 1, 8)     # print formatting setting
 seedDictNum = sum([len(x) for x in seedDict.values()])
 print("Total seeds: {}, Total subseeds: {}".format(len(seedList), seedDictNum))
 print("{:{}}{:{}}{:10}".format("Seed", formSize, "Subseed", formSize, ".out Size (b)"))
+
+voms_init()
 
 # resubmit the seed jobs that failed
 for seed in seedDict:
