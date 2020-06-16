@@ -74,6 +74,8 @@ def submit_seed_job(SeedN, used_seeds, maxSeeds, count, options): # submits seed
     numVars = options[2]
     used_seeds.append(SeedN)
     count = condor_job(str(SeedN), count=count, options=options, maxSeeds=maxSeeds)
+    if test_mode:
+        return used_seeds, count
     for num in range(0, numVars):
         if(SeedN & (1 << num)):
             SubSeedN = SeedN & ~(1 << num)
@@ -248,6 +250,7 @@ sig_corr = None                         # will hold signal correlation matrix
 varNames = None                         # list of input variable names
 
 condor_folder = "condor_log"
+test_mode = False
 
 # adjust seed generation if seed and cut arguments are provided
 if len(sys.argv) > 2:
@@ -255,8 +258,13 @@ if len(sys.argv) > 2:
     corr_cut = int(sys.argv[3])
     if len(sys.argv) > 4:
         condor_folder = sys.argv[4]
+        if len(sys.argv) > 5:
+            test_mode = sys.argv[5] == "true"
 
-#Args are ...step1.py year maxSeeds corr_cut [condor_folder]
+if test_mode:
+    print "Running in test mode. Only one job will be submitted."
+
+#Args are ...step1.py year maxSeeds corr_cut [condor_folder] [test mode]
         
 options = [                             # contains arguments for condor job submission functions
     os.getcwd(),                        # running/working directory
@@ -305,9 +313,11 @@ while len(used_seeds) < maxSeeds:
         var_count = gen_seed.count("1")
         if ( gen_seed not in used_seeds ) and ( var_count > 1 ) and ( len(used_seeds) < maxSeeds ):
             used_seeds, count = submit_seed_job(int(gen_seed, 2), used_seeds, maxSeeds, count, options)
-        if count > maxSeeds: break
-        
-used_seeds, count = variable_inclusion(used_seeds, numCorrSeed, correlated_pairs, maxSeeds, count, options)
+        if count > maxSeeds or test_mode:
+            break
+
+if not test_mode:        
+    used_seeds, count = variable_inclusion(used_seeds, numCorrSeed, correlated_pairs, maxSeeds, count, options)
 
 #variable_occurence(used_seeds, varNames)   # include if you want to see the frequency of variables considered in seeds
           
