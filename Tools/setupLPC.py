@@ -4,12 +4,15 @@
 
 import os, sys, getpass, pexpect, argparse
 from subprocess import check_output
+from subprocess import call as sys_call
 sys.path.insert(0, "../TTTT_TMVA_DNN")
 import varsList
 
 # set-up the working area
 lpcHomeDir = os.path.expanduser("~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/")
 brux_pwd = None
+
+# Run CERN
 
 def check_voms():
     # Returns True if the VOMS proxy is already running
@@ -25,16 +28,22 @@ def voms_init():
     #Initialize the VOMS proxy if it is not already running
     if not check_voms():
         print "[   ] Initializing VOMS"
-        os.system("voms-proxy-init --rfc --voms cms")
-        print "[OK ] VOMS initialized"
+        if sys_call("voms-proxy-init --rfc --voms cms", shell=True) == 0:
+            print "[OK ] VOMS initialized"
+        else:
+            print "[ERR] VOMS cannot be initialized: call to voms-proxy-init failed!"
+            sys.exit(1)
         
 def compile_splitter():
     # compile the sample splitting c++ script
     if "splitROOT.out" in os.listdir(os.getcwd() + "/Tools/"):
-        os.system("rm {}/Tools/splitROOT.out".format(os.getcwd()))
+        sys_call("rm {}/Tools/splitROOT.out".format(os.getcwd()), shell=True)
     print "[   ] Compiling splitROOT.cpp..."
-    os.system("g++ `root-config --cflags` `root-config --libs` -o ./Tools/splitROOT.out ./Tools/splitROOT.cpp")
-    print "[OK ] Compiled splitROOT.CPP"
+    if sys_call("g++ `root-config --cflags` `root-config --libs` -o ./Tools/splitROOT.out ./Tools/splitROOT.cpp", shell=True) == 0:
+        print "[OK ] Compiled splitROOT.CPP"
+    else:
+        print "[ERR] Compiling splitROOT.cpp failed!"
+        sys.exit(1)
     
 # transfer files from BRUX to LPC
 # will need to input BRUX password
@@ -78,7 +87,7 @@ def download_samples(years = ["2017", "2018"]):
         
         # output sample origin and destination when running setup
         if step2Sample not in os.listdir(lpcHomeDir):
-            os.system("mkdir {}{}".format(lpcHomeDir,step2Sample))
+            sys_call("mkdir {}{}".format(lpcHomeDir,step2Sample), shell=True)
         print("[   ] Transferring files from {} to {}...".format(
             varsList.bruxUserName + "@brux.hep.brown.edu:" + inputDirBRUX,
             lpcHomeDir + step2Sample
@@ -94,8 +103,17 @@ def download_samples(years = ["2017", "2018"]):
             	        lpcHomeDir,
                         step2Sample
                         ))
-                child.expect(varsList.bruxUserName + "@brux.hep.brown.edu's password: ")
+                opt = 1
+                while opt == 1:
+                    # Handle both the password prompt and the connection prompt.
+                    opt = child.expect([varsList.bruxUserName + "@brux.hep.brown.edu's password: "
+                                        "Are you sure you want to continue connecting (yes/no)? "])
+                    if opt == 1:
+                        # Confirm connection
+                        child.sendline("yes")
+                # Send password
                 child.sendline(brux_pwd)
+                
                 child.interact()
                 print "[OK ] Done."
             else:
@@ -119,54 +137,61 @@ def split_root(years = ["2017", "2018"]):
     # run the root file splitting script
     for year in years:
         print("[   ] Splitting {} ROOT files...".format(year))
-        dir = lpcHomeDir + (varsList.step2Sample2017 if year == "2017" else varsList.step2Sample2018)
+        d = lpcHomeDir + (varsList.step2Sample2017 if year == "2017" else varsList.step2Sample2018)
         for sample in (varsList.sig2017 + varsList.bkg2017 if year == "2017" else varsList.sig2018 + varsList.bkg2018):
-            os.system("./Tools/splitROOT.out {} {} {} {}".format(
-                dir,    # location of sample to split
-                dir,    # destination of split sample(s)
+            if sys_call("./Tools/splitROOT.out {} {} {} {}".format(
+                d,                           # location of sample to split
+                d,                           # destination of split sample(s)
                 sample,                      # sample to split
                 3                            # number of files to split into
-            ))
+                ), shell=True) == 1:
+                print "[ERR] Splitting " + sample + " failed!"
     print "[OK ] Finished splitting ROOT files"
     
 def eos_transfer(years = ["2017", "2018"]):
     #Transfer data to EOS
     for year in years:
-        dir = (varsList.step2Sample2017 if year == "2017" else varsList.step2Sample2018)
+        d = (varsList.step2Sample2017 if year == "2017" else varsList.step2Sample2018)
         #Make EOS dir
-        os.system("eosmkdir root://cmseos.fnal.gov//store/user/{}".format(varsList.eosUserName + "/" + dir + "/"))
+        sys_call("eosmkdir root://cmseos.fnal.gov//store/user/{}".format(varsList.eosUserName + "/" + d + "/"), shell=True)
         
         # transfer one of the split samples to EOS
         print "[   ] Transferring to EOS..."
-        os.system("xrdcp {}*split0.root root://cmseos.fnal.gov//store/user/{}".format(
-                     "./" + dir + "/",
-                     varsList.eosUserName + "/" + dir + "/"
-                  ))
+        if sys_call("xrdcp {}*split0.root root://cmseos.fnal.gov//store/user/{}".format(
+                     "./" + d + "/",
+                     varsList.eosUserName + "/" + d + "/"
+                  ), shell=True) == 1:
+            print "[ERR] EOS transfer of split ROOT file failed!"
+            sys.exit(1)
 
     # tar the CMSSW framework
     if "CMSSW946.tgz" in os.listdir(lpcHomeDir):
         print("[   ] Deleting existing CMSSW946.tgz...")
-        os.system("rm {}{}".format(lpcHomeDir,"CMSSW946.tgz"))
+        sys_call("rm {}{}".format(lpcHomeDir,"CMSSW946.tgz"), shell=True)
     print "[   ] Creating TAR file"
-    os.system("tar -C ~/nobackup/ -zcvf CMSSW946.tgz --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' {}".format(
-        "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + varsList.step2Sample2017,
-        "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + varsList.step2Sample2018,
-        "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/condor_log*",
-        "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/dataset_*",
-        "CMSSW_9_4_6_patch1/"
-    ))
+    if sys_call("tar -C ~/nobackup/ -zcvf CMSSW946.tgz --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' {}".format(
+            "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + varsList.step2Sample2017,
+            "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + varsList.step2Sample2018,
+            "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/condor_log*",
+            "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/dataset_*",
+            "CMSSW_9_4_6_patch1/"
+        ), shell=True) == 1:
+        print "[ERR] Creating TAR file failed!"
+        sys.exit(1)
     print("[   ] Transferring CMSSW946.tgz to EOS...")
-    os.system("xrdcp -f CMSSW946.tgz root://cmseos.fnal.gov//store/user/{}".format(varsList.eosUserName))
+    if sys_call("xrdcp -f CMSSW946.tgz root://cmseos.fnal.gov//store/user/{}".format(varsList.eosUserName), shell=True) == 1:
+        print "[ERR] EOS trandfer of TAR file failed!"
+        sys.exit(1)
     print("[OK ] EOS transfer complete")
 
-def create_result_dirs():    
-    # create TMVA DNN training result directories
-    if "condor_log" not in os.listdir("./"):
-        os.system("mkdir {}condor_log".format(lpcHomeDir))
-    if "dataset" not in os.listdir("./"):
-        os.system("mkdir {}dataset".format(lpcHomeDir))
-        os.system("mkdir {}dataset/weights".format(lpcHomeDir))
-
+##def create_result_dirs():    
+##    # create TMVA DNN training result directories
+##    if "condor_log" not in os.listdir("./"):
+##        os.system("mkdir {}condor_log".format(lpcHomeDir))
+##    if "dataset" not in os.listdir("./"):
+##        os.system("mkdir {}dataset".format(lpcHomeDir))
+##        os.system("mkdir {}dataset/weights".format(lpcHomeDir))
+# To be replaced by new condor log manager
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--compile", action="store_true", help="Compile the splitRoot binary")
