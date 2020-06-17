@@ -5,7 +5,7 @@ host="LPC"
 year="2017"
 seeds="500"
 corrCut="80"
-condor_folder="condor_log"
+condor_folder="default"
 test=false
 
 while getopts ":h:y:s:c:f:t" opt; do

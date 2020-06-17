@@ -9,6 +9,7 @@ import itertools
 from ROOT import TMVA, TFile, TTree, TCut
 from ROOT import gSystem, gApplication, gROOT
 from subprocess import check_output
+from datetime import datetime
 
 sys.path.insert(0, "../TTTT_TMVA_DNN")
 
@@ -249,7 +250,7 @@ count = 0                               # counts the number of jobs submitted
 sig_corr = None                         # will hold signal correlation matrix
 varNames = None                         # list of input variable names
 
-condor_folder = "condor_log"
+condor_folder = "default"
 test_mode = False
 
 # adjust seed generation if seed and cut arguments are provided
@@ -263,6 +264,13 @@ if len(sys.argv) > 2:
 
 if test_mode:
     print "Running in test mode. Only one job will be submitted."
+
+# Make condor folder if it doesn't exist
+if condor_folder == "default":
+    condor_folder = "condor_log_" + datetime.now().strftime("%d.%b.%Y")
+    print "Created folder " + condor_folder + " to store results"
+if not os.path.exists(os.getcwd() + "/" + condor_folder + "/"):
+    os.mkdir(os.getcwd() + "/" + condor_folder + "/")
 
 #Args are ...step1.py year maxSeeds corr_cut [condor_folder] [test mode]
         
