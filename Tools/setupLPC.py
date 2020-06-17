@@ -106,7 +106,7 @@ def download_samples(years = ["2017", "2018"]):
                 opt = 1
                 while opt == 1:
                     # Handle both the password prompt and the connection prompt.
-                    opt = child.expect([varsList.bruxUserName + "@brux.hep.brown.edu's password: "
+                    opt = child.expect([varsList.bruxUserName + "@brux.hep.brown.edu's password: ",
                                         "Are you sure you want to continue connecting (yes/no)? "])
                     if opt == 1:
                         # Confirm connection
