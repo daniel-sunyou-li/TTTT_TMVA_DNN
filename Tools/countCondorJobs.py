@@ -5,6 +5,10 @@ import numpy as np
 sys.path.insert(0, "../TTTT_TMVA_DNN")
 import varsList
 
+condor_log = "condor_log"
+if len(sys.argv) > 1:
+  condor_log = str(sys.argv[1])
+
 def variable_occurence(count_arr, seed):
   seed_str = "{:0{}b}".format(seed,len(count_arr))
   for count, variable in enumerate(seed_str):
@@ -14,7 +18,7 @@ def variable_occurence(count_arr, seed):
 def count_job(condorPath,seedOut,seedLog,seedOutDirectory,failed_count,finished_count):
   if seedOut in seedOutDirectory:
     job_success = False
-    for line in open(os.getcwd() + "/condor_log/" + seedOut).readlines():
+    for line in open(os.getcwd() + "/" + condor_log + "/" + seedOut).readlines():
       if "ROC-integral" in line:
         job_success = True
         finished_count += 1
@@ -42,12 +46,12 @@ def count_jobs(condorPath,seedJobDirectory,seedOutDirectory,seedLogDirectory):
     seedOut = seed + ".out"
     seedLog = seed + ".log"
     if seedLog not in seedLogDirectory:
-      os.system("rm ./condor_log/{}".format(seedJob))
+      os.system("rm ./{}/{}".format(condor_log,seedJob))
     else:
       failed_count, finished_count = count_job(condorPath,seedOut,seedLog,seedOutDirectory,failed_count,finished_count)
   return failed_count, finished_count
     
-seedDirectory = os.listdir(os.getcwd() + "/condor_log/")
+seedDirectory = os.listdir(os.getcwd() + "/{}/".format(condor_log))
 seedOutDirectory = [seedStr for seedStr in seedDirectory if ".out" in seedStr]
 seedLogDirectory = [seedStr for seedStr in seedDirectory if ".log" in seedStr]
 seedJobDirectory = [seedStr for seedStr in seedDirectory if ".job" in seedStr]
@@ -56,7 +60,7 @@ numVars = int(seedLogDirectory[0].split("vars_")[0].split("Keras_")[1])
 count_arr = np.zeros(numVars)
 
 total_count = sum(".job" in seedStr for seedStr in seedDirectory)
-failed_count, finished_count = count_jobs(os.getcwd()+"/condor_log/",seedJobDirectory,seedOutDirectory,seedLogDirectory)
+failed_count, finished_count = count_jobs(os.getcwd()+"/"+condor_log+"/",seedJobDirectory,seedOutDirectory,seedLogDirectory)
 
 for seedName in seedDirectory:
   if "Subseed" not in seedName and ".job" in seedName:

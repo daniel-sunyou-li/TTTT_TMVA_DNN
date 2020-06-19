@@ -9,6 +9,8 @@ condorDirs = [
     "condor_log" 
 ]
 
+dataset = "dataset" + condorDirs[0].split("log")[1]
+
 def get_seeds(condor_dirs):
     seedListDict = {}
     seedDict = {}
@@ -45,9 +47,9 @@ def variable_importance(seedDict={},numVars=0,option=0):
     importances = {}
     count_arr = np.zeros(numVars)
     if option == 1:
-        varImportanceFile = open("./dataset/VariableImportanceResults_" + str(numVars) + "vars_opt1.txt","w")
+        varImportanceFile = open("./"+dataset+"/VariableImportanceResults_" + str(numVars) + "vars_opt1.txt","w")
     else:
-        varImportanceFile = open("./dataset/VariableImportanceResults_" + str(numVars) + "vars_opt0.txt","w")
+        varImportanceFile = open("./"+dataset+"/VariableImportanceResults_" + str(numVars) + "vars_opt0.txt","w")
     varImportanceFile.write("Weight: {}\n".format(varsList.weightStr))
     varImportanceFile.write("Cut: {}\n".format(varsList.cutStr))
     varImportanceFile.write("Number of Variables: {}, Date: {}\n".format(
@@ -126,7 +128,7 @@ def variable_importance(seedDict={},numVars=0,option=0):
         importances_name = {}
         for key in importances:
             importances_name[varsList.varList["DNN"][key][0]] = importances[key]
-        np.save("./dataset/ROC_hists_" + str(numVars) + "vars",importances_name)
+        np.save("./"+dataset+"/ROC_hists_" + str(numVars) + "vars",importances_name)
   
 # Run the program  
 def main(condorDirs):
@@ -143,6 +145,6 @@ def main(condorDirs):
     print("Using results from: {}".format(condorDirs))
     seedDict, numVars = get_seeds(condorDirs)
     variable_importance(seedDict, numVars, option)
-    print("Saving results to {}".format(os.getcwd() + "/dataset/"))
+    print("Saving results to {}".format(os.getcwd() + "/"+dataset+"/"))
     
 main(condorDirs)

@@ -42,7 +42,7 @@ myArgs = np.array([ # Stores the command line arguments
   ['-o','--option','option',          DEFAULT_OPTION],
   ['-d','--dataset','dataset',        DEFAULT_DATASET],
   ['-n','--nvars','nvars',            DEFAULT_NVARS]
-])    
+],dtype=object)    
 
 try: # retrieve command line options
   shortopts   = "w:y:o:d:n:vh?" # possible command line options
@@ -60,15 +60,12 @@ try: # retrieve command line options
   
 except getopt.GetoptError: # output error if command line argument invalid
   print("ERROR: unknown options in argument %s" %sys.argv[1:])
-  usage()
   sys.exit(1)
 for opt, arg in opts:
-  if opt in myArgs[:,0]:
+  if opt in myArgs[:,0] or opt in myArgs[:,1]:
     index = np.where(myArgs[:,0] == opt)[0][0] # np.where returns a tuple of arrays
     myArgs[index,3] = arg # override the variables with the command line argument
-  elif opt in myArgs[:,1]:
-    index = np.where(myArgs[:,1] == opt)[0][0] 
-    myArgs[index,3] = arg
+    print(myArgs[index,3])
 
 # Initialize some variables after reading in arguments
 verbose_index = np.where(myArgs[:,2] == 'verbose')[0][0]  
@@ -83,7 +80,6 @@ numVars = int(myArgs[nvars_index,3])
 where = myArgs[where_index,3]
 year = int(myArgs[year_index,3])
 dataset = str(myArgs[dataset_index,3])
-
 # import scikit optimize
 
 if where == "brux":
@@ -228,8 +224,8 @@ REGULATOR =   ['none', 'dropout', 'normalization', 'both']
 ACTIVATION =  ['relu','softplus','elu']
 
 ### Optimization parameters
-NCALLS =      50
-NSTARTS =     30
+NCALLS =      5
+NSTARTS =     3
 
 space = [
   Integer(HIDDEN[0],       HIDDEN[1],                     name = "hidden_layers"),
@@ -274,7 +270,7 @@ def objective(**X):
     dataset
   )
   os.system(commandString)  
-  temp_name = "dataset/temp_file.txt"
+  temp_name = dataset+"/temp_file.txt"
   ROC = float(open(temp_name, "r").read())
     
   # Reset the session

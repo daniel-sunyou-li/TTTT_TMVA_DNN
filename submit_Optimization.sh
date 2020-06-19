@@ -14,13 +14,13 @@ eval `scramv1 runtime -sh`
 source /cvmfs/sft.cern.ch/lcg/contrib/gcc/7.3.0/x86_64-centos7-gcc7-opt/setup.sh
 source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.16.00/x86_64-centos7-gcc48-opt/bin/thisroot.sh
 
-if [ $host == 'BRUX' ] || [ $host == 'brux' ] || [ $host == 'Brux' ] && [ [ $year = '2017' ] || [ $year = '2018' ] ]
+if [ $host == 'BRUX' ] || [ $host == 'brux' ] || [ $host == 'Brux' ]
 then
   python TMVAClassification_OptimizationWrapper -w brux -n $numVars -o $option -y $year -d $dataset
-elif [ $host == 'LPC' ] || [ $host == 'lpc' ] || [ $host == 'Lpc' ] && [ [ $year = '2017' ] || [ $year = '2018' ] ]
+elif [ $host == 'LPC' ] || [ $host == 'lpc' ] || [ $host == 'Lpc' ]
 then
   python TMVAClassification_OptimizationWrapper.py -w lpc -n $numVars -o $option -y $year -d $dataset
 else
   echo Invalid or No Options Used. Need to include "host" and "number of variables". 
-  echo Example submissions: "./submit_OptimizationWrapper.sh lpc 2017 20 1 dataset" or "./submit_OptimizationWrapper.sh brux 2018 20 0 dataset"
+  echo Example submissions: "./submit_Optimization.sh lpc 2017 20 1 dataset" or "./submit_Optimization.sh brux 2018 20 0 dataset"
 fi
