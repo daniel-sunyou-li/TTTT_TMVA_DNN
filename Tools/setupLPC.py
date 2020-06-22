@@ -163,17 +163,20 @@ def eos_transfer(years = ["2017", "2018"]):
                   ), shell=True) == 1:
             print "[ERR] EOS transfer of split ROOT file failed!"
             sys.exit(1)
+        print("[OK ] EOS transfer complete")
 
+def create_tar():
     # tar the CMSSW framework
     if "CMSSW946.tgz" in os.listdir(lpcHomeDir):
         print("[   ] Deleting existing CMSSW946.tgz...")
-        sys_call("rm {}{}".format(lpcHomeDir,"CMSSW946.tgz"), shell=True)
+        sys_call("rm {}{}".format(lpcHomeDir, "CMSSW946.tgz"), shell=True)
     print "[   ] Creating TAR file"
-    if sys_call("tar -C ~/nobackup/ -zcvf CMSSW946.tgz --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' {}".format(
+    if sys_call("tar -C ~/nobackup/ -zcvf CMSSW946.tgz --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' {}".format(
             "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + varsList.step2Sample2017,
             "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + varsList.step2Sample2018,
             "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/condor_log*",
             "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/dataset_*",
+            "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/CMSSW946.tgz",
             "CMSSW_9_4_6_patch1/"
         ), shell=True) == 1:
         print "[ERR] Creating TAR file failed!"
@@ -198,6 +201,7 @@ parser.add_argument("-c", "--compile", action="store_true", help="Compile the sp
 parser.add_argument("-d", "--download-samples", action="store_true", help="Only download the samples for BRUX")
 parser.add_argument("-s", "--split-root", action="store_true", help="Split the ROOT files")
 parser.add_argument("-e", "--eos-upload", action="store_true", help="Upload split files to EOS")
+parser.add_argument("-t", "--tar-upload", action="store_true", help="Create TAR file and upload to EOS")
 parser.add_argument("years", nargs="*", default=["2017", "2018"], help="Years to work with, from 2017 or 2018")
 
 if __name__ == "__main__":
@@ -222,6 +226,9 @@ if __name__ == "__main__":
     if args.eos_upload:
         partial = True
         eos_transfer(args.years)
+    if args.tar_upload:
+        partial = True
+        create_tar()
         
     if not partial:
         print "Running whole setup script..."
@@ -229,5 +236,6 @@ if __name__ == "__main__":
         download_samples(args.years)
         split_root(args.years)
         eos_transfer(args.years)
+        create_tar()
     
     print "Done."        
