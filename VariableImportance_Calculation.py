@@ -10,6 +10,7 @@ condorDirs = []
 
 parser = argparse.ArgumentParser()
 parser.add_argument("folders", nargs="*", default=[], help="condor_log folders to use, default is all condor_log*")
+parser.add_argument("-f", "--output-folder", default="auto", help="The folder to output calculations to.")
 args = parser.parse_args()
 
 for d in args.folders:
@@ -106,7 +107,8 @@ def variable_importance(seedDict={}, numVars=0):
                                                np.mean(importances[varIndx]) / np.std(importances[varIndx])
                                               ] )
     varImportanceFile.write("\nImportance calculation:")
-    varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<7} / {:<7} / {:<11}".format(
+    varImportanceFile.write("\nNormalization: {}".format(normalization))
+    varImportanceFile.write("\n{:<6} / {:<34} / {:<6} / {:<7} / {:<7} / {:<11} / {:<11}".format(
         "Index",
         "Variable Name",
         "Freq.",
@@ -116,7 +118,7 @@ def variable_importance(seedDict={}, numVars=0):
         "Importance"
     ))
     for varIndx in importance_stats:
-        varImportanceFile.write("\n{:<6} {:<34} / {:<6} / {:<8.4f} / {:<7.4f} / {:<7.4f} / {:<11.3f}".format(
+        varImportanceFile.write("\n{:<6} / {:<34} / {:<6} / {:<8.4f} / {:<7.4f} / {:<7.4f} / {:<11.3f}".format(
             str(varIndx+1)+".",
             varsList.varList["DNN"][varIndx][0],
             count_arr[varIndx],
@@ -134,9 +136,13 @@ def variable_importance(seedDict={}, numVars=0):
 
 
 #Ensure dataset forlder exists
-if not os.path.exists("dataset"):
-    os.mkdir("dataset")
+ds_folder = args.output_folder
+if ds_folder == "auto":
+    ds_folder = "dataset_" + datetime.datetime.now().strftime("%d.%b.%Y")
+    
+if not os.path.exists(ds_folder):
+    os.mkdir(ds_folder)
 
 seedDict, numVars = get_seeds(condorDirs)
 variable_importance(seedDict, numVars)
-print("Saving results to {}".format(os.getcwd() + "/dataset/"))
+print("Saving results to {}".format(os.getcwd() + "/" + ds_folder))
