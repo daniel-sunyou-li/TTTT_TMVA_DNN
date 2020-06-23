@@ -205,9 +205,12 @@ def check_voms():
     # Returns True if the VOMS proxy is already running
     print "Checking VOMS"
     try:
-        check_output("voms-proxy-info", shell=True)
-        print "[OK ] VOMS found"
-        return True
+        output = check_output("voms-proxy-info", shell=True)
+        if output.rfind("timeleft") > -1:
+            if int(output[output.rfind(": ")+2:]) > 0:
+                print "[OK ] VOMS found"
+                return True
+        return False
     except:
         return False
     
@@ -215,7 +218,10 @@ def voms_init():
     #Initialize the VOMS proxy if it is not already running
     if not check_voms():
         print "Initializing VOMS"
-        os.system("voms-proxy-init --rfc --voms cms")
+        output = check_output("voms-proxy-init --rfc --voms cms", shell=True)
+        if "failure" in output:
+            print "Incorrect password entered. Try again."
+            voms_init()
         print "VOMS initialized"
           
 os.system("source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh")

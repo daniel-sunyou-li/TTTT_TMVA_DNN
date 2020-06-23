@@ -14,25 +14,29 @@ brux_pwd = None
 
 # Run CERN
 
+#Check VOMS
 def check_voms():
     # Returns True if the VOMS proxy is already running
-    print "[   ] Checking VOMS"
+    print "Checking VOMS"
     try:
-        check_output("voms-proxy-info", shell=True)
-        print "[OK ] VOMS found"
-        return True
+        output = check_output("voms-proxy-info", shell=True)
+        if output.rfind("timeleft") > -1:
+            if int(output[output.rfind(": ")+2:]) > 0:
+                print "[OK ] VOMS found"
+                return True
+        return False
     except:
         return False
     
 def voms_init():
     #Initialize the VOMS proxy if it is not already running
     if not check_voms():
-        print "[   ] Initializing VOMS"
-        if sys_call("voms-proxy-init --rfc --voms cms", shell=True) == 0:
-            print "[OK ] VOMS initialized"
-        else:
-            print "[ERR] VOMS cannot be initialized: call to voms-proxy-init failed!"
-            sys.exit(1)
+        print "Initializing VOMS"
+        output = check_output("voms-proxy-init --rfc --voms cms", shell=True)
+        if "failure" in output:
+            print "Incorrect password entered. Try again."
+            voms_init()
+        print "VOMS initialized"
         
 def compile_splitter():
     # compile the sample splitting c++ script
