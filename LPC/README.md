@@ -34,18 +34,7 @@ Note that the submission script takes a minimum of 0.25s/job, so submitting 1000
 
 To view information about the status of running or submitted jobs whose logs are stored in a given folder, the `Tools/countCondorJobs.py` script can be used.
 
-The tool accepts two optional arguments:
-
-- -f [condor log path]: the folder in which the Condor log files are stored. Default `condor_log`.
-- -v: toggle verbose mode, which displays the names of all failed jobs.
-
-<u>Example Usage</u>
-To check on the status of jobs in the `condor_log_15.June.2020` folder without verbosity, the syntax is:
-`python Tools/countCondorJobs.py -f condor_log_15.June.2020`
-
-Note that the process reads each output file, and therefore may take several minutes depending on the number of jobs submitted to a given folder. The number of jobs can be counted by using `ls [log folder] | grep *.job | wc -l`.
-
-The script outputs a list of each variable and how many jobs it was included in, as well as how many jobs successfully finished, how many failed, and how many seeds were submitted.
+See the documentation in the Tools README.
 
 ### Resubmitting Failed Jobs
 

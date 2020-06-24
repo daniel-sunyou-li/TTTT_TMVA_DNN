@@ -1,4 +1,4 @@
-# Tools Used to Prepare the Analysis Process
+# Tools Used in the Analysis Process
 
 ## `setupLPC.py`
 
@@ -38,6 +38,28 @@ To compile the splitRoot binary, create split files for the 2017 dataset, and up
 `python Tools/setupLPC.py -c -s -e 2017`
 
 Note that the full script may take hours to finish running.
+
+
+
+##  `countCondorJobs.py`
+
+The Condor job counting script scans a folder containing .job files and reports on the status of those jobs.
+
+In automatic/default mode, the script scans for all folders labeled "condor_log*" and then reports on each one individually.
+
+The script accepts the following arguments:
+
+- (*-v*) Toggle verbose mode, and output the number of jobs for each variable as well as the names of any failed jobs.
+- A list of folders to scan, overriding the default match.
+
+<u>Example Usage</u>
+To report on the jobs in the folder `condor_log_17.June.2020`, the syntax would be:
+`python Tools/countCondorJobs.py condor_log_17.June.2020`
+
+Note that the process reads each output file, and therefore may take several minutes depending on the number of jobs submitted to a given folder. The number of jobs can be counted by using `ls [log folder] | grep *.job | wc -l`.
+
+The report information includes the number of submitted, completed, and failed jobs, as well as the number of submitted seeds. Optionally, using the *-v* flag, the report includes the number of jobs for each variable, and the names of all failed jobs.
+
 
 
 
