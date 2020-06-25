@@ -6,6 +6,7 @@ import getopt
 import random
 import ROOT
 import itertools
+from time import sleep
 from ROOT import TMVA, TFile, TTree, TCut
 from ROOT import gSystem, gApplication, gROOT
 from subprocess import check_output
@@ -63,12 +64,32 @@ def condor_job(SeedN="", SubSeedN="", count=0, options=['','','','','',''], maxS
     jdf.close()
     
     os.chdir("%s/"%(condorDir))
-    os.system("condor_submit %(FILENAME)s.job"%job_spec)
-    os.system("sleep 0.25")
+    output = check_output("condor_submit %(FILENAME)s.job"%job_spec, shell=True)
+    if output.find("submitted") != -1:
+        i = output.find("Submitting job(s).") + 19
+        ns_jobs = int(output[i:output.find("job(s)", i)])
+
+        i = output.find("to cluster ") + 11
+        cluster = output[i:output.find(".", i)]
+
+        i = output.find("jobs to ") + 8
+        sched = output[i:output.find("\n", i)]
+
+        count += ns_jobs
+        print("{} jobs (+{}) submitted to cluster {} by {}, {} out of {} seeds generated.\r".format(count, ns_jobs, cluster, sched, len(used_seeds), maxSeeds)),
+    else:
+        print "The job submission appears to have failed. Review the output below:"
+        print output
+        print
+        choice = raw_input ("Continue? (y/N) ")
+        if not "y" in choice.lower():
+            print "Job submission cancelled."
+            sys.exit(1)
+        print "Continuing. Counting job as submitted."
+        count += 1
+    sleep(0.25)
     os.chdir("%s"%(runDir))
     
-    count += 1
-    print("{} jobs submitted,  {} out of {} seeds generated.".format(count, len(used_seeds), maxSeeds))
     return count
     
 def submit_seed_job(SeedN, used_seeds, maxSeeds, count, options): # submits seed job and corresponding subseed jobs
@@ -196,7 +217,8 @@ def variable_occurence(used_seeds, varNames):
     for seed in used_seeds:
         seed_str = "{:0{}b}".format(int(seed), len(count_arr))
         for indx, variable in enumerate(seed_str):
-            if variable == "1": count_arr[indx] += 1
+            if variable == "1":
+                count_arr[indx] += 1
     for indx, varName in enumerate(varNames):
         print("{:32}: {:3}".format(len(used_seeds)))
 
@@ -207,7 +229,7 @@ def check_voms():
     try:
         output = check_output("voms-proxy-info", shell=True)
         if output.rfind("timeleft") > -1:
-            if int(output[output.rfind(": ")+2:]) > 0:
+            if int(output[output.rfind(": ")+2:].replace(":", "")) > 0:
                 print "[OK ] VOMS found"
                 return True
         return False
@@ -333,5 +355,6 @@ while len(used_seeds) < maxSeeds:
 if not test_mode:        
     used_seeds, count = variable_inclusion(used_seeds, numCorrSeed, correlated_pairs, maxSeeds, count, options)
 
+print
 #variable_occurence(used_seeds, varNames)   # include if you want to see the frequency of variables considered in seeds
           
