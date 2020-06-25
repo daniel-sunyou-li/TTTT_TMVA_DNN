@@ -23,7 +23,7 @@ There are three general steps for this analysis:
     cd ./TTTT_TMVA_DNN/
     mkdir dataset
     pip install --user scikit-optimize # this should be stored in .local/lib/python2.7/site-packages
-    
+
 ### Set-up Instructions for LPC
     # sign-in to LPC
     kinit -f [username]@FNAL.GOV
@@ -99,12 +99,31 @@ On the LPC, if a job uses more memory than specified in the Condor job submissio
 * Advised to ([read the description of the LPC condor cluster machines](https://uscms.org/uscms_at_work/computing/setup/batch_systems_advanced.shtml)) before adjusting parameters
 
 ### 1.4.1 Calculate the variable importance ###
-After ensuring that all jobs are finished running--or finding out by the calculation script failing--run the script:
+After ensuring that all jobs are finished running - or finding out by the calculation script failing - run the script: `VariableImportance_Calculation.py`. This script reads the data from Condor log folders, and generates datasets of variable importance data.
 
-`python VariableImportance_Calculation.py 1`
+The script supports the following arguments:
 
-which iterates through all the `.out` files determining the relative importance of the variables and storing the results in `TTTT_TMVA_DNN/dataset/VariableImportanceResults_vars[#].txt` as well as `ROC_hists_[#]vars.npy` which contains a NumPy array of the distributions which can be plotted.
-* There are two options for running variable importance: the traditional variable importance (`0`) or the variable importance significance (`1`).  The traditional variable importance sums over all the values in the ROC differential distributions for a given variable and normalizes the value. The variable importance significance takes the ratio of the distributions mean to RMS.
+- (*-f*) the output folder to use for the dataset.
+  - This defaults to an automatically created folder named `dataset_day.Month.year`.
+- A list of folders containing Condor logs to use as inputs.
+  - This defaults to all folders in the current working directory matching `condor_log*`.
+
+<u>Example Usage</u>
+The syntax to run the variable importance calculation on the log folder `my_logs` and generate results to an automatically named output folder would be:
+`python VariableImportance_Calculation.py my_logs`
+The outputs would be visible in the folder `dataset_day.Month.year` corresponding to the date the calculation is run.
+
+The script iterates through all the `.out` files in each input folder, determining the relative importance of the variables and storing the results in `VariableImportanceResults_[#]vars.txt`, as well as `ROC_hists_[#]vars.npy` which contains a NumPy array of the distributions which can be plotted. Both these files are in the dataset output folder.
+
+The output text file contains:
+
+- The weight function used.
+- The cut condition used.
+- The folders included in the calculation (as arguments to the script).
+- The number of variables used.
+- The date the calculation was run.
+- The normalization value for the calculation.
+- For each variable: Name, Frequency, Sum, Mean, RMS, and Importance.
 
 ### 1.4.2 Plot the variable importance ###
 Because BRUX cannot display graphics, to visualize the variable importance, we need to move `VariableImportanceResults_vars[#].txt` to a different system.  Using a Jupyter python notebook ([Google Colab](https://colab.research.google.com/notebooks/welcome.ipynb) or [CERN SWAN](swan.cern.ch)):
@@ -114,7 +133,7 @@ Because BRUX cannot display graphics, to visualize the variable importance, we n
   * `scp '[lpc_username]@cmslpc-sl7.fnal.gov:/uscms_data/d3/[lpc_username]/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/dataset/ROC*' ./`
 2. Run `VariableImportance_Plot.ipynb` which should generate a bar graph of the variable importance.
 * The notebook is configured to run on Google Colab and connect to Google's 'My Drive' so editing will need to be done if being run on SWAN.
-    
+  
 ## 2 Hyper Parameter Optimization ##
 __Determine the optimal dense neural network hyper parameters for a given input using `scikit-optimize`.__
 ### 2.1 (Optional) Edit the hyper parameter survey space in `TMVAClassificationPyKeras_OptimizationWrapper.py` ###
