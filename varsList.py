@@ -193,7 +193,7 @@ varList['DNN'] = [
   ['HT_2m','HTwoTwoPtBjets','GeV'],
   ['Sphericity','Sphericity','Sphericity'],
   ['Aplanarity','Aplanarity','Aplanarity'],
-  ['minDR_lepBJet','min[#DeltaR(l,j)]',''],
+  ['minDR_lepJet','min[#DeltaR(l,j)]',''],
   ['BDTtrijet1','trijet1 discriminator',''],
   ['BDTtrijet2','trijet2 discriminator',''],
   ['BDTtrijet3','trijet3 discriminator',''],
