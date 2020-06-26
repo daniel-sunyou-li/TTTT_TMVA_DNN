@@ -2,6 +2,7 @@
 import glob, os, sys 
 import getopt
 import math
+from subprocess import check_output
 
 if len(sys.argv) == 1:
     print("Error: Supply sample year: VariableImportanceLPC_resubmit.py year [condor_log]")
@@ -34,6 +35,7 @@ def condorJob(SeedN="", SubSeedN="", count=0, options=['', '', ''], memory="3.5 
     runDir =    options[0]
     condorDir = options[1]
     numVars =   options[2]
+    eosDir =    options[3]
 
     fileName = ""
     SubmitSeedN = ""
@@ -49,7 +51,9 @@ def condorJob(SeedN="", SubSeedN="", count=0, options=['', '', ''], memory="3.5 
         "SubmitSeedN": SubmitSeedN,
         "FILENAME": fileName,
         "REQMEM": memory,
-        "YEAR": year
+        "YEAR": year,
+        "EOSDIR": eosDir,
+        "eosUserName": varsList.eosUserName
     }
     jdfName = condorDir + "%(FILENAME)s.job"%job_spec
     jdf = open(jdfName, "w")
@@ -67,7 +71,8 @@ def condorJob(SeedN="", SubSeedN="", count=0, options=['', '', ''], memory="3.5 
 options = [
     os.getcwd(),
     os.getcwd() + "/" + condor_folder + "/",
-    len(varsList.varList["DNN"])
+    len(varsList.varList["DNN"]),
+    varsList.inputDirEOS2017 if year == 2017 else varsList.inputDirEOS2018
 ]
 
 # checks if job was removed by scheduler (false)
@@ -101,9 +106,12 @@ def check_voms():
     # Returns True if the VOMS proxy is already running
     print "Checking VOMS"
     try:
-        check_output("voms-proxy-info", shell=True)
-        print "[OK ] VOMS found"
-        return True
+        output = check_output("voms-proxy-info", shell=True)
+        if output.rfind("timeleft") > -1:
+            if int(output[output.rfind(": ")+2:].replace(":", "")) > 0:
+                print "[OK ] VOMS found"
+                return True
+        return False
     except:
         return False
     
@@ -111,7 +119,10 @@ def voms_init():
     #Initialize the VOMS proxy if it is not already running
     if not check_voms():
         print "Initializing VOMS"
-        os.system("voms-proxy-init --rfc --voms cms")
+        output = check_output("voms-proxy-init --rfc --voms cms", shell=True)
+        if "failure" in output:
+            print "Incorrect password entered. Try again."
+            voms_init()
         print "VOMS initialized"
 
 finished_count = 0
@@ -125,22 +136,23 @@ seedOutDirectory = [seedStr for seedStr in seedDirectory if ".out" in seedStr]
 seedJobDirectory = [seedStr for seedStr in seedDirectory if ".job" in seedStr]
 seedLogDirectory = [seedStr for seedStr in seedDirectory if ".log" in seedStr]
 
-for seedStr in seedStrDir:
+for seedStr in os.listdir(condor_folder):
     if "Subseed_" not in seedStr and ".job" in seedStr:
-        seed = seedStr.split("_Seed_")[1].split(".out")[0]
+        seed = seedStr.split("_Seed_")[1].split(".job")[0]
         seedList.append(seed)
         
 for seed in seedList:
     subSeedArr = glob.glob(options[1] + "Keras_" + str(options[2]) + "vars_Seed_" + seed + "_Subseed_*.out")
-    seedDict[seed] = subSeedArr
+    seedDict[seed] = [x[x.rfind("_")+1:].rstrip(".out") for x in subSeedArr]
 
 maxSeed = str(int("1" * options[2], 2))
 formSize = max(len(maxSeed) + 1, 8)     # print formatting setting
 seedDictNum = sum([len(x) for x in seedDict.values()])
-print("Total seeds: {}, Total subseeds: {}".format(len(seedList), seedDictNum))
-print("{:{}}{:{}}{:10}".format("Seed", formSize, "Subseed", formSize, ".out Size (b)"))
 
 voms_init()
+
+print("Total seeds: {}, Total subseeds: {}".format(len(seedList), seedDictNum))
+print("{:{}}{:{}}{:10}".format("Seed", formSize, "Subseed", formSize, ".out Size (b)"))
 
 # resubmit the seed jobs that failed
 for seed in seedDict:
