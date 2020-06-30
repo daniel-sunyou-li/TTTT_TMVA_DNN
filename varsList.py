@@ -126,13 +126,13 @@ bkg2017_2 = [
 ]
 
 bkg2018_0 = [
-  sample.split("hadd")[0] + "split0.root" for sample in bkg2017
+  sample.split("hadd")[0] + "split0.root" for sample in bkg2018
 ]
 bkg12018_1 = [
-  sample.split("hadd")[0] + "split1.root" for sample in bkg2017
+  sample.split("hadd")[0] + "split1.root" for sample in bkg2018
 ]
 bkg2018_2 = [
-  sample.split("hadd")[0] + "split2.root" for sample in bkg2017
+  sample.split("hadd")[0] + "split2.root" for sample in bkg2018
 ]
 
 #[<variable in trees>, <variable name for axes and titles>, <unit>]
@@ -193,7 +193,7 @@ varList['DNN'] = [
   ['HT_2m','HTwoTwoPtBjets','GeV'],
   ['Sphericity','Sphericity','Sphericity'],
   ['Aplanarity','Aplanarity','Aplanarity'],
-  ['minDR_lepBJet','min[#DeltaR(l,j)]',''],
+  ['minDR_lepJet','min[#DeltaR(l,j)]',''],
   ['BDTtrijet1','trijet1 discriminator',''],
   ['BDTtrijet2','trijet2 discriminator',''],
   ['BDTtrijet3','trijet3 discriminator',''],

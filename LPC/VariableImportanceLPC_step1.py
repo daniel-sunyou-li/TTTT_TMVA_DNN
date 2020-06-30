@@ -261,7 +261,7 @@ if year == 2017:
 elif year == 2018: 
     inputDirLPC = varsList.inputDirLPC2018
     inputDirEOS = varsList.inputDirEOS2018
-    step2Sample = varsList.step2Sample2017
+    step2Sample = varsList.step2Sample2018
 
 varList = varsList.varList["DNN"]       # contains all the input variables
 used_seeds = []                         # stores which seeds have been used
