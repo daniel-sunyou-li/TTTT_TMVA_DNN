@@ -83,33 +83,36 @@ for jf in job_folders:
     for seed_j in jf.seed_jobs:
         if seed_j.has_result:
             seed_rocs[seed_j.seed] = seed_j.roc_integral
+            for var, included in seed_j.seed.states.iteritems():
+                if included:
+                    if var in importance_stats:
+                        importance_stats[var]["freq"] += 1
+                    else:
+                        importance_stats[var] = { "freq": 1 }
 
-print "Found " + str(len(seed_rocs.keys())) + " seed ROC-integrals"
+print "Found " + str(len(seed_rocs.keys())) + " seed ROC-integrals."
 
 # Calculate importances
+n = 1
 for jf in job_folders:
     for seed, seed_roc in seed_rocs.iteritems():
-        print seed.binary
-        ssjs = jf.subseed_jobs(seed)
-        print len(ssjs)
-        for subseed_j in ssjs:
+        print("Processing seed {}.\r".format(n)),
+        n += 1
+        for subseed_j in jf.subseed_jobs(seed):
             if subseed_j.has_result:
                 for var, included in subseed_j.subseed.states.iteritems():
                     if included:
                         if var in importances:
                             importances[var].append(seed_roc - subseed_j.roc_integral)
-                            importance_stats[var]["freq"] += 1
                         else:
-                            print "Creating " + var
                             importances[var] = [seed_roc - subseed_j.roc_integral]
-                            importance_stats[var] = { "freq": 1 }
 
-print "Computing stats"
+print
+print "Computing stats."
 for var, importance in importances.iteritems():
     normalization += sum(importance)
 
     # Compute stats
-    freq = len([j for j in seed_jobs if j.seed.states[var]])
     mean = np.mean(importance)
     std = np.std(importance)
 
@@ -117,41 +120,10 @@ for var, importance in importances.iteritems():
     importance_stats[var]["rms"] = std
     importance_stats[var]["importance"] = mean / std
 
-print "Computing sums"
+print "Computing sums."
 # Add sum calculation once normalization is computed
 for var, importance in importances.iteritems():
     importance_stats[var]["sum"] = sum(importance) / abs(normalization)
-
-### Old
-##for var in variables:
-##    # Find the finished jobs associated with this variable
-##    seed_jobs = []
-##    subseed_joblist = []
-##    for jf in job_folders:
-##        for j in jf.variable_jobs(var):
-##            if j.has_result:
-##                if j.subseed == None:
-##                    seed_jobs.append(j)
-##                else:
-##                    subseed_joblist.append(j)
-##        
-##    importances[var] = []
-##
-##    # Find all seed jobs containing this variable
-##    print str(len(seed_jobs)) + " seed jobs and " + str(len(subseed_joblist)) + " subseed jobs"
-##    for seed_j in seed_jobs:
-##
-##        # Find all subseed jobs for this seed containing this variable
-##        subseed_jobs = [j for j in subseed_joblist if j.seed == seed_j.seed]
-##        print "    " + str(len(subseed_jobs)) + " subseeds"
-##        for subseed_j in subseed_jobs:
-##            # Add computation of importance
-##            importances[var].append(
-##                seed_j.roc_integral - subseed_j.roc_integral
-##                )
-##
-##    # Add to normalization
-    
 
 print "Importances computed."
 
@@ -178,7 +150,7 @@ with open(os.path.join(ds_folder, "VariableImportanceResults_" + str(num_vars) +
         "Importance"
     ))
 
-    for i, var in enumerate(sorted(importances.keys(), key=lambda k: importance_stats[k][sort_order])):
+    for i, var in enumerate(reversed(sorted(importances.keys(), key=lambda k: importance_stats[k][sort_order]))):
         f.write("\n{:<6} / {:<34} / {:<6} / {:<8.4f} / {:<7.4f} / {:<7.4f} / {:<11.3f}".format(
             str(i + 1) + ".",
             var,
@@ -188,7 +160,7 @@ with open(os.path.join(ds_folder, "VariableImportanceResults_" + str(num_vars) +
             importance_stats[var]["rms"],
             importance_stats[var]["importance"]
         ))
-print "Wrote VariableImportanceResults" + str(num_vars) + "vars.txt"
+print "Wrote VariableImportanceResults_" + str(num_vars) + "vars.txt"
 
 # ROC Hists File
 np.save(os.path.join(ds_folder, "ROC_hists_" + str(num_vars) + "vars"), importances)
@@ -196,7 +168,7 @@ print "Wrote ROC_hists" + str(num_vars) + "vars"
 
 # Importance Order File
 with open(os.path.join(ds_folder, "VariableImportanceOrder_" + str(num_vars) + "vars.txt"), "w") as f:
-    for var in sorted(importances.keys(), key=lambda k: importance_stats[k][sort_order]):
+    for var in reversed(sorted(importances.keys(), key=lambda k: importance_stats[k][sort_order])):
         f.write(var + "\n")
 print "Wrote " + "VariableImportanceOrder_" + str(num_vars) + "vars.txt"
 

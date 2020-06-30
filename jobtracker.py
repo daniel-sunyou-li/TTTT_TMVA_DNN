@@ -168,31 +168,32 @@ class JobFolder(object):
 
         # Find all files and all jobs
         flist = listdir(self.path)
-        log("Extracting job list and sorting.")
-        jobfiles = sorted([f for f in flist if f.endswith(".job")], key=len)
+        jobfiles = sorted([f.rstrip(".job") for f in flist if f.endswith(".job")], key=len)
         
         log("Found {} jobs, scanning and importing.".format(len(jobfiles)))
-        u_seeds = set()
-        for jobfile in jobfiles:
-            # Create job object from filename
-            name = jobfile.rstrip(".job")
-            subseed_n = int(name[name.rfind("_")+1:]) if "Subseed" in name else None
-            if subseed_n == None:
-                u_seeds.add(seed_n)
-            seed_n = int(name[name.find("Seed_")+5:name.find("_", name.find("Seed_")+5)])
+        seeds = {}
+        for name in jobfiles:
+            if not "Subseed" in name:
+                seed_n = long(name[name.find("Seed_")+5:])
+                seeds[seed_n] = Seed.from_binary("{:0{}b}".format(seed_n, len(variables)), variables)
+                self.jobs.append(Job(self.path,
+                                     name,
+                                     seeds[seed_n],
+                                     None))
+                
+        log("Found {} seed jobs.".format(len(seeds.keys())))
+        
+        for name in jobfiles:
+            if not "Subseed" in name:
+                continue
+            seed_n = long(name[name.find("Seed_")+5:name.find("_", name.find("Seed_")+5)])
+            subseed_n = long(name[name.rfind("_")+1:])
             
-            if subseed_n != None:
-                if not seed_n in u_seeds:
-                    print "Expected: " + str(seed_n)
-                    print u_seeds
-                    raise ValueError("Seed not in list!")
             self.jobs.append(Job(self.path,
                                  name,
-                                 Seed.from_binary("{:0{}b}".format(seed_n, len(variables)), variables),
-                                 None if subseed_n == None else Seed.from_binary("{:0{}b}".format(subseed_n, len(variables)), variables)))
+                                 seeds[seed_n],
+                                 Seed.from_binary("{:0{}b}".format(subseed_n, len(variables)), variables)))
 
-        print len(u_seeds)
-        return
         self._save_jtd()
         self.check()
         log("Import finished. Spec file saved.")
