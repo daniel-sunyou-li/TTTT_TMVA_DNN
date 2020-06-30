@@ -17,14 +17,14 @@ BKG=`python -c 'import sys; sys.path.insert(0, "../TTTT_TMVA_DNN/"); import vars
 
 for sig in $SIG:
 do
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/$sig .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/${sig//:} .
 done
 for bkg in $BKG:
 do
-xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/$bkg .
+xrdcp -s root://cmseos.fnal.gov//store/user/$eosUserName/$eosDir/${bkg//:} .
 done
 
-cd ./CMSSW_9_4_6_patch1/src
+cd ..
 
 export SCRAM_ARCH=slc7_amd64_gcc630
 eval `scramv1 runtime -sh`
