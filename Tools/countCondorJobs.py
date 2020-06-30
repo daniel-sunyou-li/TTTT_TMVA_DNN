@@ -5,7 +5,6 @@ import numpy as np
 sys.path.insert(0, "../TTTT_TMVA_DNN")
 import varsList
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument("folders", nargs="*", default=[], help="The condor log folders.")
 parser.add_argument("-v", "--verbose", action="store_true", help="Show more output.")
@@ -13,6 +12,7 @@ args = parser.parse_args()
 
 condor_folders = args.folders
 verbose = args.verbose
+
 
 def variable_occurence(count_arr, seed):
     seed_str = "{:0{}b}".format(seed, len(count_arr))
@@ -78,13 +78,13 @@ for condor_folder in condor_folders:
     seedOutDirectory = [seedStr for seedStr in seedDirectory if ".out" in seedStr]
     seedLogDirectory = [seedStr for seedStr in seedDirectory if ".log" in seedStr]
     seedJobDirectory = [seedStr for seedStr in seedDirectory if ".job" in seedStr]
-
     numVars = int(seedLogDirectory[0].split("vars_")[0].split("Keras_")[1])
     count_arr = np.zeros(numVars)
 
     total_count = sum(".job" in seedStr for seedStr in seedDirectory)
     failed_count, finished_count = count_jobs(os.getcwd() + "/" + condor_folder + "/", seedJobDirectory, seedOutDirectory, seedLogDirectory)
     seed_count = 0
+
 
     for seedName in seedDirectory:
         if "Subseed" not in seedName and ".job" in seedName:
