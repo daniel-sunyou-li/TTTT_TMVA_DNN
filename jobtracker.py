@@ -35,11 +35,11 @@ class Seed(object):
     def __len__(self):
         return len(self.variables)
 
-    def __eq__(self, seed):
-        return seed != None and (seed.binary == self.binary and seed.variables == self.variables)
-
-    def __ne__(self, seed):
-        return seed == None or (seed.binary != self.binary or seed.binary != self.variables)
+##    def __eq__(self, seed):
+##        return seed != None and (seed.binary == self.binary and seed.variables == self.variables)
+##
+##    def __ne__(self, seed):
+##        return seed == None or (seed.binary != self.binary or seed.binary != self.variables)
 
     @property
     def binary(self):
@@ -120,7 +120,6 @@ class Job(object):
                 self.roc_integral = -1
 
         return self.finished
-    
 
 class JobFolder(object):
     def __init__(self, path="condor_log"):
@@ -140,10 +139,16 @@ class JobFolder(object):
         log("Loading job spec for " + self.path)
         if self.compacted:
             log("   Is spec file.")
-            self._read_jtd()
+            try:
+                self._read_jtd()
+            except:
+                log("   Spec file corrupted!")
         elif os.path.exists(os.path.join(self.path, "jobs.jtd")):
             log("   Found spec file.")
-            self._read_jtd()
+            try:
+                self._read_jtd()
+            except:
+                log("   Spec file corrupted!")
         else:
             log("   Spec file not found! Use the import_folder function.")
 
@@ -203,6 +208,9 @@ class JobFolder(object):
         if self.compacted:
             log("Already compacted!")
             return
+        if len([j for j in self.jobs if not j.finished]) > 0:
+            log("Unable to compact! Contains unfinished jobs!")
+            return
         if dest == "default":
             dest = os.path.join(os.getcwd(), self.path[self.path.rfind("/")+1:] + ".jtd")
 
@@ -221,12 +229,13 @@ class JobFolder(object):
         # Check the status of each job
         if self.compacted:
             return
-        log("Checking" + (" subset of" if subset != None else "") + " job statuses in {}".format(self.path))
+        log("Checking" + (" subset of {}".format(len(subset)) if subset != None else "") + " job statuses in {}".format(self.path))
         if subset == None:
             subset = self.jobs
         for job in subset:
             job.check_finished()
-        self._save_jtd()
+        if len(subset) > 1:
+            self._save_jtd()
 
     def __len__(self):
         # The number of jobs in this folder
@@ -239,7 +248,7 @@ class JobFolder(object):
 
     def subseed_jobs(self, seed):
         # The subseed jobs for a given seed
-        return [j for j in self.jobs if (j.subseed != None and j.seed == seed)]
+        return [j for j in self.jobs if (j.subseed != None and j.seed.binary == seed.binary)]
 
     @property
     def variables(self):
@@ -263,14 +272,14 @@ class JobFolder(object):
 
     def get_resubmit_list(self):
         # Get the jobs which need to be resubmitted.
-        self.check([j for j in self.jobs if not (j.finished and j.roc_integral == -1)])
+        self.check([j for j in self.jobs if (not j.has_result)])
         return [j for j in self.jobs if (j.finished and j.roc_integral == -1)]
 
     def get_variable_counts(self):
         # Get a dict containing the number of times each variable was tested
         counts = {}
         for var in self.variables:
-            counts[var] = len([j for j in self.variable_jobs(var) if (j.subseed != None and j.subseed.includes(var))])
+            counts[var] = len([j for j in self.variable_jobs(var) if (j.subseed == None and j.seed.includes(var))])
         return counts
 
     def get_stats(self):
@@ -279,7 +288,7 @@ class JobFolder(object):
             "jobs": len(self),
             "finished_jobs": len(self.result_jobs),
             "failed_jobs": len(self.get_resubmit_list()),
-            "seeds": len(self.seeds),
+            "seeds": len(self.seed_jobs),
             "variable_counts": self.get_variable_counts()
             }
 
