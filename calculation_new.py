@@ -57,7 +57,7 @@ print "Loading job data..."
 job_folders = []
 for folder in condor_folders:
     jf = jt.JobFolder(folder)
-    if jf.jobs == []:
+    if jf.jobs == None:
         # Folder needs to be imported
         print("The folder {} has not been loaded by the job tracker.".format(folder))
         choice = raw_input ("Import with default variables? (Y/n)")
@@ -82,7 +82,7 @@ seed_rocs = {}
 for jf in job_folders:
     for seed_j in jf.seed_jobs:
         if seed_j.has_result:
-            seed_rocs[seed_j.seed] = seed_j.roc_integral
+            seed_rocs[seed_j.seed] = (seed_j.roc_integral, jf)
             for var, included in seed_j.seed.states.iteritems():
                 if included:
                     if var in importance_stats:
@@ -92,22 +92,20 @@ for jf in job_folders:
 
 print "Found " + str(len(seed_rocs.keys())) + " seed ROC-integrals."
 
-# Calculate importances
 n = 1
-for jf in job_folders:
-    for seed, seed_roc in seed_rocs.iteritems():
-        print("Processing seed {}.\r".format(n)),
-        n += 1
-        for subseed_j in jf.subseed_jobs(seed):
-            if subseed_j.has_result:
-                for var, included in subseed_j.subseed.states.iteritems():
-                    if included:
-                        if var in importances:
-                            importances[var].append(seed_roc - subseed_j.roc_integral)
-                        else:
-                            importances[var] = [seed_roc - subseed_j.roc_integral]
-
+for seed, seed_roc in seed_rocs.iteritems():
+    print("Processing seed {}.\r".format(n)),
+    n += 1
+    for subseed_j in seed_roc[1].subseed_jobs(seed):
+        if subseed_j.has_result:
+            for var, included in subseed_j.subseed.states.iteritems():
+                if not included and seed.states[var]:
+                    if var in importances:
+                        importances[var].append(seed_roc[0] - subseed_j.roc_integral)
+                    else:
+                        importances[var] = [seed_roc[0] - subseed_j.roc_integral]
 print
+    
 print "Computing stats."
 for var, importance in importances.iteritems():
     normalization += sum(importance)
@@ -119,11 +117,7 @@ for var, importance in importances.iteritems():
     importance_stats[var]["mean"] = mean
     importance_stats[var]["rms"] = std
     importance_stats[var]["importance"] = mean / std
-
-print "Computing sums."
-# Add sum calculation once normalization is computed
-for var, importance in importances.iteritems():
-    importance_stats[var]["sum"] = sum(importance) / abs(normalization)
+    importance_stats[var]["sum"] = sum(importance)
 
 print "Importances computed."
 
@@ -164,7 +158,7 @@ print "Wrote VariableImportanceResults_" + str(num_vars) + "vars.txt"
 
 # ROC Hists File
 np.save(os.path.join(ds_folder, "ROC_hists_" + str(num_vars) + "vars"), importances)
-print "Wrote ROC_hists" + str(num_vars) + "vars"
+print "Wrote ROC_hists_" + str(num_vars) + "vars"
 
 # Importance Order File
 with open(os.path.join(ds_folder, "VariableImportanceOrder_" + str(num_vars) + "vars.txt"), "w") as f:
