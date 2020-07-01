@@ -145,4 +145,38 @@ The `folders.py` script is used to access the functionality of the backend from 
 
 The script accepts the following command-line arguments:
 
-- 
+- `-v` (optional): Toggle verbose mode, showing output from backend library.
+- `-c` (optional): Operate in *compact* mode (see below).
+- `-i varlist`  (optional): Operate in *import* mode (see below).
+  - `varlist` can either be `all` to use the default list of 76 variables, or a path to a file which contains a sorted list of variable names, one per line.
+- A list of Condor log folders (optional). Defaults to scanning the working directory for all folders matching `condor_log*`.
+
+Based on the command line flags, the script behaves differently.
+
+<u>*Import* Mode:</u> Run with `-i varlist` option.
+
+The script will call the `import_folder` method on each of the folders specified, using the given variable list. This generates a spec file within the folder (see the section on spec files, as well as the documentation for `JobFolder` for more details). If the spec file already exists, a prompt to overwrite appears. See also: documentation for `import_folder` in `JobFolder`.
+
+Example Usage:
+To import the folders `condor_log_17.June.2020` and `condor_log_new` using the variable list stored in `15vars.txt`, the syntax would be: `python folders.py -i 15vars.txt condor_log_17.June.2020 condor_log_new`.
+
+<u>*Compact* Mode:</u> Run with the `-c` flag.
+
+The script will call the `compact_folder` method on each of the folders specified. This removes the condor log files and keeps only the spec files. A warning will appear for folders that could not be compacted. See also: documentation for `compact_folder` in `JobFolder`.
+
+Example Usage:
+To compact the folder `condor_log_23.June.2020`, the syntax would be: `python folders.py -c condor_log_23.June.2020`.
+
+<u>*Information* Mode:</u> Run **without** `-c` or `-i` options.
+
+The script will display information about the status of jobs within each of the folders specified. The folders must have a spec file, and a warning will appear if one does not exist. The generated information is based on calling `get_stats` on each of the folders. See also: documentation for `get_stats` in `JobFolder`.
+
+If the script is called with the `-v` flag, then for each folder, the number of times each variable is used in a seed as well as the name of each failed job will be displayed.
+
+In all cases, the number and percent of finished and failed jobs will be printed, as well as the number of submitted seeds.
+
+Example Usage:
+To display verbose information about the folders `condor_log_23.June.2020` and `condor_log_17.June.2020` the syntax would be: `python folders.py -v condor_log_23.June.2020 condor_log_17.June.2020`
+
+
+
