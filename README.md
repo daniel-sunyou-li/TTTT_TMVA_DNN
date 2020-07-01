@@ -1,180 +1,182 @@
-# TTTT DNN Classifier using ROOT.TMVA #
-__Train a dense neural network to classify .ROOT samples as being either signal (TTTT) or background events.__\
-__***Needs updating***__
+# Four Top Machine Learning Classification and Importance Calculation
 
-There are three general steps for this analysis:
-  1.  _Input variable importance calculation_
-  2.  _Dense neural network hyper parameter optimization_
-  3.  _Evaluate a fully trained optimized dense neural network classifier_
+Introduction
 
-### Set-up Instructions for BRUX
-    # sign-in to BRUX
-    ssh -XY [username]@brux.hep.brown.edu
-    
-    # retrieve the CMSSW environment
-    source /cvmfs/cms.cern.ch/cmsset_default.sh
-    export SCRAM_ARCH=slc7_amd64_gcc630
-    cmsrel CMSSW_9_4_6_patch1
-    cd CMSSW_9_4_6_patch1/src/
-    cmsenv
-    
-    # clone the repository
-    git clone https://github.com/daniel-sunyou-li/TTTT_TMVA_DNN.git
-    cd ./TTTT_TMVA_DNN/
-    mkdir dataset
-    pip install --user scikit-optimize # this should be stored in .local/lib/python2.7/site-packages
+## Setup
 
-### Set-up Instructions for LPC
-    # sign-in to LPC
-    kinit -f [username]@FNAL.GOV
-    ssh -XY [username]@cmslpc-sl7.fnal.gov
-    
-    cd nobackup/
-    
-    # retrieve the CMSSW environment
-    source /cvmfs/cms.cern.ch/cmsset_default.csh
-    setenv SCRAM_ARCH slc7_amd64_gcc630
-    cmsrel CMSSW_9_4_6_patch1
-    cd CMSSW_9_4_6_patch1/src/
-    cmsenv
-    
-    # clone the repository
-    git clone https://github.com/daniel-sunyou-li/TTTT_TMVA_DNN.git
-    cd ./TTTT_TMVA_DNN/
-    chmod u+rwx *
-    pip install --user scikit-optimize
-    python ./Tools/setupLPC.py
+Setup
 
-Some of the scripts have the line `os.system('bash')` which is required for setting up the environment but requires `exit` in the command line after running the script to view the outputs.
-      
-### Datasets ###
-We are using 2017 Step 2 LJMET samples that are stored in: `/mnt/hadoop/store/group/bruxljm/FWLJMET102X_1lep2017_Oct2019_4t_03202020_step2/nominal/`
-* The directory is also listed in `varsList.py` as `inputDirBRUX`
+## Managing Jobs
 
-There is one signal sample: `TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root`
-There are fifteen background samples.  All the sample names can be found in `varsList.py`.
+The bulk of the data generated in this project is stored in individual jobs. Each job corresponds to one instance of training a neural network, testing it, and computing a ROC-Integral value. These jobs are defined by `.job` files, which are submitted to Condor. As the network is trained, a `.out`, `.err`, and `.log` file is also generated for each job, containing its output and information about its status.
 
-### Importing Datasets to LPC ###
-When running variable importance on the LPC, we need to import the signal and background samples onto both the LPC storage and the EOS storage. Run the commands:
+The cycle of creating, submitting, checking the status of, and gathering results from jobs is handled by different Python scripts within the software package.
 
-`python ~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/setupLPC.py`
+### `jobtracker.py`: The Backend
 
-In case there are issues with the tar file, then make adjustments to `TTTT_TMVA_DNN` and run the commands,
+To simplify job management, the software package is built around `jobtracker.py`, a job management library. It tracks the status of jobs and provides convenient information about them.
 
-    tar -zcvf CMSSW946.tgz ~/nobackup/CMSSW_9_4_6_patch1/
-    xrdcp CMSSW946.tgz root://cmseos.fnal.gov//store/user/<EOS Username>
+*Note*: In order for spec files to be read properly, <u>never</u> import the library using `from jobtracker import *`. You <u>must</u> import the library using a module name, such as `import jobtracker as jt`. Otherwise you will encounter errors when loading spec files.
 
-## 1. Input Variable Importance Calculation ###
-__Calculate the relative importance of a Step 2 input variable in training a dense neural network classifier.  Then, the "unimportant" variables can be excluded from subsequent training to save time.__
-### 1.1 (Optional) Edit `varsList.py` ###
-`varsList.py` contains a python `dict` named `varList["DNN"]` containing lists of: the input variable name, expression and units.  Comment out (or uncomment) the variables being included in the variable importance calculation.
-### 1.2 (Optional) Edit the network architecture ###
-If you would like to change the generic unoptimized network architecture being trained, then you can edit `TMVAClassification_VariableImportance.py`.  
-### 1.3.1 Run the variable importance calculation script ###
-The variable importance analysis is run by the command:
+`LOG = True`: Turns on output from the library. Set at the module level.
 
-    mkdir condor_log
-    voms-proxy-init --valid 192:00 -voms cms
-    ./submit_VariableImportance.sh LPC 2017 100 80 
 
-which submits Condor jobs for training the networks, each representing a different input subset to be trained.  The first argument is to specify which server the script is being run out of; the second argument specifies which production year samples to use; the third argument specifies the number of "seeds" being generated; and the fourth argument specifies the correlation coefficient cut.  
-* A seed is a binary string with a character length equal to the number of input variables considered.  A value of `1` indicates that the variable should be included as an input to the network and a `0` is to exclude the variable. The total number of Condor jobs relates to the number of seeds by roughly: `# Jobs ~ # Seeds + 0.5 * # Seeds * # Variables`.
 
-The results and logs are stored in `condor_log` where the desired result is the ROC value, which is contained in the `.out` file. 
+```python
+class Job(folder: str, name: str, seed: Seed, subseed: None or Seed)
+```
 
-If submitting on the LPC, be sure to edit the username parameters in `varsList.py`.
+The `Job` object represents a single Condor job stored within a given folder.
+An instance has the following method:
 
-### 1.3.2 Resubmit failed Condor jobs ###
-To check the status of the Condor job, use the command: `condor_q`
-* Using the option `-better-analyze` provides a summary of available nodes
-* Using the option `-batch -run` provides a summary of all running jobs
+- `check_finished()`
+  Reads the `.out` file of the job if it exists, and updates its `finished` and `roc_integral` properties accordingly.
 
-You can identify a failed job by noting a small `.out` file size and checking the `.err` log. In the case of failed jobs, run the script:
+An instance has the following properties:
 
-`python resubmit_VariableImportance.sh BRUX # or LPC`
+- `folder`
+  The full path to the folder in which the job is stored, or `None` if the job is stored in a compacted state.
+- `name`
+  The name of the job, corresponding to filenames. <u>Example</u>: `Keras_76vars_Seed_<#>_Subseed_<#>`.
+- `path`
+  The full filepath of the `.job` file, or `None` if the job is stored in a compacted state.
+- `seed`
+  A `Seed` object corresponding to the job's seed.
+- `subseed`
+  A `Seed` object corresponding to the job's subseed, or `None` if the job does not have a subseed.
+- `finished`
+  `True` if the job has finished processing, whether a result was achieved or not. `False` otherwise. Updated by the `check_finished` method.
+- `roc_integral`
+  Stores the value of the ROC-Integral computed by the job, or `-1` if the value has not been computed yet. Updated by the `check_finished` method.
+- `has_result`
+  `True` if the job has finished and obtained a ROC-Integral value, `False` otherwise.
 
-which iterates through the `.out` files identifying if the ROC value is present.  Keep running the script so long as there are failed Condor jobs. 
 
-On the LPC, if a job uses more memory than specified in the Condor job submission file, then the scheduler will remove the job. To adjust the memory usage, edit `/LPC/VariableImportanceLPC_step1.py` and adjust the variable `request_memory`.
-* Advised to ([read the description of the LPC condor cluster machines](https://uscms.org/uscms_at_work/computing/setup/batch_systems_advanced.shtml)) before adjusting parameters
 
-### 1.4.1 Calculate the variable importance ###
-After ensuring that all jobs are finished running - or finding out by the calculation script failing - run the script: `VariableImportance_Calculation.py`. This script reads the data from Condor log folders, and generates datasets of variable importance data.
+```python
+class JobFolder(path: str)
+```
 
-The script supports the following arguments:
+The `JobFolder` object encapsulates a folder where job files are stored and its related **spec file**. See the section on spec files for more details.
 
-- (*-f*) the output folder to use for the dataset.
-  - This defaults to an automatically created folder named `dataset_day.Month.year`.
-- A list of folders containing Condor logs to use as inputs.
-  - This defaults to all folders in the current working directory matching `condor_log*`.
+An instance has the following properties:
 
-<u>Example Usage</u>
-The syntax to run the variable importance calculation on the log folder `my_logs` and generate results to an automatically named output folder would be:
-`python VariableImportance_Calculation.py my_logs`
-The outputs would be visible in the folder `dataset_day.Month.year` corresponding to the date the calculation is run.
+- `path`
+  The full path to the folder containing jobs, or to the spec file if the folder is compacted.
+- `jobs`
+  A list of `Job` objects in the folder, or `None` if the folder has not been initialized.
+- `compacted`
+  `True` if the folder has been compacted using the `compact_folder` method, `False` otherwise.
+- `seed_jobs`
+  A list of `Job` objects which have no subseed.
+- `variables`
+  A list of variable names. A variable name will appear if it is used in at least one `Job` in the folder.
+- `result_jobs`
+  A list of `Job` objects which have finished, obtaining a ROC-Integral value.
 
-The script iterates through all the `.out` files in each input folder, determining the relative importance of the variables and storing the results in `VariableImportanceResults_[#]vars.txt`, as well as `ROC_hists_[#]vars.npy` which contains a NumPy array of the distributions which can be plotted. Both these files are in the dataset output folder.
+An instance has the following methods:
 
-The output text file contains:
+- `check(subset: list)`
+  Calls the `check_finished` method of each `Job` object in the `subset`, or on all jobs in the folder if no subset is specified.
+- `get_variable_counts()`
+  Returns a dictionary whose keys are the union of all the variables used across all jobs in the folder, and whose values are the number of times the given variable is included in a job which has no `subseed`. 
+- `get_resubmit_list()`
+  Returns a list of `Job` objects which have finished without computing a ROC-Integral value, and thus need to be resubmitted to Condor.
+- `variable_jobs(var: str)`
+  Returns a list of `Job` objects whose `seed` contains the given variable name `var`. Note that the variable does not have to be included, just contained.
+- `subseed_jobs(seed: Seed)`
+  Returns a list of `Job` objects whose `seed` properties match the given seed value and have a `subseed` value not equal to `None`.
+- `get_stats()`
+  Returns a dictionary with information about the folder and job progress. The dictionary contains the following entries:
+  - `jobs`: The number of jobs in the folder. Equivalent to `len(job_folder)`.
+  - `finished_jobs`: The number of jobs that have finished (regardless of success). Equivalent to `len(job_folder.result_jobs)`.
+  - `failed_jobs`: The number of jobs that finished without computing a ROC-Integral value. Equivalent to `len(job_folder.get_resubmit_list())`.
+  - `seeds`: The number of seeds in the folder. Equivalent to `len(job_folder.seed_jobs)`.
+  - `variable_counts`: Equivalent to `job_folder.get_variable_counts()`.
+- `import_folder(variables: list)`
+  Scans the folder on the disk, reading information from the `.job` files and creating `Job` objects to store in a spec file. The variable list is necessary to interpret the seed and subseed values in the file names. After the jobs have been created, their status is checked and the spec file is saved.
+  *Note*: This may take several minutes depending on how many job files are in the folder.
+- `compact_folder( [ dest: str = "default" ] )`
+  Deletes the folder and contained `.job` files, leaving only a spec file named identically to the folder, or at path `dest` if the default value is overridden. The compaction process can only take place if all jobs in the folder have finished. The process is irreversible.
 
-- The weight function used.
-- The cut condition used.
-- The folders included in the calculation (as arguments to the script).
-- The number of variables used.
-- The date the calculation was run.
-- The normalization value for the calculation.
-- For each variable: Name, Frequency, Sum, Mean, RMS, and Importance.
+The class has the following static method:
 
-### 1.4.2 Plot the variable importance ###
-Because BRUX cannot display graphics, to visualize the variable importance, we need to move `VariableImportanceResults_vars[#].txt` to a different system.  Using a Jupyter python notebook ([Google Colab](https://colab.research.google.com/notebooks/welcome.ipynb) or [CERN SWAN](swan.cern.ch)):
-1. From a local repository (or from the terminal in SWAN) use: `scp [brux_username]@brux.hep.brown.edu:/path/to/file.txt/ ./` or `scp [lpc_username]@cmslpc-sl7.fnal.gov:/path/to/file/`
-* An easy way to extract the Variable Importance results is to use the following commands:
-  * `scp '[lpc_username]@cmslpc-sl7.fnal.gov:/uscms_data/d3/[lpc_username]/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/dataset/VariableImportance*' ./`
-  * `scp '[lpc_username]@cmslpc-sl7.fnal.gov:/uscms_data/d3/[lpc_username]/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/dataset/ROC*' ./`
-2. Run `VariableImportance_Plot.ipynb` which should generate a bar graph of the variable importance.
-* The notebook is configured to run on Google Colab and connect to Google's 'My Drive' so editing will need to be done if being run on SWAN.
-  
-## 2 Hyper Parameter Optimization ##
-__Determine the optimal dense neural network hyper parameters for a given input using `scikit-optimize`.__
-### 2.1 (Optional) Edit the hyper parameter survey space in `TMVAClassificationPyKeras_OptimizationWrapper.py` ###
-To make best use of this step, select a reduced input variable set.  By default, there are seven hyper parameters being optimized:
-* `HIDDEN (Integer)`: the number of hidden layers in the dense network
-* `NODES (Integer)`: the number of initial input nodes
-* `PATTERN (Categorical)`: choosing between a static number or reducing number of nodes per hidden layer
-* `BATCH_POW (Integer)`: the power determining the batch size where `BATCH_SIZE = 2**{BATCH_POW}`
-* `LRATE (Real)`: the starting learning rate for the model optimizer (`Adam`)
-* `REGULATOR (Categorical)`: choosing the combination of training regulators (i.e. Dropout, Batch normalization)
-* `ACTIVATION (Categorical)`: the activation function that transforms the node output (i.e. ReLU, Softplus)
+- `JobFolder.create( [ name: str = "default" ] )`
+  Creates a new `JobFolder` object corresponding to a blank folder. The folder will be named `condor_log_[day].[Month].[year]` and placed in the working directory if the default name is used. The `JobFolder` object is returned.
 
-For each of these hyper parameters, the survey space can be edited before running the analysis.  Also, there are static parameters that can be edited:
-* `EPOCHS`: the number of training iterations for a model
-* `PATIENCE`: the number of epochs before implementing early stopping
-* `NCALLS`: the total number of hyper parameter iterations (the number of inferred samples is `NCALLS - NSTARTS`)
-* `NSTARTS`: the number of randomly sampled hyper parameter iterations
 
-If editing the static parameters, necessary to edit `EPOCHS` and `PATIENCE` in `TMVAOptimization.py` as well.
-### 2.2 Run the hyper parameter optimization ###
-Run the script:
 
-`./submit_Optimization.sh LPC 10 1`  
+```python
+class Seed(variables: list)
+```
 
-The first argument is the server the script is being run out of (LPC or BRUX). The second argument is for the number of ranked variables to be included in the hyper parameter optimization training (e.g. include the top 10 ranked variables). The third argument specifies how the variables should be ranked with `0` corresponding to the traditional variable importance and `1` corresponding to the variable importance significance.
+The `Seed` class corresponds to a binary seed which indicates which variables are tested in each job.
 
-This will begin the hyper parameter process that selects a hyper parameter set and then trains that architecture with the defined (reduced) input variable set.  The parameters and result (ROC integral) of each trained model are written to `TTTT_TMVA_DNN/dataset/optimize_Keras_[#]vars/optimize_log_[date and tag].txt`.  The model with the best result (largest ROC integral) is written to `params_[date and tag].txt`.  An additional text file `varsListHPO.txt` will be written specifying the sum of the variable importance metric used in ranking along with the inputs included (in order of increasing importance). 
+An instance has the following properties:
 
-__Note:__ The hyper parameter optimization uses fewer number of training/testing events and fewer epochs to give preliminary results to a full training cycle.  Under the assumption that there is more than one signal sample and many background samples, the abridged dataset greatly reduces computation time.
-## 3. Run a full training cycle ##
-__Using the "important" variables and optimized model architecture, run a full training set to get final results.__
+- `variables`
+  The list of variable names, in order, that are used in generating this seed.
+- `states`
+  A dictionary where the keys are variable names, and the values are `True` if the given variable is included in the seed (corresponding to a `1` in the binary string), or `False` otherwise (`0`).
+- `binary`
+  A binary string representation of the seed. The leftmost character corresponds to the first variable in the list.
 
-### 3.1 Run the final full training cycle with `TMVAClassification_Training.py` ###
-Run the final full training cycle using: 
+An instance has the following methods:
 
-`./submit_Training.sh LPC 1 ./dataset/optimize_Keras_[#]vars/`
+- `include(var)`
+  If the variable `var` is used in this seed, set its entry in `states` to `True`.
+- `exclude(var)`
+  If the variable `var` is used in this seed, set its entry in `states` to `False`.
+- `includes(var)`
+  Returns `True` if the variable `var` is used in the seed and its entry in `states` is `True`.
 
-The first argument is the server the script is being run out of (LPC or BRUX). The second argument is to specify if a static model is used (`0`) or a hyper parameter optimized model will be used (`1`). The third argument accompanies the second argument where if a hyper parameter optimized model is used, then the results directory from the hyper parameter optimization should be specified. 
+The class has the following static methods:
 
-After the training completes, the ROC integral value will be displayed in the commandline but also appended to `varsListHPO.txt` at the end of the file. The fully trained model will be stored in `TTTT_TMVA_DNN/dataset/weights/Keras_[#]vars/TrainedModel_PyKeras.h5`.  
+- `Seed.from_binary(bitstring: str, variables: list)`
+  Creates a new `Seed` object from a list of variables and a binary string. The characters in the string are read left to right, with the leftmost character corresponding to the first variable in the list. The `Seed` object is returned.
+- `Seed.random(variables)`
+  Creates a new `Seed` object with random variable inclusion given a list of variables. The `Seed` object is returned.
 
-Now, you should have a fully trained model (`TrainedModel_PyKeras.h5`) that can be used on any dataset with the same Step 2 inputs! 
-* It would be a good idea to change the name of this model and store it somewhere safe
+
+
+### `folders.py`: Folder Management Utilities
+
+The `folders.py` script is used to access the functionality of the backend from the command line. It allows the user to import, compact, and view data about folders.
+
+The script accepts the following command-line arguments:
+
+- `-v` (optional): Toggle verbose mode, showing output from backend library.
+- `-c` (optional): Operate in *compact* mode (see below).
+- `-i varlist`  (optional): Operate in *import* mode (see below).
+  - `varlist` can either be `all` to use the default list of 76 variables, or a path to a file which contains a sorted list of variable names, one per line.
+- A list of Condor log folders (optional). Defaults to scanning the working directory for all folders matching `condor_log*`.
+
+Based on the command line flags, the script behaves differently.
+
+<u>*Import* Mode:</u> Run with `-i varlist` option.
+
+The script will call the `import_folder` method on each of the folders specified, using the given variable list. This generates a spec file within the folder (see the section on spec files, as well as the documentation for `JobFolder` for more details). If the spec file already exists, a prompt to overwrite appears. See also: documentation for `import_folder` in `JobFolder`.
+
+Example Usage:
+To import the folders `condor_log_17.June.2020` and `condor_log_new` using the variable list stored in `15vars.txt`, the syntax would be: `python folders.py -i 15vars.txt condor_log_17.June.2020 condor_log_new`.
+
+<u>*Compact* Mode:</u> Run with the `-c` flag.
+
+The script will call the `compact_folder` method on each of the folders specified. This removes the condor log files and keeps only the spec files. A warning will appear for folders that could not be compacted. See also: documentation for `compact_folder` in `JobFolder`.
+
+Example Usage:
+To compact the folder `condor_log_23.June.2020`, the syntax would be: `python folders.py -c condor_log_23.June.2020`.
+
+<u>*Information* Mode:</u> Run **without** `-c` or `-i` options.
+
+The script will display information about the status of jobs within each of the folders specified. The folders must have a spec file, and a warning will appear if one does not exist. The generated information is based on calling `get_stats` on each of the folders. See also: documentation for `get_stats` in `JobFolder`.
+
+If the script is called with the `-v` flag, then for each folder, the number of times each variable is used in a seed as well as the name of each failed job will be displayed.
+
+In all cases, the number and percent of finished and failed jobs will be printed, as well as the number of submitted seeds.
+
+Example Usage:
+To display verbose information about the folders `condor_log_23.June.2020` and `condor_log_17.June.2020` the syntax would be: `python folders.py -v condor_log_23.June.2020 condor_log_17.June.2020`
+
+
 

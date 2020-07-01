@@ -178,7 +178,7 @@ def generate_uncorr_seeds(seed, numCorrSeed, correlated_pairs):
         correlated_pairs_list.append(correlated_pairs[pair_key])
     for pair in correlated_pairs_list:
         seed = seed_replace(seed, 0, pair)
-    correlation_combos = [list(set(combo)) for combo in list(itertools.product(*correlated_pairs_list))]
+    correlation_combos = [list(set(combo)) for combo in list(itertools.product(*correlated_pairs_list))] #Make it faster?
     for combo in correlation_combos:
         new_seeds.append((seed_replace(seed, 1, combo)))
     new_seeds = list(set(new_seeds))

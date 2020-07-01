@@ -24,7 +24,7 @@ if args.compact:
     print "Done."
 elif args.import_data != None:
     print "Importing data from folders..."
-    varlist = None
+    varlist = []
     if args.import_data.lower() == "all":
         print "Default variable list will be used."
         varlist = [v[0] for v in __import__("varsList").varList["DNN"]]
@@ -35,7 +35,7 @@ elif args.import_data != None:
                 if line != "":
                     varlist.append(line.rstrip().strip())
     for folder in folders:
-        jf = jobtracker.JobFolder()
+        jf = jobtracker.JobFolder(folder)
         if jf.jobs != None:
             print("{} already has a spec file!".format(folder))
             choice = raw_input("Overwrite? (y/N) ")
