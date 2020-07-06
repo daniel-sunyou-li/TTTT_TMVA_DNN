@@ -1,8 +1,9 @@
 import jobtracker as jt
 from argparse import ArgumentParser
-from multiprocessing import Process, Lock
+from multiprocessing import Process, Lock, Value
 from subprocess import check_output
 from time import sleep
+from sys import exit as sys_exit
 import os
 import varsList
 
@@ -118,13 +119,11 @@ voms_init()
 
 # Track Progress
 info_lock = Lock()
-failed_jobs = []
-submitted_jobs = 0
-submitted_seeds = 0
+submitted_jobs = Value("i", 0)
+submitted_seeds = Value("i", 0)
 
 # Submit a single job to Condor
 def submit_job(job):
-    global submitted_jobs, submitted_seeds, failed_jobs
     # Create a job file
     run_dir = os.getcwd()
     with open(job.path, "w") as f:
@@ -151,23 +150,22 @@ def submit_job(job):
         i = output.find("jobs to ") + 8
         sched = output[i:output.find("\n", i)]
 
-        submitted_jobs += ns_jobs
+        submitted_jobs.value += ns_jobs
         if job.subseed == None:
-            submitted_seeds += 1
-        print("{} jobs (+{}) submitted to cluster {} by {}".format(submitted_jobs, ns_jobs, cluster, sched) +
-              ".\r" if resubmit else ", {} out of {} seeds submitted.".format(submitted_seeds, num_seeds)),
+            submitted_seeds.value += 1
+        print("{} jobs (+{}) submitted to cluster {} by {}".format(submitted_jobs.value, ns_jobs, cluster, sched) +
+              ".\r" if resubmit else ", {} out of {} seeds submitted.".format(submitted_seeds.value, num_seeds)),
     else:
         print "[WARN] Job submission failed. Will retry at end."
         print output
         print
-        failed_jobs.append(job)
+        sys.exit(1)
     info_lock.release()
     
     os.chdir(run_dir)
 
 # Split jobs among processes
 def submit_joblist(job_list):
-    global failed_jobs
     failed_jobs = []
     procs = []
     j = 0
@@ -176,17 +174,21 @@ def submit_joblist(job_list):
             # Start a new process for this job
             p = Process(target=submit_job, args=(job_list[j],))
             p.start()
-            procs.append(p)
+            procs.append((p, job_list[j]))
             j += 1
         # Clean up old job
         for p in procs:
-            if not p.is_alive():
+            if not p[0].is_alive():
+                if p[0].exitcode == 1:
+                    failed_jobs.append(p[1])
                 procs.remove(p)
                 break
         sleep(0.25)
     # Wait for remaining processes to finish
     for p in procs:
-        p.join()
+        p[0].join()
+        if p[0].exitcode == 1:
+            failed_jobs.append(p[1])
 
     print
 
@@ -197,7 +199,7 @@ def submit_joblist(job_list):
             print "Done."
             return
         print "Retrying failed submissions."
-        submit_joblist(failed_jobs[:])
+        submit_joblist(failed_jobs)
         
 
 # Run in Resubmit mode
