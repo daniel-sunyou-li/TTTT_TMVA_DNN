@@ -181,6 +181,26 @@ To display verbose information about the folders `condor_log_23.June.2020` and `
 
 
 
+### `submit.py`: Job Submission and Resubmission
+
+The `submit.py` script is used to create new Condor jobs for the variable importance calculation, and also to resubmit jobs which failed to compute a ROC-Integral value.
+
+The script accepts the following command-line arguments:
+
+- `-v` (optional): Toggle verbose mode, showing output from backend library.
+- `-r` (optional): Run in *resubmit* mode (as opposed to submit mode - see details below).
+- `-p num_processes` (optional): Specify how many processes should be used to submit jobs in parallel. Default 2.
+- `-n num_seeds` (optional): How many seeds to submit. Only meaningful in *submit* mode. Default 500.
+- `-c correlation_percent` (optional): The percentage correlation between two variables necessary for them to count as highly correlated. Default 80.
+- `-l varlist` (optional):  The variables to use when submitting jobs. Only meaningful in *submit* mode.
+  - `varlist` can either be `all` to use the default list of 76 variables, or a path to a file which contains a sorted list of variable names, one per line.
+- `-y year`: The dataset to use when training. Specify `2017` or `2018`.
+- A list of Condor log folders (optional). Defaults to scanning the working directory for all folders matching `condor_log*` in *resubmit* mode, or submitting to a new folder named `condor_log_[day].[Month].[year]` in *submit* mode.
+
+<u>*Resubmit* Mode</u>: Run with `-r` flag.
+
+
+
 ### `calculate.py`: Variable Importance Calculation
 
 The `calculate.py` script takes the results from one or several job folders and produces variable importance calculations for each of the variables used. Only successfully finished jobs can be used in the calculation, so it may be useful to check their status using `folders.py` before running this script.
