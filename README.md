@@ -166,6 +166,7 @@ The script will call the `compact_folder` method on each of the folders specifie
 
 Example Usage:
 To compact the folder `condor_log_23.June.2020`, the syntax would be: `python folders.py -c condor_log_23.June.2020`.
+After running this command, the working directory would contain the spec file `condor_log_23.June.2020.jtd` and the folder will be deleted.
 
 <u>*Information* Mode:</u> Run **without** `-c` or `-i` options.
 
@@ -179,4 +180,76 @@ Example Usage:
 To display verbose information about the folders `condor_log_23.June.2020` and `condor_log_17.June.2020` the syntax would be: `python folders.py -v condor_log_23.June.2020 condor_log_17.June.2020`
 
 
+
+### `submit.py`: Job Submission and Resubmission
+
+The `submit.py` script is used to create new Condor jobs for the variable importance calculation, and also to resubmit jobs which failed to compute a ROC-Integral value.
+
+The script accepts the following command-line arguments:
+
+- `-v` (optional): Toggle verbose mode, showing output from backend library.
+- `-r` (optional): Run in *resubmit* mode (as opposed to submit mode - see details below).
+- `-p num_processes` (optional): Specify how many processes should be used to submit jobs in parallel. Default 2.
+- `-n num_seeds` (optional): How many seeds to submit. Only meaningful in *submit* mode. Default 500.
+- `-c correlation_percent` (optional): The percentage correlation between two variables necessary for them to count as highly correlated. Default 80.
+- `-l varlist` (optional):  The variables to use when submitting jobs. Only meaningful in *submit* mode.
+  - `varlist` can either be `all` to use the default list of 76 variables, or a path to a file which contains a sorted list of variable names, one per line.
+- `-y year`: The dataset to use when training. Specify `2017` or `2018`.
+- A list of Condor log folders (optional). Defaults to scanning the working directory for all folders matching `condor_log*` in *resubmit* mode, or submitting to a new folder named `condor_log_[day].[Month].[year]` in *submit* mode.
+
+<u>*Resubmit* Mode</u>: Run with `-r` flag.
+
+
+
+### `calculate.py`: Variable Importance Calculation
+
+The `calculate.py` script takes the results from one or several job folders and produces variable importance calculations for each of the variables used. Only successfully finished jobs can be used in the calculation, so it may be useful to check their status using `folders.py` before running this script.
+
+The script accepts the following command-line arguments:
+
+- `-v` (optional): Toggle verbose mode, showing output from backend library.
+- `-f output_folder` (optional): Specify where the generated calculations will be stored. When not supplied, the default is a folder named `dataset_[day].[Month].[year]`.
+- `-o sort_order` (optional): Specify how the resulting data per variable should be sorted, in descending order. Valid choices are:
+  - `importance` (default): Sort by the "Importance" column.
+  - `freq`: Sort by the "Freq." (frequency) column.
+  - `sum`: Sort by the "Sum" column.
+  - `mean`: Sort by the "Mean" column.
+  - `rms`: Sort by the "RMS" column.
+- A list of Condor log folders (optional). Defaults to scanning the working directory for all folders matching `condor_log*`.
+
+<u>Files Produced</u>
+
+The script produces three files within the specified dataset folder (see `-f` command line option).
+
+- The `VariableImportanceResults_[#]vars.txt` file (where `[#]` is the total number of variables used in the calculation). This contains the following information:
+  - The weight string.
+  - The cut string.
+  - The paths to the folders (or .jtd files) used in the calculation.
+  - The number of variables used in the calculation.
+  - The date the file was produced.
+  - The normalization value.
+  - For each variable, in the specified sort order (see `-o` command line option), each of the statistics listed in the statistics section.
+- The `ROC_hists_[#]vars` file (where `[#]` is the total number of variables used in the calculation), which is used to create plots.
+- The `VariableImportanceOrder_[#]vars.txt` file (where `[#]` is the total number of variables used in the calculation). This contains just the variable names in the specified sort order (see `-o` command line option), with one variable name per line.
+
+<u>Example Usage</u>
+
+To calculate variable importance from the folders `condor_log_17.Jun.2020` and `condor_log_20.Jun.2020`, with results sorted by the number of times each variable is tested, and output the data to the folder `dataset_freq`, the syntax would be:
+`python calculate.py -f dataset_freq -o freq condor_log_17.Jun.2020 condor_log_20.Jun.2020`.
+
+<u>The Calculation Process and Statistics</u>
+
+The importance of each variable is calculated by first finding the differences between the ROC-Integral values for each variable seed and subseed. The script does this in three steps.
+
+1. All the input folders are scanned and seed jobs (jobs which have no `subseed` value) are identified. The ROC-Integral value for each seed job is recorded, and for each variable which is included in the seed job (see the `Seed` documentation), the frequency of that variable is increased by one.
+2. For each of the seed jobs found in step 1, the list of subseed jobs for that seed is found (see the documentation for `subseed_jobs` in `JobFolder`). For each variable in the subseed, if it is **not** included in the subseed but *is* included in the seed, the difference in ROC-Integral values between the seed and subseed is recorded in an list corresponding to that variable.
+3. For each variable name and corresponding list of ROC-Integral differences generated in step 2, the statistics outlined in the next section are computed.
+
+The variable importance results file stores the following calculated statistics for each variable:
+
+- *Frequency*: How often the variable is included in a seed job.
+- *Sum*: The sum of all the ROC-integral differences corresponding to the variable.
+- *Mean*: The mean of all the ROC-integral differences corresponding to the variable.
+- *RMS*: The standard deviation of all the ROC-integral differences corresponding to the variable.
+- *Importance*: Given as *Mean* / *RMS*.
 

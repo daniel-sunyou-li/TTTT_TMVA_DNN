@@ -35,12 +35,6 @@ class Seed(object):
     def __len__(self):
         return len(self.variables)
 
-##    def __eq__(self, seed):
-##        return seed != None and (seed.binary == self.binary and seed.variables == self.variables)
-##
-##    def __ne__(self, seed):
-##        return seed == None or (seed.binary != self.binary or seed.binary != self.variables)
-
     @property
     def binary(self):
         # Get a binary representation of the seed
@@ -66,7 +60,7 @@ class Seed(object):
         return seed
 
     @staticmethod
-    def random(self, variables):
+    def random(variables):
         # Generate a random seed given variables
         rss = "{:0{}b}".format(randint(0, int("1" * len(variables), 2)), len(variables))
         return Seed.from_binary(rss, variables)
@@ -86,7 +80,10 @@ class Job(object):
     @property
     def path(self):
         # The full path to the job file
-        return os.path.join(self.folder, self.name + ".job")
+        if self.folder != None:
+            return os.path.join(self.folder, self.name + ".job")
+        else:
+            return None
 
     @property
     def has_result(self):
@@ -124,6 +121,8 @@ class Job(object):
 class JobFolder(object):
     def __init__(self, path="condor_log"):
         # Initialize a condor folder object
+        if path.endswith("/"):
+            path = path.rstrip("/")
         self.path = os.path.join(getcwd(), path) if os.path.exists(os.path.join(getcwd(), path)) else path
         self.jobs = None
         if path.endswith(".jtd"):
@@ -218,6 +217,8 @@ class JobFolder(object):
         self.compacted = True
         old_path = self.path
         self.path = dest
+        for job in self.jobs:
+            job.folder = None
         self._save_jtd()
         log("Compacted {} into spec file {}.".format(old_path, self.path))
 
