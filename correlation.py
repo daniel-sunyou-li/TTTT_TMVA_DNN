@@ -29,7 +29,7 @@ def get_correlation_matrix(year, variables):
     # Load used variables
     for var in variables:
         try:
-            var_data = varsList.varList["DNN"][varsList.varList["DNN"].index(var)]
+            var_data = varsList.varList["DNN"][[v[0] for v in varsList.varList["DNN"]].index(var)]
             loader.AddVariable(var_data[0], var_data[1], var_data[2], "F")
         except ValueError:
             print("[WARN] The variable {} was not found. Omitting.".format(var))

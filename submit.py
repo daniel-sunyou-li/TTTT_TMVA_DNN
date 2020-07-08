@@ -218,7 +218,7 @@ def resubmit_jobs():
 def submit_new_jobs():
     jf = jt.JobFolder.create(folders[0])
     print("Submitting new jobs into folder: {}".format(jf.path))
-    seeds = generate_uncorrelated_seeds(num_seeds, variables, cutoff, year)
+    seeds = generate_uncorrelated_seeds(num_seeds, variables, correlation, year)
 
 
 # Run
