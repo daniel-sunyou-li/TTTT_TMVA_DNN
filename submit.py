@@ -4,6 +4,7 @@ from multiprocessing import Process, Lock, Value
 from subprocess import check_output
 from time import sleep
 from sys import exit as sys_exit
+from correlation import generate_uncorrelated_seeds
 import os
 import varsList
 
@@ -217,7 +218,7 @@ def resubmit_jobs():
 def submit_new_jobs():
     jf = jt.JobFolder.create(folders[0])
     print("Submitting new jobs into folder: {}".format(jf.path))
-    
+    seeds = generate_uncorrelated_seeds(num_seeds, variables, cutoff, year)
 
 
 # Run
