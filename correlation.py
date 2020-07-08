@@ -1,13 +1,11 @@
 from ROOT import TMVA, TFile
 from random import randint
 import numpy as np
-import os, sys
+import os
 from jobtracker import Seed
 import varsList
 
 # Initialize TMVA library
-sys.path.insert(0, "../TTTT_TMVA_DNN")
-os.system("source /cvmfs/sft.cern.ch/lcg/views/LCG_91/x86_64-centos7-gcc62-opt/setup.sh")
 TMVA.Tools.Instance()
 TMVA.PyMethodBase.PyInitialize()
 
