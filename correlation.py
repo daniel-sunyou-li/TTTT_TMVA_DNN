@@ -1,4 +1,4 @@
-from ROOT import TMVA, TFile
+from ROOT import TMVA, TFile, TCut
 from random import randint
 import numpy as np
 import os
@@ -11,7 +11,7 @@ TMVA.PyMethodBase.PyInitialize()
 
 # Load parameters
 weight_string = varsList.weightStr
-cut_string = varsList.cutStr
+cut_string = TCut(varsList.cutStr)
 
 def get_correlation_matrix(year, variables):
     # Returns the correlation matrix of the given variables
@@ -35,8 +35,10 @@ def get_correlation_matrix(year, variables):
             print("[WARN] The variable {} was not found. Omitting.".format(var))
 
     # Open ROOT files
-    signal = TFile.Open(signal_path).Get("ljmet")
-    bkgrnd = TFile.Open(bkgrnd_path).Get("ljmet")
+    signal_f = TFile.Open(signal_path)
+    signal = signal_f.Get("ljmet")
+    bkgrnd_f = TFile.Open(bkgrnd_path)
+    bkgrnd = bkgrnd_f.Get("ljmet")
 
     # Load signal and background
     loader.AddSignalTree(signal)
@@ -84,23 +86,23 @@ def get_correlated_groups(corr_mat, variables, cutoff):
                 if not in_pairs(pair):
                     pairs.append((pair, corr_mat[i, j]))
 
+    print("Found {} correlated pairs.".format(len(pairs)))
+
     # Find correlated groups
-    correlated = set()
-    for pair in pairs:
-        # Build correlated group starting with {X, Y}
-        corr_grp = list(pair[0])
-        v = 0
-        while v < len(corr_grp):
-            var = corr_grp[v]
-            # Look at all pairs again
-            for c_pair in pairs:
-                if c_pair != pair and var in pair[0]:
-                    # Found pair {X, Z} or {Y, Z}
-                    corr_grp.extend([v for v in pair[0] if v != var])
-            v += 1
-        correlated.add(set(corr_grp))
+    correlated = []
+    for var in variables:
+        var_pairs = [p[0] for p in pairs if var in p[0]]
+        if len(var_pairs) > 1:
+            c_grp = set()
+            for v_pair in var_pairs:
+                c_grp.update(v_pair)
+            print("Found group {}".format(c_grp))
+            correlated.append(c_grp)
+        elif len(var_pairs) == 1:
+            print("Listing correlated pair {}".format(var_pairs[0]))
+            correlated.append(var_pairs[0])
             
-    return list(correlated), pairs
+    return correlated, pairs
                     
 def generate_uncorrelated_seeds(count, variables, cutoff, year):
     # Generates <count> uncorrelated Seed objects using the specified variables
@@ -114,17 +116,15 @@ def generate_uncorrelated_seeds(count, variables, cutoff, year):
     seeds = [Seed.random(variables) for _ in range(count)]
 
     # Find seeds that violate correlated pairs and modify them
-    
+
     for seed in seeds:
         for group in groups:
             group_vars = [v for v in group if seed.includes(v)]
             if len(group_vars) > 1:
-                print "Modifying seed"
                 # This seed needs to be modified.
                 keep = randint(0, len(group_vars))
                 for i, gv in enumerate(group_vars):
                     if i != keep:
-                        print "  Excluded " + gv
                         seed.exclude(gv)
 
     return seeds

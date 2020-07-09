@@ -110,7 +110,7 @@ def voms_init():
     #Initialize the VOMS proxy if it is not already running
     if not check_voms():
         print "Initializing VOMS"
-        output = check_output("voms-proxy-init --rfc --voms cms", shell=True)
+        output = check_output("voms-proxy-init --voms cms", shell=True)
         if "failure" in output:
             print "Incorrect password entered. Try again."
             voms_init()
@@ -154,8 +154,10 @@ def submit_job(job):
         submitted_jobs.value += ns_jobs
         if job.subseed == None:
             submitted_seeds.value += 1
-        print("{} jobs (+{}) submitted to cluster {} by {}".format(submitted_jobs.value, ns_jobs, cluster, sched) +
-              ".\r" if resubmit else ", {} out of {} seeds submitted.".format(submitted_seeds.value, num_seeds)),
+        if resubmit:
+            print("{} jobs (+{}) submitted to cluster {} by {}.\r".format(submitted_jobs.value, ns_jobs, cluster, sched)),
+        else:
+            print("{} jobs (+{}) submitted to cluster {} by {}, {} out of {} seeds submitted.\r".format(submitted_jobs.value, ns_jobs, cluster, sched, submitted_seeds.value, num_seeds)),
     else:
         print "[WARN] Job submission failed. Will retry at end."
         print output
@@ -220,6 +222,32 @@ def submit_new_jobs():
     print("Submitting new jobs into folder: {}".format(jf.path))
     seeds = generate_uncorrelated_seeds(num_seeds, variables, correlation, year)
 
+    print "Generating jobs."
+    if jf.jobs == None:
+        jf.jobs = []
+    job_list = []
+    for seed in seeds:
+        seed_num = int(seed.binary, base=2)
+        seed_job_name = "Keras_" + str(len(variables)) + "vars_Seed_" + str(seed_num)
+        job_list.append(jt.Job(jf.path,
+                               seed_job_name,
+                               seed,
+                               None))
+        
+        for i in range(len(variables)):
+            subseed_num = seed_num & ~(1 << i)
+            subseed = jt.Seed.from_binary("{:0{}b}".format(subseed_num, len(variables)), variables)
+            job_list.append(jt.Job(jf.path,
+                                   seed_job_name + "_Subseed_" + str(subseed_num),
+                                   seed,
+                                   subseed))
+
+    jf.jobs.extend(job_list)
+    jf._save_jtd()
+    print("{} jobs generated and saved.".format(len(job_list)))
+
+    print "Submitting jobs."
+    submit_joblist(job_list)
 
 # Run
 if resubmit:
