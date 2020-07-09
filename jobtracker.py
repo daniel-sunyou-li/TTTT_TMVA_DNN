@@ -86,6 +86,10 @@ class Job(object):
             return None
 
     @property
+    def has_outfile(self):
+        return self.folder == None or os.path.exists(os.path.join(self.folder, self.name + ".out"))
+
+    @property
     def has_result(self):
         return self.finished and self.roc_integral != -1
 
@@ -96,7 +100,7 @@ class Job(object):
         if self.folder != None and os.path.exists(self.path):
             out_path = os.path.join(self.folder, self.name + ".out")
             
-            if os.path.exists(out_path):
+            if self.has_outfile:
                 # Read the .out file and determine current state of job
                 with open(out_path, "r") as f:
                     for line in f.readlines():
@@ -111,10 +115,6 @@ class Job(object):
                             break
                         else:
                             self.finished = True
-            #else:
-                # The job was removed by the scheduler
-                #self.finished = True
-                #self.roc_integral = -1
 
         return self.finished
 
@@ -271,6 +271,11 @@ class JobFolder(object):
         self.check([j for j in self.jobs if not j.has_result])
         return [j for j in self.jobs if j.has_result]
 
+    @property
+    def unstarted_jobs(self):
+        # The jobs which do not yet have a .out file
+        return [j for j in self.jobs if not j.has_outfile]
+
     def get_resubmit_list(self):
         # Get the jobs which need to be resubmitted.
         self.check([j for j in self.jobs if (not j.has_result)])
@@ -289,6 +294,7 @@ class JobFolder(object):
             "jobs": len(self),
             "finished_jobs": len(self.result_jobs),
             "failed_jobs": len(self.get_resubmit_list()),
+            "unstarted_jobs": len(self.unstarted_jobs),
             "seeds": len(self.seed_jobs),
             "variable_counts": self.get_variable_counts()
             }

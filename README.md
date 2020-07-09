@@ -50,6 +50,8 @@ An instance has the following properties:
   Stores the value of the ROC-Integral computed by the job, or `-1` if the value has not been computed yet. Updated by the `check_finished` method.
 - `has_result`
   `True` if the job has finished and obtained a ROC-Integral value, `False` otherwise.
+- `has_outfile`
+  `True` if the job has an `.out` file in the job folder, or if the job is in a compacted folder.
 
 
 
@@ -73,6 +75,8 @@ An instance has the following properties:
   A list of variable names. A variable name will appear if it is used in at least one `Job` in the folder.
 - `result_jobs`
   A list of `Job` objects which have finished, obtaining a ROC-Integral value.
+- `unstarted_jobs`
+  A list of `Job` objects which have not started yet, and therefore do not have a `.out` file.
 
 An instance has the following methods:
 
@@ -91,6 +95,7 @@ An instance has the following methods:
   - `jobs`: The number of jobs in the folder. Equivalent to `len(job_folder)`.
   - `finished_jobs`: The number of jobs that have finished (regardless of success). Equivalent to `len(job_folder.result_jobs)`.
   - `failed_jobs`: The number of jobs that finished without computing a ROC-Integral value. Equivalent to `len(job_folder.get_resubmit_list())`.
+  - `unstarted_jobs`: The number of jobs which do not have a `.out` file. Equivalent to `len(job_folder.unstarted_jobs)`.
   - `seeds`: The number of seeds in the folder. Equivalent to `len(job_folder.seed_jobs)`.
   - `variable_counts`: Equivalent to `job_folder.get_variable_counts()`.
 - `import_folder(variables: list)`
@@ -174,7 +179,7 @@ The script will display information about the status of jobs within each of the 
 
 If the script is called with the `-v` flag, then for each folder, the number of times each variable is used in a seed as well as the name of each failed job will be displayed.
 
-In all cases, the number and percent of finished and failed jobs will be printed, as well as the number of submitted seeds.
+In all cases, the number and percent of finished, failed, and unstarted jobs will be printed, as well as the number of submitted seeds.
 
 Example Usage:
 To display verbose information about the folders `condor_log_23.June.2020` and `condor_log_17.June.2020` the syntax would be: `python folders.py -v condor_log_23.June.2020 condor_log_17.June.2020`
@@ -189,6 +194,7 @@ The script accepts the following command-line arguments:
 
 - `-v` (optional): Toggle verbose mode, showing output from backend library.
 - `-r` (optional): Run in *resubmit* mode (as opposed to submit mode - see details below).
+- `--ignore-unstarted` (optional): Ignore unstarted jobs when compiling list of jobs to resubmit.
 - `-p num_processes` (optional): Specify how many processes should be used to submit jobs in parallel. Default 2.
 - `-n num_seeds` (optional): How many seeds to submit. Only meaningful in *submit* mode. Default 500.
 - `-c correlation_percent` (optional): The percentage correlation between two variables necessary for them to count as highly correlated. Default 80.
@@ -199,7 +205,9 @@ The script accepts the following command-line arguments:
 
 <u>*Resubmit* Mode</u>: Run with the `-r` flag.
 
-In resubmit mode, the script scans the specified folders for jobs which failed to compute a ROC-Integral value. These jobs can be listed by running `python folders.py -v [folders...]`, which displays the names of failed jobs as well as the total number. Once resubmitted, the new output from the jobs will be stored in their existing folder.
+In resubmit mode, the script scans the specified folders for jobs which failed to compute a ROC-Integral value, as well as jobs which have not yet been started. These jobs can be listed by running `python folders.py -v [folders...]`, which displays the names of failed jobs as well as the total number. Once resubmitted, the new output from the jobs will be stored in their existing folder.
+
+*Caution*: because unstarted jobs are included in the resubmit list, resubmit mode should not be run before Condor has a chance to process all of the submitted jobs. To resubmit only *failed* jobs, use the `--ignore-unstarted` flag.
 
 Example Usage:
 To resubmit failed jobs in the `condor_log_17.Jun.2020` folder using 2017 data and a correlation percentage of 70, the syntax is: `python submit.py -r -y 2017 -c 70 condor_log_17.Jun.2020`.

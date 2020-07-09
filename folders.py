@@ -77,5 +77,9 @@ else:
             stats["failed_jobs"], stats["jobs"], 100. * float(stats["failed_jobs"]) / float(stats["jobs"])
             )
         )
+        print("Unstarted condor jobs: {} / {}, {:.2f}%".format(
+            stats["unstarted_jobs"], stats["jobs"], 100. * float(stats["unstarted_jobs"]) / float(stats["jobs"])
+            )
+        )
         print("Submitted {} seeds".format(stats["seeds"]))
         print
