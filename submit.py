@@ -138,10 +138,14 @@ def submit_job(job):
             })
     os.chdir(job.folder)
 
-    output = check_output("condor_submit {}".format(job.path), shell=True)
+    output = None
+    try:
+        output = check_output("condor_submit {}".format(job.path), shell=True)
+    except:
+        pass
 
     info_lock.acquire()
-    if output.find("submitted") != -1:
+    if output != None and output.find("submitted") != -1:
         i = output.find("Submitting job(s).") + 19
         ns_jobs = int(output[i:output.find("job(s)", i)])
 
@@ -216,6 +220,8 @@ def resubmit_jobs():
     print("Found {} jobs to resubmit.".format(len(job_list)))
     submit_joblist(job_list)
 
+    print "Done."
+
 # Run in Submit mode
 def submit_new_jobs():
     jf = jt.JobFolder.create(folders[0])
@@ -248,6 +254,8 @@ def submit_new_jobs():
 
     print "Submitting jobs."
     submit_joblist(job_list)
+
+    print "Done."
 
 # Run
 if resubmit:

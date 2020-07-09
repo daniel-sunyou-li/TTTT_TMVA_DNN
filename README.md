@@ -199,17 +199,23 @@ The script accepts the following command-line arguments:
 
 <u>*Resubmit* Mode</u>: Run with the `-r` flag.
 
-
+In resubmit mode, the script scans the specified folders for jobs which failed to compute a ROC-Integral value. These jobs can be listed by running `python folders.py -v [folders...]`, which displays the names of failed jobs as well as the total number. Once resubmitted, the new output from the jobs will be stored in their existing folder.
 
 Example Usage:
 To resubmit failed jobs in the `condor_log_17.Jun.2020` folder using 2017 data and a correlation percentage of 70, the syntax is: `python submit.py -r -y 2017 -c 70 condor_log_17.Jun.2020`.
 
 <u>*Submit* Mode</u>: Run **without** the `-r` flag.
 
-
+In submit mode, the script generates new seeds and subseeds to create jobs. By default, these are stored in a folder named `condor_log_[day].[Month].[year]`, though this can be changed by specifying an existing or alternative path to be created.
 
 Example Usage:
 To submit 50 seeds of new jobs using the variable list `15vars.txt`, to be placed in a new folder, using 2017 data and a correlation percentage of 80, to be submitted using 4 parallel processes, the syntax is: `python submit.py -y 2017 -l 15vars.txt -n 50`.
+
+<u>Multiprocessing Capable</u>
+
+In both modes, the script uses parallel processes to submit jobs. The number of processes can be specified using the `-p` option. By default, two processes are used. Increasing the number of processes can cause some submissions to fail (with four processes, the observed rate of failure is around 0.7%). The failed submissions are tracked, and a prompt will appear to retry submission after all other jobs have been submitted.
+
+
 
 ### `calculate.py`: Variable Importance Calculation
 

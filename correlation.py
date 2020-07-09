@@ -53,7 +53,7 @@ def get_correlation_matrix(year, variables):
     # Set cuts
     loader.PrepareTrainingAndTestTree(
         cut_string, cut_string,
-        "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V"
+        "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V:VerboseLevel=Info"
     )
     
     # Set the pointer to the right histogram
