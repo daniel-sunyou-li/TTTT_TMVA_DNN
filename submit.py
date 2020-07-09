@@ -166,7 +166,7 @@ def submit_job(job):
         print "[WARN] Job submission failed. Will retry at end."
         print output
         print
-        sys.exit(1)
+        sys_exit(1)
     info_lock.release()
     
     os.chdir(run_dir)
