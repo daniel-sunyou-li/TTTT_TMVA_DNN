@@ -111,10 +111,10 @@ class Job(object):
                             break
                         else:
                             self.finished = True
-            else:
+            #else:
                 # The job was removed by the scheduler
-                self.finished = True
-                self.roc_integral = -1
+                #self.finished = True
+                #self.roc_integral = -1
 
         return self.finished
 
