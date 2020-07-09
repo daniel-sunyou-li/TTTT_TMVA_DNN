@@ -197,9 +197,19 @@ The script accepts the following command-line arguments:
 - `-y year`: The dataset to use when training. Specify `2017` or `2018`.
 - A list of Condor log folders (optional). Defaults to scanning the working directory for all folders matching `condor_log*` in *resubmit* mode, or submitting to a new folder named `condor_log_[day].[Month].[year]` in *submit* mode.
 
-<u>*Resubmit* Mode</u>: Run with `-r` flag.
+<u>*Resubmit* Mode</u>: Run with the `-r` flag.
 
 
+
+Example Usage:
+To resubmit failed jobs in the `condor_log_17.Jun.2020` folder using 2017 data and a correlation percentage of 70, the syntax is: `python submit.py -r -y 2017 -c 70 condor_log_17.Jun.2020`.
+
+<u>*Submit* Mode</u>: Run **without** the `-r` flag.
+
+
+
+Example Usage:
+To submit 50 seeds of new jobs using the variable list `15vars.txt`, to be placed in a new folder, using 2017 data and a correlation percentage of 80, to be submitted using 4 parallel processes, the syntax is: `python submit.py -y 2017 -l 15vars.txt -n 50`.
 
 ### `calculate.py`: Variable Importance Calculation
 
