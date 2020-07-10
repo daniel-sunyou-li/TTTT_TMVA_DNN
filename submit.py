@@ -31,7 +31,7 @@ parser.add_argument("-y", "--year", required=True, help="The dataset year to use
 parser.add_argument("-n", "--seeds", default="500", help="The number of seeds to submit (only in submit mode).")
 parser.add_argument("-c", "--correlation", default="80", help="The correlation cutoff percentage.")
 parser.add_argument("-l", "--var-list", default="all", help="The variables to use when generating seeds.")
-parser.add_argument("--ignore-unstarted", action="store_true", help="Do not include unstarted jobs in the resubmit list.")
+parser.add_argument("--include-unstarted", action="store_true", help="Include unstarted jobs in the resubmit list.")
 parser.add_argument("folders", nargs="*", default=[], help="Condor log folders to [re]submit to.")
 args = parser.parse_args()
 
@@ -82,7 +82,7 @@ if not resubmit:
                     variables.append(line.rstrip().strip())
 
 # --ignore-unstarted
-ignore_unstarted = args.ignore_unstarted
+include_unstarted = args.include_unstarted
 
 # Get information from varsList
 eos_input_folder = varsList.inputDirEOS2018 if year == "2018" else varsList.inputDirEOS2017
@@ -221,7 +221,7 @@ def resubmit_jobs():
         print(" - {}".format(folder))
         jf = jt.JobFolder(folder)
         job_list.extend(jf.get_resubmit_list())
-        if not ignore_unstarted:
+        if include_unstarted:
             unstarted = jf.unstarted_jobs
             if len(unstarted) > 0:
                 print("   Found {} unstarted jobs".format(len(unstarted)))

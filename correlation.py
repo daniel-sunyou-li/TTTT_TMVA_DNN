@@ -96,8 +96,9 @@ def get_correlated_groups(corr_mat, variables, cutoff):
             c_grp = set()
             for v_pair in var_pairs:
                 c_grp.update(v_pair)
-            print("Found group {}".format(c_grp))
-            correlated.append(c_grp)
+            if not c_grp in correlated:
+                print("Found group {}".format(c_grp))
+                correlated.append(c_grp)
         elif len(var_pairs) == 1:
             print("Listing correlated pair {}".format(var_pairs[0]))
             correlated.append(var_pairs[0])
@@ -119,12 +120,16 @@ def generate_uncorrelated_seeds(count, variables, cutoff, year):
 
     for seed in seeds:
         for group in groups:
+            # group = {X, Y, Z} are highly correlated
             group_vars = [v for v in group if seed.includes(v)]
+            # group_vars = {X, Z} -> variables from <group> which are ON in seed (seed.includes(Y) == False)
             if len(group_vars) > 1:
                 # This seed needs to be modified.
                 keep = randint(0, len(group_vars))
+                # Pick a random variable from {X, Z} to keep: for example Z (1).
                 for i, gv in enumerate(group_vars):
                     if i != keep:
+                        # for i == 0 (X) -> exclude X from seed
                         seed.exclude(gv)
 
     return seeds
