@@ -86,6 +86,10 @@ class Job(object):
             return None
 
     @property
+    def has_logfile(self):
+        return self.folder == None or os.path.exists(os.path.join(self.folder, self.name + ".log"))
+
+    @property
     def has_result(self):
         return self.finished and self.roc_integral != -1
 
@@ -94,25 +98,29 @@ class Job(object):
             return True
         
         if self.folder != None and os.path.exists(self.path):
+            log_path = os.path.join(self.folder, self.name + ".log")
             out_path = os.path.join(self.folder, self.name + ".out")
             
-            if os.path.exists(out_path):
-                # Read the .out file and determine current state of job
-                with open(out_path, "r") as f:
+            if os.path.exists(log_path):
+                # Read the .log file and determine current state of job
+                with open(log_path, "r") as f:
                     for line in f.readlines():
                         if "005 (" in line or "009 (" in line: 
                             self.finished = True
                         elif "006 (" in line or "000 (" in line or "001 (" in line:
                             self.finished = False
-                        elif "ROC-integral" in line:
-                            # Final calculation appears.
-                            self.finished = True
-                            self.roc_integral = float(line[line.find(" ")+1:])
-                            break
-                        else:
-                            self.finished = True
+
+                if self.finished:
+                    if os.path.exists(out_path):
+                        with open(out_path, "r") as f:
+                            for line in f.readlines():
+                                if "ROC-integral" in line:
+                                    # Final calculation appears.
+                                    self.roc_integral = float(line[line.find(" ")+1:])
+                                    break
+                    else:
+                        self.roc_integral = -1
             else:
-                # The job was removed by the scheduler
                 self.finished = True
                 self.roc_integral = -1
 
@@ -271,6 +279,11 @@ class JobFolder(object):
         self.check([j for j in self.jobs if not j.has_result])
         return [j for j in self.jobs if j.has_result]
 
+    @property
+    def unstarted_jobs(self):
+        # The jobs which do not yet have a .out file
+        return [j for j in self.jobs if not j.has_logfile]
+
     def get_resubmit_list(self):
         # Get the jobs which need to be resubmitted.
         self.check([j for j in self.jobs if (not j.has_result)])
@@ -289,6 +302,7 @@ class JobFolder(object):
             "jobs": len(self),
             "finished_jobs": len(self.result_jobs),
             "failed_jobs": len(self.get_resubmit_list()),
+            "unstarted_jobs": len(self.unstarted_jobs),
             "seeds": len(self.seed_jobs),
             "variable_counts": self.get_variable_counts()
             }

@@ -4,6 +4,7 @@ from multiprocessing import Process, Lock, Value
 from subprocess import check_output
 from time import sleep
 from sys import exit as sys_exit
+from correlation import generate_uncorrelated_seeds
 import os
 import varsList
 
@@ -30,6 +31,7 @@ parser.add_argument("-y", "--year", required=True, help="The dataset year to use
 parser.add_argument("-n", "--seeds", default="500", help="The number of seeds to submit (only in submit mode).")
 parser.add_argument("-c", "--correlation", default="80", help="The correlation cutoff percentage.")
 parser.add_argument("-l", "--var-list", default="all", help="The variables to use when generating seeds.")
+parser.add_argument("--include-unstarted", action="store_true", help="Include unstarted jobs in the resubmit list.")
 parser.add_argument("folders", nargs="*", default=[], help="Condor log folders to [re]submit to.")
 args = parser.parse_args()
 
@@ -79,6 +81,9 @@ if not resubmit:
                 if line != "":
                     variables.append(line.rstrip().strip())
 
+# --ignore-unstarted
+include_unstarted = args.include_unstarted
+
 # Get information from varsList
 eos_input_folder = varsList.inputDirEOS2018 if year == "2018" else varsList.inputDirEOS2017
 
@@ -109,7 +114,7 @@ def voms_init():
     #Initialize the VOMS proxy if it is not already running
     if not check_voms():
         print "Initializing VOMS"
-        output = check_output("voms-proxy-init --rfc --voms cms", shell=True)
+        output = check_output("voms-proxy-init --voms cms", shell=True)
         if "failure" in output:
             print "Incorrect password entered. Try again."
             voms_init()
@@ -137,10 +142,14 @@ def submit_job(job):
             })
     os.chdir(job.folder)
 
-    output = check_output("condor_submit {}".format(job.path), shell=True)
+    output = None
+    try:
+        output = check_output("condor_submit {}".format(job.path), shell=True)
+    except:
+        pass
 
     info_lock.acquire()
-    if output.find("submitted") != -1:
+    if output != None and output.find("submitted") != -1:
         i = output.find("Submitting job(s).") + 19
         ns_jobs = int(output[i:output.find("job(s)", i)])
 
@@ -153,15 +162,17 @@ def submit_job(job):
         submitted_jobs.value += ns_jobs
         if job.subseed == None:
             submitted_seeds.value += 1
-        print("{} jobs (+{}) submitted to cluster {} by {}".format(submitted_jobs.value, ns_jobs, cluster, sched) +
-              ".\r" if resubmit else ", {} out of {} seeds submitted.".format(submitted_seeds.value, num_seeds)),
+        if resubmit:
+            print("{} jobs (+{}) submitted to cluster {} by {}.\r".format(submitted_jobs.value, ns_jobs, cluster, sched)),
+        else:
+            print("{} jobs (+{}) submitted to cluster {} by {}, {} out of {} seeds submitted.\r".format(submitted_jobs.value, ns_jobs, cluster, sched, submitted_seeds.value, num_seeds)),
     else:
         print "[WARN] Job submission failed. Will retry at end."
         print output
         print
-        sys.exit(1)
+        info_lock.release()
+        sys_exit(1)
     info_lock.release()
-    
     os.chdir(run_dir)
 
 # Split jobs among processes
@@ -210,15 +221,50 @@ def resubmit_jobs():
         print(" - {}".format(folder))
         jf = jt.JobFolder(folder)
         job_list.extend(jf.get_resubmit_list())
+        if include_unstarted:
+            unstarted = jf.unstarted_jobs
+            if len(unstarted) > 0:
+                print("   Found {} unstarted jobs".format(len(unstarted)))
+                job_list.extend(unstarted)
     print("Found {} jobs to resubmit.".format(len(job_list)))
     submit_joblist(job_list)
+
+    print "Done."
 
 # Run in Submit mode
 def submit_new_jobs():
     jf = jt.JobFolder.create(folders[0])
     print("Submitting new jobs into folder: {}".format(jf.path))
-    
+    seeds = generate_uncorrelated_seeds(num_seeds, variables, correlation, year)
 
+    print "Generating jobs."
+    if jf.jobs == None:
+        jf.jobs = []
+    job_list = []
+    for seed in seeds:
+        seed_num = int(seed.binary, base=2)
+        seed_job_name = "Keras_" + str(len(variables)) + "vars_Seed_" + str(seed_num)
+        job_list.append(jt.Job(jf.path,
+                               seed_job_name,
+                               seed,
+                               None))
+        
+        for i in range(len(variables)):
+            subseed_num = seed_num & ~(1 << i)
+            subseed = jt.Seed.from_binary("{:0{}b}".format(subseed_num, len(variables)), variables)
+            job_list.append(jt.Job(jf.path,
+                                   seed_job_name + "_Subseed_" + str(subseed_num),
+                                   seed,
+                                   subseed))
+
+    jf.jobs.extend(job_list)
+    jf._save_jtd()
+    print("{} jobs generated and saved.".format(len(job_list)))
+
+    print "Submitting jobs."
+    submit_joblist(job_list)
+
+    print "Done."
 
 # Run
 if resubmit:
