@@ -168,7 +168,6 @@ def submit_job(job):
             print("{} jobs (+{}) submitted to cluster {} by {}, {} out of {} seeds submitted.\r".format(submitted_jobs.value, ns_jobs, cluster, sched, submitted_seeds.value, num_seeds)),
     else:
         print "[WARN] Job submission failed. Will retry at end."
-        print output
         print
         info_lock.release()
         sys_exit(1)
