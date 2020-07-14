@@ -1,13 +1,19 @@
 import os
+from datetime import datetime
 from argparse import ArgumentParser
+from json import loads as load_json
+from json import dumps as write_json
+
+from skopt.space import Real, Integer, Categorical
 
 parser = ArgumentParser()
 #parser.add_argument("-v", "--verbose", action="store_true", help="Display detailed logs.")
 parser.add_argument("dataset", help="The dataset folder to use variable importance results from.")
 parser.add_argument("-o", "--sort-order", default="importance",
                     help="Which attribute to sort variables by. Choose from (importance, freq, sum, mean, rms, or specify a filepath).")
-parser.add_argument("-n", "--num-vars", default="all", help="How many variables, from the top of the sorted order, to use.")
 parser.add_argument("--sort-increasing", action="store_true", help="Sort in increasing instead of decreasing order")
+parser.add_argument("-n", "--num-vars", default="all", help="How many variables, from the top of the sorted order, to use.")
+parser.add_argument("-p", "--parameters", default=None, help="Specify a JSON folder with static and hyper parameters.")
 args = parser.parse_args()
 
 # Load dataset
@@ -85,3 +91,66 @@ if args.num_vars == "all":
 else:
     variables = var_order[:int(args.num_vars)]
 print("Variables used in optimization:\n - {}".format("\n - ".join(variables)))
+
+# Determine static and hyper parameter
+timestamp = datetime.now()
+PARAMETERS = {
+    "static": [
+        "static",
+        "epochs",
+        "patience",
+        "model_name",
+        "tag_num",
+        "tag",
+        "log_file",
+        "n_calls",
+        "n_starts"
+        ],
+
+    "epochs": 15,
+    "patience": 5,
+    "model_name": "dummy_opt_model.h5",
+    "tag_num": str(timestamp.hour),
+    "tag": timestamp.strftime("%m-%d_%H"),
+    "log_file": os.path.join(args.dataset, "optimize_log_" + timestamp.strftime("%m-%d_%H") + ".txt"),
+
+    "hidden_layers": [1, 3],
+    "initial_nodes": [len(var_order), len(var_order) * 10],
+    "node_pattern": ["static", "dynamic"],
+    "batch_power": [8, 11],
+    "learning_rate": [1e-5, 1e-2],
+    "regulator": ["none", "dropout", "normalization", "both"],
+    "activation_function": ["relu", "softplus", "elu"],
+
+    "n_calls": 50,
+    "n_starts": 30
+}
+# Update parameters given file
+if args.parameters != None and os.path.exists(args.parameters):
+    print("Loading updated parameters from {}.".format(args.parameters))
+    with open(args.parameters, "r") as f:
+        u_params = load_json(f.read())
+        PARAMETERS.update(u_params)
+
+# Save used parameters to file
+with open(os.path.join(args.dataset, "optimize_parameters" + timestamp.strftime("%m-%d_%H") + ".json"), "w") as f:
+    f.write(write_json(PARAMETERS))
+print("Parameters saved to dataset folder.")
+
+# Determine optimization space
+opt_space = []
+for param, value in PARAMETERS.iteritems():
+    if param not in PARAMETERS["static"]:
+        if type(value[0]) == str:
+            opt_space.append(
+                Categorical(value, name=param)
+                )
+        elif param == "learning_rate":
+            opt_space.append(
+                Real(*value, "log-uniform", name=param)
+                )
+        else:
+            opt_space.append(
+                Integer(*value, name=param)
+                )
+            
