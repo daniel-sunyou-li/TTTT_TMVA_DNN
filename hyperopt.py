@@ -183,6 +183,8 @@ logfile.write("{:7}, {:7}, {:7}, {:7}, {:9}, {:14}, {:10}, {:7}\n".format(
 
 # Determine optimization space
 opt_space = []
+opt_order = {}
+i = 0
 for param, value in PARAMETERS.iteritems():
     if param not in PARAMETERS["static"]:
         if type(value[0]) == str:
@@ -197,6 +199,8 @@ for param, value in PARAMETERS.iteritems():
             opt_space.append(
                 Integer(*value, name=param)
                 )
+        opt_order[param] = i
+        i += 1
 
 # Training Instance
 class TrainingInstance(object):
@@ -341,11 +345,11 @@ with open(os.path.join(args.dataset, "optimized_params_" + PARAMETERS["tag"] + "
     f.write("TTTT TMVA DNN Hyper Parameter Optimization Parameters \n")
     f.write("Static and Parameter Space stored in: {}\n".format(parameter_file))
     f.write("Optimized Parameters:\n")
-    f.write(" Hidden Layers: {}\n".format(res_gp.x[0]))
-    f.write(" Initial Nodes: {}\n".format(res_gp.x[1]))
-    f.write(" Batch Power: {}\n".format(res_gp.x[2]))
-    f.write(" Learning Rate: {}\n".format(res_gp.x[3]))
-    f.write(" Node Pattern: {}\n".format(res_gp.x[4]))
-    f.write(" Regulator: {}\n".format(res_gp.x[5]))
-    f.write(" Activation Function: {}\n".format(res_gp.x[6]))
+    f.write(" Hidden Layers: {}\n".format(res_gp.x[opt_order["hidden_layers"]]))
+    f.write(" Initial Nodes: {}\n".format(res_gp.x[opt_order["initial_nodes"]]))
+    f.write(" Batch Power: {}\n".format(res_gp.x[opt_order["batch_power"]]))
+    f.write(" Learning Rate: {}\n".format(res_gp.x[opt_order["learning_rate"]]))
+    f.write(" Node Pattern: {}\n".format(res_gp.x[opt_order["node_pattern"]]))
+    f.write(" Regulator: {}\n".format(res_gp.x[opt_order["regulator"]]))
+    f.write(" Activation Function: {}\n".format(res_gp.x[opt_order["activation_function"]]))
 print("Finished optimization in: {} s".format(datetime.now() - start_time))
