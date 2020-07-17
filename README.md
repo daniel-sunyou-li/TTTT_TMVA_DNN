@@ -168,6 +168,8 @@ An instance has the following methods:
   If the variable `var` is used in this seed, set its entry in `states` to `False`.
 - `includes(var)`
   Returns `True` if the variable `var` is used in the seed and its entry in `states` is `True`.
+- `save_to(path)`
+  Pickle the Seed and save it to the specified path.
 
 The class has the following static methods:
 
@@ -175,6 +177,8 @@ The class has the following static methods:
   Creates a new `Seed` object from a list of variables and a binary string. The characters in the string are read left to right, with the leftmost character corresponding to the first variable in the list. The `Seed` object is returned.
 - `Seed.random(variables)`
   Creates a new `Seed` object with random variable inclusion given a list of variables. The `Seed` object is returned.
+- `Seed.load_from(path)`
+  Loads a pickled Seed object from the specified path and returns it.
 
 [Return to Index](#introduction)
 
