@@ -32,6 +32,11 @@ class Seed(object):
         # Check if a variable is included in this seed
         return var in self.states and self.states[var]
 
+    def save_to(self, path):
+        # Pickle the seed's data
+        with open(path, "wb") as f:
+            pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
+
     def __len__(self):
         return len(self.variables)
 
@@ -64,6 +69,12 @@ class Seed(object):
         # Generate a random seed given variables
         rss = "{:0{}b}".format(randint(0, int("1" * len(variables), 2)), len(variables))
         return Seed.from_binary(rss, variables)
+
+    @staticmethod
+    def load_from(path):
+        # Load a pickled Seed
+        with open(path, "rb") as f:
+            return pickle.load(f)
 
 
 class Job(object):

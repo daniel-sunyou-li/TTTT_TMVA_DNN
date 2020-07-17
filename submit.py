@@ -10,9 +10,10 @@ import varsList
 
 # Condor job submission template
 CONDOR_TEMPLATE = """universe = vanilla
-Executable = %(RUNDIR)s/etc/LPC/VariableImportanceLPC_step2.sh
-Should_Transfer_Files = YES
-WhenToTransferOutput = ON_EXIT
+Executable = %(RUNDIR)s/remote.sh
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_input_files = %(seed_path)s
 request_memory = 3.5 GB
 request_cpus = 2
 image_size = 3.5 GB
@@ -20,7 +21,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(SubmitSeedN)s %(EOSDIR)s %(eosUserName)s %(YEAR)s
+Arguments = %(eos_username)s %(eos_folder)s %(year)s %(seed_path)s
 Queue 1"""
 
 parser = ArgumentParser()
@@ -129,16 +130,20 @@ submitted_seeds = Value("i", 0)
 
 # Submit a single job to Condor
 def submit_job(job):
+    # Pickle the job's seed
+    seed_path = os.path.join(job.folder, job.name + ".seed")
+    (job.seed if job.subseed == None else job.subseed).save_to(seed_path)
+    
     # Create a job file
     run_dir = os.getcwd()
     with open(job.path, "w") as f:
         f.write(CONDOR_TEMPLATE%{
             "RUNDIR": run_dir,
             "FILENAME": job.name,
-            "SubmitSeedN": int(job.seed.binary if job.subseed == None else job.subseed.binary, base=2),
-            "EOSDIR": eos_input_folder,
-            "eosUserName": eos_username,
-            "YEAR": year
+            "seed_path": seed_path,
+            "eos_folder": eos_input_folder,
+            "eos_username": eos_username,
+            "year": year
             })
     os.chdir(job.folder)
 
