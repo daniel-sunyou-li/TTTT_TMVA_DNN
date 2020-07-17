@@ -7,10 +7,10 @@
 - [Setup](#setup)
 - [Starting the Environment](#starting-the-environment)
 - [Managing Jobs](#managing-jobs)
-  - [`jobtracker.py`: The Backend](#jobtracker.py-the-backend)
-  - [`folders.py`: Folder Management Utilities](#folders.py-folder-management-utilities)
-  - [`submit.py`: Job Submission and Resubmission](#submit.py-job-submission-and-resubmission)
-  - [`calculate.py`: Variable Importance Calculation](#calculate.py-variable-importance-calculation)
+  - [`jobtracker.py`: The Backend](#jobtrackerpy-the-backend)
+  - [`folders.py`: Folder Management Utilities](#folderspy-folder-management-utilities)
+  - [`submit.py`: Job Submission and Resubmission](#submitpy-job-submission-and-resubmission)
+  - [`calculate.py`: Variable Importance Calculation](#calculatepy-variable-importance-calculation)
 - [Hyper Parameter Optimization](#hyper-parameter-optimization)
 
 ## Setup
