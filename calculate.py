@@ -16,6 +16,7 @@ parser.add_argument("-f", "--output-folder", default="auto", help="The folder to
 parser.add_argument("-v", "--verbose", action="store_true", help="Display output from job tracker system.")
 parser.add_argument("-o", "--sort-order", default="importance",
                     help="Which attribute to sort variables by in resulting files. Choose from (importance, freq, sum, mean, rms).")
+parser.add_argument("--sort-increasing", action="store_true", help="Sort in increasing instead of decreasing order")
 args = parser.parse_args()
 
 # Interpret folder paths
@@ -48,6 +49,7 @@ if args.sort_order.lower() not in ["importance", "freq", "sum", "mean", "rms"]:
     print("Invalid sort option: {}. Using \"importance\".".format(args.sort_order.lower()))
 else:
     sort_order = args.sort_order.lower()
+sort_increasing = args.sort_increasing
 
 print "Variable Importance Calculator"
 print "Using Folders: \n - " + "\n - ".join(condor_folders)
@@ -124,6 +126,9 @@ print "Importances computed."
 print "Writing to output files."
 
 num_vars = len(importances.keys())
+sorted_vars = sorted(importances.keys(), key=lambda k: importance_stats[k][sort_order])
+if not sort_increasing:
+    sorted_vars = reversed(sorted_vars)
 
 # Variable Importance File
 with open(os.path.join(ds_folder, "VariableImportanceResults_" + str(num_vars) + "vars.txt"), "w") as f:
@@ -143,8 +148,8 @@ with open(os.path.join(ds_folder, "VariableImportanceResults_" + str(num_vars) +
         "RMS",
         "Importance"
     ))
-
-    for i, var in enumerate(reversed(sorted(importances.keys(), key=lambda k: importance_stats[k][sort_order]))):
+    
+    for i, var in enumerate(sorted_vars):
         f.write("\n{:<6} / {:<34} / {:<6} / {:<8.4f} / {:<7.4f} / {:<7.4f} / {:<11.3f}".format(
             str(i + 1) + ".",
             var,
@@ -162,7 +167,7 @@ print "Wrote ROC_hists_" + str(num_vars) + "vars"
 
 # Importance Order File
 with open(os.path.join(ds_folder, "VariableImportanceOrder_" + str(num_vars) + "vars.txt"), "w") as f:
-    for var in reversed(sorted(importances.keys(), key=lambda k: importance_stats[k][sort_order])):
+    for var in sorted_vars:
         f.write(var + "\n")
 print "Wrote " + "VariableImportanceOrder_" + str(num_vars) + "vars.txt"
 
