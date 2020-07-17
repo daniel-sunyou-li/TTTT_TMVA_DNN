@@ -138,7 +138,7 @@ PARAMETERS = {
 
     "epochs": 15,
     "patience": 5,
-    "model_name": "dummy_opt_model.h5",
+    "model_name": os.path.join(args.dataset, "dummy_opt_model.h5"),
     "tag_num": str(timestamp.hour),
     "tag": timestamp.strftime("%m-%d_%H"),
     "log_file": os.path.join(args.dataset, "optimize_log_" + timestamp.strftime("%m-%d_%H") + ".txt"),
@@ -214,7 +214,7 @@ class TrainingInstance(object):
         self.loader.SetBackgroundWeightExpression(varsList.weightStr)
         self.cut = TCut(varsList.cutStr)
 
-        loader.PrepareTrainingAndTestTree( 
+        self.loader.PrepareTrainingAndTestTree( 
             self.cut, self.cut, 
             "SplitMode=Random:NormMode=NumEvents:!V"
         )
@@ -228,11 +228,11 @@ class TrainingInstance(object):
             self.loader,
             TMVA.Types.kPyKeras,
             "PyKeras",
-            "!H:!V:VarTransform=G:FilenameModel=" + X["model_name"] + \
+            "!H:!V:VarTransform=G:FilenameModel=" + PARAMETERS["model_name"] + \
             ":SaveBestOnly=true" + \
-            ":NumEpochs=" + str(X["epochs"]) + \
-            ":BatchSize=" + str(2**X["batch_power"]) +\
-            ":TriesEarlyStopping=" + str(X["patience"])
+            ":NumEpochs=" + str(PARAMETERS["epochs"]) + \
+            ":BatchSize=" + str(2**X["batch_power"]) + \
+            ":TriesEarlyStopping=" + str(PARAMETERS["patience"])
             )
 
     def get_result(self):
@@ -240,7 +240,7 @@ class TrainingInstance(object):
         self.factory.TestAllMethods()
         self.factory.EvaluateAllMethods()
 
-        ROC = self.factory.getROCIntegral(self.loader, "PyKeras")
+        ROC = self.factory.GetROCIntegral(self.loader, "PyKeras")
 
         self.factory.DeleteAllMethods()
         self.factory.fMethodsMap.clear()
@@ -276,17 +276,17 @@ class TrainingInstance(object):
     def _build_model(self):
         self.model = Sequential()
         self.model.add(Dense(
-          self.X["initial_nodes"],
-          input_dim=len(variables),
-          kernel_initializer="glorot_normal",
-          activation=self.X["activation_function"]
-          )
+            self.X["initial_nodes"],
+            input_dim=len(variables),
+            kernel_initializer="glorot_normal",
+            activation=self.X["activation_function"]
+            )
         )
         partition = int(self.X["initial_nodes"] / self.X["hidden_layers"])
-        for i in range(hidden):
+        for i in range(self.X["hidden_layers"]):
             if self.X["regulator"] in ["normalization", "both"]:
                 self.model.add(BatchNormalization())
-            if regulator in ["dropout", "both"]:
+            if self.X["regulator"] in ["dropout", "both"]:
                 self.model.add(Dropout(0.5))
             if self.X["node_pattern"] == "dynamic":
                 self.model.add(Dense(
@@ -313,6 +313,9 @@ class TrainingInstance(object):
             loss="categorical_crossentropy",
             metrics=["accuracy"]
         )
+
+        self.model.save(PARAMETERS["model_name"])
+        self.model.summary()
             
 # Objective function
 @use_named_args(opt_space)
@@ -321,6 +324,17 @@ def objective(**X):
     instance = TrainingInstance(X)
     result = instance.get_result()
     print("Obtained ROC-Integral value: {}".format(result))
+    logfile.write('{:7}, {:7}, {:7}, {:7}, {:9}, {:14}, {:10}, {:7}\n'.format(
+        str(X["hidden_layers"]),
+        str(X["initial_nodes"]),
+        str(round(X["learning_rate"], 5)),
+        str(2**X["batch_power"]),
+        str(X["node_pattern"]),
+        str(X["regulator"]),
+        str(X["activation_function"]),
+        str(round(result, 5))
+        )
+    )
     opt_metric = log(1 - result)
     print("    Metric: {}".format(round(opt_metric, 2)))
     return opt_metric
