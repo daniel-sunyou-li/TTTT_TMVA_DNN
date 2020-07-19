@@ -1,5 +1,8 @@
 import sys
-import os.path
+import os
+from base64 import b64decode
+
+os.environ['KERAS_BACKEND'] = 'tensorflow'
 
 from ROOT import TMVA, TCut, TFile
 
@@ -13,12 +16,9 @@ import varsList
 
 # Parse the arguments
 year = int(sys.argv[1])
-seed_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), sys.argv[2])
+seed_vars = set(b64decode(sys.argv[2]).split(","))
 
-print("TTTT Condor Job using {} data and seed from {}.".format(year, seed_path))
-
-# Load the seed
-seed = jt.Seed.load_from(seed_path)
+print("TTTT Condor Job using {} data.".format(year))
 
 # Initialize TMVA
 TMVA.Tools.Instance()
@@ -30,10 +30,9 @@ factory = TMVA.Factory("VariableImportance",
 
 # Add variables from seed to loader
 num_vars = 0
-for var, included in seed.states.iteritems():
-    if included:
+for var_data in varsList.varList["DNN"]:
+    if var_data[0] in seed_vars:
         num_vars += 1
-        var_data = varsList.varList["DNN"][[v[0] for v in varsList.varList["DNN"]].index(var)]
         loader.AddVariable(var_data[0], var_data[1], var_data[2], "F")
 
 # Add signal and background trees to loader
@@ -41,14 +40,14 @@ signals = []
 signal_trees = []
 backgrounds = []
 background_trees = []  
-for sig in varsList.sig2017_1 if year == 2017 else varsList.sig2018_1:
-    signals.append(TFile.Open(os.path.join(varsList.inputDirCondor, sig)))
+for sig in varsList.sig2017_0 if year == 2017 else varsList.sig2018_0:
+    signals.append(TFile.Open(sig))
     signal_trees.append(signals[-1].Get("ljmet"))
     signal_trees[-1].GetEntry(0)
     loader.AddSignalTree(signal_trees[-1], 1)
 
-for bkg in varsList.bkg2017_1 if year == 2017 else varsList.bkg2018_1:
-    backgrounds.append(TFile.Open(os.path.join(varsList.inputDirCondor, bkg)))
+for bkg in varsList.bkg2017_0 if year == 2017 else varsList.bkg2018_0:
+    backgrounds.append(TFile.Open(bkg))
     background_trees.append(backgrounds[-1].Get("ljmet"))
     background_trees[-1].GetEntry(0)
     if background_trees[-1].GetEntries() != 0:
