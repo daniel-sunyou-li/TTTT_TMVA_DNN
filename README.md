@@ -11,6 +11,7 @@
   - [`folders.py`: Folder Management Utilities](#folderspy-folder-management-utilities)
   - [`submit.py`: Job Submission and Resubmission](#submitpy-job-submission-and-resubmission)
   - [`calculate.py`: Variable Importance Calculation](#calculatepy-variable-importance-calculation)
+- [Condor Job Scripts](#condor-job-scripts)
 - [Hyper Parameter Optimization](#hyper-parameter-optimization)
 
 ## Setup
@@ -239,6 +240,7 @@ The script accepts the following command-line arguments:
 - `--include-unstarted` (optional): Include unstarted jobs when compiling list of jobs to resubmit.
 - `-p num_processes` (optional): Specify how many processes should be used to submit jobs in parallel. Default 2.
 - `-n num_seeds` (optional): How many seeds to submit. Only meaningful in *submit* mode. Default 500.
+- `--test` (optional): Submit *only one* job to Condor. Useful for testing whether the submission system is working. Only in *submit* mode.
 - `-c correlation_percent` (optional): The percentage correlation between two variables necessary for them to count as highly correlated. Default 80.
 - `-l varlist` (optional):  The variables to use when submitting jobs. Only meaningful in *submit* mode.
   - `varlist` can either be `all` to use the default list of 76 variables, or a path to a file which contains a sorted list of variable names, one per line.
@@ -321,6 +323,18 @@ The variable importance results file stores the following calculated statistics 
 - *Mean*: The mean of all the ROC-integral differences corresponding to the variable.
 - *RMS*: The standard deviation of all the ROC-integral differences corresponding to the variable.
 - *Importance*: Given as *Mean* / *RMS*.
+
+[Return to Index](#introduction)
+
+
+
+## Condor Job Scripts
+
+The user does not interact directly with the scripts that run on the Condor nodes. Instead, they are launched indirectly by `submit.py`, and their output is monitored by the job tracker library.
+
+`remote.sh` is the target Condor executable. It retrieves the TTTT source code from the `CMSSW946.tgz` file, sets up the working environment, and retrieves the relevant dataset samples. Then, it launches the `remote.py` script.
+
+`remote.py` performs the neural network training corresponding to one job. It is passed the dataset year and a base-64 encoded string of variable names by `remote.sh`. These are the variables included in the seed this job corresponds to. The neural network is then trained using these variables, and the resulting ROC-Integral value is printed to the output.
 
 [Return to Index](#introduction)
 
