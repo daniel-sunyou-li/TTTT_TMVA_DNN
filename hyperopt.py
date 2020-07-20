@@ -137,7 +137,7 @@ PARAMETERS = {
     "epochs": 15,
     "patience": 5,
     "model_name": os.path.join(args.dataset, "dummy_opt_model.h5"),
-    "tag": timestamp.strftime("%d.%b.Y_%H"),
+    "tag": timestamp.strftime("%d.%b.%Y_%H"),
     "log_file": os.path.join(args.dataset, "optimize_log_" + timestamp.strftime("%d.%b.Y_%H") + ".txt"),
 
     "hidden_layers": [1, 3],
