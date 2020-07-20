@@ -26,7 +26,6 @@ TMVA.PyMethodBase.PyInitialize()
 (TMVA.gConfig().GetIONames()).fWeightFileDir = "/weights"
 
 parser = ArgumentParser()
-#parser.add_argument("-v", "--verbose", action="store_true", help="Display detailed logs.")
 parser.add_argument("dataset", help="The dataset folder to use variable importance results from.")
 parser.add_argument("-o", "--sort-order", default="importance",
                     help="Which attribute to sort variables by. Choose from (importance, freq, sum, mean, rms, or specify a filepath).")
@@ -129,7 +128,6 @@ PARAMETERS = {
         "epochs",
         "patience",
         "model_name",
-        "tag_num",
         "tag",
         "log_file",
         "n_calls",
@@ -139,9 +137,8 @@ PARAMETERS = {
     "epochs": 15,
     "patience": 5,
     "model_name": os.path.join(args.dataset, "dummy_opt_model.h5"),
-    "tag_num": str(timestamp.hour),
-    "tag": timestamp.strftime("%m-%d_%H"),
-    "log_file": os.path.join(args.dataset, "optimize_log_" + timestamp.strftime("%m-%d_%H") + ".txt"),
+    "tag": timestamp.strftime("%d.%b.Y_%H"),
+    "log_file": os.path.join(args.dataset, "optimize_log_" + timestamp.strftime("%d.%b.Y_%H") + ".txt"),
 
     "hidden_layers": [1, 3],
     "initial_nodes": [len(var_order), len(var_order) * 10],
@@ -162,7 +159,7 @@ if args.parameters != None and os.path.exists(args.parameters):
         PARAMETERS.update(u_params)
 
 # Save used parameters to file
-parameter_file = os.path.join(args.dataset, "optimize_parameters" + timestamp.strftime("%m-%d_%H") + ".json")
+parameter_file = os.path.join(args.dataset, "parameters_" + PARAMETERS["tag"] + ".json")
 with open(parameter_file, "w") as f:
     f.write(write_json(PARAMETERS, indent=2))
 print("Parameters saved to dataset folder.")
@@ -354,16 +351,18 @@ res_gp = gp_minimize(
 logfile.close()
 
 # Report results
-print("Writing optimized parameter log to: optimized_params_" + PARAMETERS["tag"] + ".txt")
+print("Writing optimized parameter log to: optimized_parameters_" + PARAMETERS["tag"] + ".txt and .json")
 with open(os.path.join(args.dataset, "optimized_params_" + PARAMETERS["tag"] + ".txt"), "w") as f:
     f.write("TTTT TMVA DNN Hyper Parameter Optimization Parameters \n")
     f.write("Static and Parameter Space stored in: {}\n".format(parameter_file))
     f.write("Optimized Parameters:\n")
-    f.write(" Hidden Layers: {}\n".format(res_gp.x[opt_order["hidden_layers"]]))
-    f.write(" Initial Nodes: {}\n".format(res_gp.x[opt_order["initial_nodes"]]))
-    f.write(" Batch Power: {}\n".format(res_gp.x[opt_order["batch_power"]]))
-    f.write(" Learning Rate: {}\n".format(res_gp.x[opt_order["learning_rate"]]))
-    f.write(" Node Pattern: {}\n".format(res_gp.x[opt_order["node_pattern"]]))
-    f.write(" Regulator: {}\n".format(res_gp.x[opt_order["regulator"]]))
-    f.write(" Activation Function: {}\n".format(res_gp.x[opt_order["activation_function"]]))
-print("Finished optimization in: {} s".format(datetime.now() - start_time))
+    f.write("    Hidden Layers: {}\n".format(res_gp.x[opt_order["hidden_layers"]]))
+    f.write("    Initial Nodes: {}\n".format(res_gp.x[opt_order["initial_nodes"]]))
+    f.write("    Batch Power: {}\n".format(res_gp.x[opt_order["batch_power"]]))
+    f.write("    Learning Rate: {}\n".format(res_gp.x[opt_order["learning_rate"]]))
+    f.write("    Node Pattern: {}\n".format(res_gp.x[opt_order["node_pattern"]]))
+    f.write("    Regulator: {}\n".format(res_gp.x[opt_order["regulator"]]))
+    f.write("    Activation Function: {}\n".format(res_gp.x[opt_order["activation_function"]]))
+with open(os.path.join(args.dataset, "optimized_parameters_" + PARAMETERS["tag"] + ".json"), "w") as f:
+    f.write(write_json(dict([(key, res_gp.x[val]) for key, val in opt_order.iteritems()]), indent=2))
+print("Finished optimization in: {}".format(datetime.now() - start_time))

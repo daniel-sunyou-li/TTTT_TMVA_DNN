@@ -20,8 +20,10 @@ def check_voms():
     print "Checking VOMS"
     try:
         output = check_output("voms-proxy-info", shell=True)
+        print output.rfind("timeleft")
+        print output[output.rfind(": ")+2:]
         if output.rfind("timeleft") > -1:
-            if int(output[output.rfind(": ")+2:]) > 0:
+            if int(output[output.rfind(": ")+2:].replace(":", "")) > 0:
                 print "[OK ] VOMS found"
                 return True
         return False
@@ -175,12 +177,13 @@ def create_tar():
         print("[   ] Deleting existing CMSSW946.tgz...")
         sys_call("rm {}{}".format(lpcHomeDir, "CMSSW946.tgz"), shell=True)
     print "[   ] Creating TAR file"
-    if sys_call("tar -C ~/nobackup/ -zcvf CMSSW946.tgz --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' {}".format(
+    if sys_call("tar -C ~/nobackup/ -zcvf CMSSW946.tgz --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' {}".format(
             "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + varsList.step2Sample2017,
             "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + varsList.step2Sample2018,
             "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/condor_log*",
             "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/dataset_*",
             "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/CMSSW946.tgz",
+            "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/.git/*",
             "CMSSW_9_4_6_patch1/"
         ), shell=True) == 1:
         print "[ERR] Creating TAR file failed!"

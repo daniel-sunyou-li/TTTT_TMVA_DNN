@@ -1,16 +1,51 @@
 # Four Top Machine Learning Classification and Importance Calculation
 
-Introduction
+### Introduction
+
+<u>Jump to a Section</u>
+
+- [Setup](#setup)
+- [Starting the Environment](#starting-the-environment)
+- [Managing Jobs](#managing-jobs)
+  - [`jobtracker.py`: The Backend](#jobtrackerpy-the-backend)
+  - [`folders.py`: Folder Management Utilities](#folderspy-folder-management-utilities)
+  - [`submit.py`: Job Submission and Resubmission](#submitpy-job-submission-and-resubmission)
+  - [`calculate.py`: Variable Importance Calculation](#calculatepy-variable-importance-calculation)
+- [Condor Job Scripts](#condor-job-scripts)
+- [Hyper Parameter Optimization](#hyper-parameter-optimization)
 
 ## Setup
 
 Setup
+
+
+
+[Return to Index](#introduction)
+
+
+
+## Starting the Environment
+
+The various Python scripts require the proper environment to run. This includes entering the CMS environment, and selecting the proper ROOT version. The `start.sh` script contains all of the necessary steps, and *must* be run before any of the Python scripts can work properly.
+
+<u>To Run the Start Script</u>
+From bash, enter the `src` directory and type `. start.sh`. The leading `.` allows the shell script to modify the current working environment, which is the desired effect.
+
+The script must be run by the user. It cannot be started from within the Python script.
+
+[Return to Index](#introduction)
+
+
 
 ## Managing Jobs
 
 The bulk of the data generated in this project is stored in individual jobs. Each job corresponds to one instance of training a neural network, testing it, and computing a ROC-Integral value. These jobs are defined by `.job` files, which are submitted to Condor. As the network is trained, a `.out`, `.err`, and `.log` file is also generated for each job, containing its output and information about its status.
 
 The cycle of creating, submitting, checking the status of, and gathering results from jobs is handled by different Python scripts within the software package.
+
+[Return to Index](#introduction)
+
+
 
 ### `jobtracker.py`: The Backend
 
@@ -134,6 +169,8 @@ An instance has the following methods:
   If the variable `var` is used in this seed, set its entry in `states` to `False`.
 - `includes(var)`
   Returns `True` if the variable `var` is used in the seed and its entry in `states` is `True`.
+- `save_to(path)`
+  Pickle the Seed and save it to the specified path.
 
 The class has the following static methods:
 
@@ -141,6 +178,10 @@ The class has the following static methods:
   Creates a new `Seed` object from a list of variables and a binary string. The characters in the string are read left to right, with the leftmost character corresponding to the first variable in the list. The `Seed` object is returned.
 - `Seed.random(variables)`
   Creates a new `Seed` object with random variable inclusion given a list of variables. The `Seed` object is returned.
+- `Seed.load_from(path)`
+  Loads a pickled Seed object from the specified path and returns it.
+
+[Return to Index](#introduction)
 
 
 
@@ -184,6 +225,8 @@ In all cases, the number and percent of finished, failed, and unstarted jobs wil
 Example Usage:
 To display verbose information about the folders `condor_log_23.June.2020` and `condor_log_17.June.2020` the syntax would be: `python folders.py -v condor_log_23.June.2020 condor_log_17.June.2020`
 
+[Return to Index](#introduction)
+
 
 
 ### `submit.py`: Job Submission and Resubmission
@@ -194,9 +237,10 @@ The script accepts the following command-line arguments:
 
 - `-v` (optional): Toggle verbose mode, showing output from backend library.
 - `-r` (optional): Run in *resubmit* mode (as opposed to submit mode - see details below).
-- `--ignore-unstarted` (optional): Ignore unstarted jobs when compiling list of jobs to resubmit.
+- `--include-unstarted` (optional): Include unstarted jobs when compiling list of jobs to resubmit.
 - `-p num_processes` (optional): Specify how many processes should be used to submit jobs in parallel. Default 2.
 - `-n num_seeds` (optional): How many seeds to submit. Only meaningful in *submit* mode. Default 500.
+- `--test` (optional): Submit *only one* job to Condor. Useful for testing whether the submission system is working. Only in *submit* mode.
 - `-c correlation_percent` (optional): The percentage correlation between two variables necessary for them to count as highly correlated. Default 80.
 - `-l varlist` (optional):  The variables to use when submitting jobs. Only meaningful in *submit* mode.
   - `varlist` can either be `all` to use the default list of 76 variables, or a path to a file which contains a sorted list of variable names, one per line.
@@ -207,7 +251,7 @@ The script accepts the following command-line arguments:
 
 In resubmit mode, the script scans the specified folders for jobs which failed to compute a ROC-Integral value, as well as jobs which have not yet been started. These jobs can be listed by running `python folders.py -v [folders...]`, which displays the names of failed jobs as well as the total number. Once resubmitted, the new output from the jobs will be stored in their existing folder.
 
-*Caution*: because unstarted jobs are included in the resubmit list, resubmit mode should not be run before Condor has a chance to process all of the submitted jobs. To resubmit only *failed* jobs, use the `--ignore-unstarted` flag.
+To resubmit *unstarted* jobs as, use the `--ignore-unstarted` flag.
 
 Example Usage:
 To resubmit failed jobs in the `condor_log_17.Jun.2020` folder using 2017 data and a correlation percentage of 70, the syntax is: `python submit.py -r -y 2017 -c 70 condor_log_17.Jun.2020`.
@@ -222,6 +266,8 @@ To submit 50 seeds of new jobs using the variable list `15vars.txt`, to be place
 <u>Multiprocessing Capable</u>
 
 In both modes, the script uses parallel processes to submit jobs. The number of processes can be specified using the `-p` option. By default, two processes are used. Increasing the number of processes can cause some submissions to fail (with four processes, the observed rate of failure is around 0.7%). The failed submissions are tracked, and a prompt will appear to retry submission after all other jobs have been submitted.
+
+[Return to Index](#introduction)
 
 
 
@@ -239,6 +285,7 @@ The script accepts the following command-line arguments:
   - `sum`: Sort by the "Sum" column.
   - `mean`: Sort by the "Mean" column.
   - `rms`: Sort by the "RMS" column.
+- `--sort-increasing` (optional): Sort in increasing order of specified value. This is the intuitive choice for "rms".
 - A list of Condor log folders (optional). Defaults to scanning the working directory for all folders matching `condor_log*`.
 
 <u>Files Produced</u>
@@ -277,3 +324,83 @@ The variable importance results file stores the following calculated statistics 
 - *RMS*: The standard deviation of all the ROC-integral differences corresponding to the variable.
 - *Importance*: Given as *Mean* / *RMS*.
 
+[Return to Index](#introduction)
+
+
+
+## Condor Job Scripts
+
+The user does not interact directly with the scripts that run on the Condor nodes. Instead, they are launched indirectly by `submit.py`, and their output is monitored by the job tracker library.
+
+`remote.sh` is the target Condor executable. It retrieves the TTTT source code from the `CMSSW946.tgz` file, sets up the working environment, and retrieves the relevant dataset samples. Then, it launches the `remote.py` script.
+
+`remote.py` performs the neural network training corresponding to one job. It is passed the dataset year and a base-64 encoded string of variable names by `remote.sh`. These are the variables included in the seed this job corresponds to. The neural network is then trained using these variables, and the resulting ROC-Integral value is printed to the output.
+
+[Return to Index](#introduction)
+
+
+
+## Hyper Parameter Optimization
+
+Hyper Parameter Optimization is used to find the best configuration for a neural network to classify TTTT events. This process builds on the results of the variable importance rankings produced by the `calculate.py` script.
+
+The optimization process is handled by the `hyperopt.py` script.
+
+The script accepts the following command-line arguments:
+
+- `-o sort_order` (optional): Specify how the variables read in from the dataset's result file should be sorted, in descending order. Valid choices are:
+  - `importance` (default): Sort by the "Importance" column.
+  - `freq`: Sort by the "Freq." (frequency) column.
+  - `sum`: Sort by the "Sum" column.
+  - `mean`: Sort by the "Mean" column.
+  - `rms`: Sort by the "RMS" column.
+  - A valid path, to a text file with one variable name per line. This will be treated as the sorted variable list.
+- `--sort-increasing` (optional): Sort in increasing order of specified value. This is the intuitive choice for "rms".
+- `-n num_vars` (optional): Specify how many of the variables, in sorted order, to use in training the neural network. Defaults to all the variables loaded.
+- `-y year`: The dataset to use when training. Specify `2017` or `2018`.
+- `-p parameters` (optional): Specify a path to a JSON file to use to update the static parameters and hyper parameter space used when training. See the *parameters* section for more.
+- The dataset folder to use the variable importance data from and to store results in.
+
+<u>Example Usage</u>
+
+To perform the optimization using the variable data in the `dataset_14.Jul.2020` folder, signal and background data from the 2017 dataset, using the first 5 variables from the `custom_sort_order.txt` file, the syntax would be: `python hyperopt.py -o custom_sort_order.txt -n 5 -y 2017 dataset_14.Jul.2020`
+
+<u>Outputs</u>
+
+The `hyperopt.py` file produces several different files as output within the dataset folder (specified as a command-line argument).
+
+- `dummy_opt_model.h5`: Used by TMVA during the training process. Can be safely deleted once the script finishes. File name is changeable as a parameter.
+- `optimize_log_[day].[Month].[year]_[hour].txt`: A log file displaying the results of each training iteration. File name is changeable as a parameter.
+- `parameters_[day].[Month].[year]_[hour].json`: A JSON file containing the parameters used in the training. See the *parameters* section and the `-p` command line option.
+- `optimized_parameters_[day].[Month].[year]_[hour].txt`: A human-readable text file containing the results of the hyper parameter optimization.
+- `optimized_parameters_[day].[Month].[year]_[hour].json`: A JSON file containing the results of the hyper parameter optimization.
+
+<u>Training Parameters</u>
+
+The parameters used for the training of the neural network are specified in `PARAMETERS` dictionary object within the script. They can be modified using a JSON file by specifying the `-p` command-line argument. The parameters used in each run of the optimization process are stored in a JSON file within the dataset.
+
+The default parameters are:
+
+- `static`: `["static", "epochs", "patience", "model_name", "tag", "log_file", "n_calls", "n_starts"]`. These parameters will not be included in the hyper parameter optimization process. They are statically defined by the user.
+- `epochs`: `15`. The maximum number of training epochs to use in each stage of the optimization process.
+- `patience`: `5`. How many epochs to wait before prematurely canceling training.
+- `model_name`: `dummy_opt_model.h5` in the dataset folder. The temporary file used by TMVA during training.
+- `tag`: `[day].[Month].[year]_[hour]`. Used to identify the files generated by the optimization process.
+- `log_file`: `optimize_log_[day].[Month].[year]_[hour].txt` in the dataset folder. The path to the log file generated.
+- `n_calls`: `50`. The number of times to run the training process when performing the optimization.
+- `n_starts`: `30`. The number of random seed points to use in the optimization.
+- `hidden_layers`: `[1, 3]`. (HP) The range for the number of hidden layers to include in the neural network.
+- `initial_nodes`: `[num_vars, 10 * num_vars]`. (HP) The number of nodes to start with in the network, where `num_vars` is the specified by the `-n` command line argument (or equivalent use of `all` or a file containing sorted variables).
+- `node_pattern`: `["static", "dynamic"]`. (HP) The type of node pattern to use when building the network.
+- `batch_power`: `[8, 11]`. (HP) The batch size is determined as `2^batch_power`.
+- `learning_rate`: `[1.0 * 10^-5, 1.0*10^-2]`. (HP) The rate at which the network is trained.
+- `regulator`: `["none", "dropout", "normalization", "both"]`. (HP) The regulator to use for the nodes.
+- `activation_function`: `["relu", "softplus", "elu"]`. (HP) The activation function to use for the nodes.
+
+<u>The Optimization Metric</u>
+
+When performing the optimization, the ideal trained neural network has a high ROC-Integral value. Because a minimizing search function (`gp_minimize`) is used, this means that the minimum of `1 - ROC` is equivalent to maximizing `ROC`.
+
+To tune sensitivity, a different optimization metric can be used to map values of `1 - ROC` to more general "performance". The current metric is `log(1 - ROC)`.
+
+[Return to Index](#introduction)

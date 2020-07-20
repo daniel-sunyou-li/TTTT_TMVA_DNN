@@ -5,14 +5,15 @@ from subprocess import check_output
 from time import sleep
 from sys import exit as sys_exit
 from correlation import generate_uncorrelated_seeds
+from base64 import b64encode
 import os
 import varsList
 
 # Condor job submission template
 CONDOR_TEMPLATE = """universe = vanilla
-Executable = %(RUNDIR)s/etc/LPC/VariableImportanceLPC_step2.sh
-Should_Transfer_Files = YES
-WhenToTransferOutput = ON_EXIT
+Executable = %(RUNDIR)s/remote.sh
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
 request_memory = 3.5 GB
 request_cpus = 2
 image_size = 3.5 GB
@@ -20,7 +21,7 @@ Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err
 Log = %(FILENAME)s.log
 Notification = Never
-Arguments = %(SubmitSeedN)s %(EOSDIR)s %(eosUserName)s %(YEAR)s
+Arguments = %(eos_username)s %(eos_folder)s %(year)s %(seed_vars)s
 Queue 1"""
 
 parser = ArgumentParser()
@@ -31,6 +32,7 @@ parser.add_argument("-y", "--year", required=True, help="The dataset year to use
 parser.add_argument("-n", "--seeds", default="500", help="The number of seeds to submit (only in submit mode).")
 parser.add_argument("-c", "--correlation", default="80", help="The correlation cutoff percentage.")
 parser.add_argument("-l", "--var-list", default="all", help="The variables to use when generating seeds.")
+parser.add_argument("--test", action="store_true", help="Only submit one job to test submission mechanics.")
 parser.add_argument("--include-unstarted", action="store_true", help="Include unstarted jobs in the resubmit list.")
 parser.add_argument("folders", nargs="*", default=[], help="Condor log folders to [re]submit to.")
 args = parser.parse_args()
@@ -129,16 +131,19 @@ submitted_seeds = Value("i", 0)
 
 # Submit a single job to Condor
 def submit_job(job):
+    # encode the job's seed
+    seed_vars = b64encode(",".join([v for v, s in (job.seed if job.subseed == None else job.subseed).states.iteritems() if s]))
+    
     # Create a job file
     run_dir = os.getcwd()
     with open(job.path, "w") as f:
         f.write(CONDOR_TEMPLATE%{
             "RUNDIR": run_dir,
             "FILENAME": job.name,
-            "SubmitSeedN": int(job.seed.binary if job.subseed == None else job.subseed.binary, base=2),
-            "EOSDIR": eos_input_folder,
-            "eosUserName": eos_username,
-            "YEAR": year
+            "seed_vars": seed_vars,
+            "eos_folder": eos_input_folder,
+            "eos_username": eos_username,
+            "year": year
             })
     os.chdir(job.folder)
 
@@ -255,6 +260,10 @@ def submit_new_jobs():
                                    seed_job_name + "_Subseed_" + str(subseed_num),
                                    seed,
                                    subseed))
+
+    # Eliminate all but one job in test mode
+    if args.test:
+        job_list = [job_list[0]]
 
     jf.jobs.extend(job_list)
     jf._save_jtd()
