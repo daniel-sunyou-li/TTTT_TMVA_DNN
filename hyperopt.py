@@ -117,7 +117,11 @@ variables = None
 if args.num_vars == "all":
     variables = var_order
 else:
-    variables = var_order[:int(args.num_vars)]
+    if ":" in args.num_vars:
+        indices = [int(x) for x in args.num_vars.split(":")]
+        variables = var_order[indices[0]:indices[1]]
+    else:
+        variables = var_order[:int(args.num_vars)]
 print("Variables used in optimization:\n - {}".format("\n - ".join(variables)))
 
 # Determine static and hyper parameter
@@ -131,14 +135,14 @@ PARAMETERS = {
         "tag",
         "log_file",
         "n_calls",
-        "n_starts"
+        "n_starts",
+        "weight_string",
+        "cut_string"
         ],
 
     "epochs": 15,
     "patience": 5,
     "model_name": os.path.join(args.dataset, "dummy_opt_model.h5"),
-    "tag": timestamp.strftime("%d.%b.%Y_%H"),
-    "log_file": os.path.join(args.dataset, "optimize_log_" + timestamp.strftime("%d.%b.Y_%H") + ".txt"),
 
     "hidden_layers": [1, 3],
     "initial_nodes": [len(var_order), len(var_order) * 10],
@@ -148,8 +152,8 @@ PARAMETERS = {
     "regulator": ["none", "dropout", "normalization", "both"],
     "activation_function": ["relu", "softplus", "elu"],
 
-    "n_calls": 50,
-    "n_starts": 30
+    "n_calls": 20,
+    "n_starts": 10
 }
 # Update parameters given file
 if args.parameters != None and os.path.exists(args.parameters):
@@ -157,6 +161,14 @@ if args.parameters != None and os.path.exists(args.parameters):
     with open(args.parameters, "r") as f:
         u_params = load_json(f.read())
         PARAMETERS.update(u_params)
+
+PARAMETERS.update({
+    "tag": timestamp.strftime("%d.%b.%Y_%H"),
+    "log_file": os.path.join(args.dataset, "optimize_log_" + timestamp.strftime("%d.%b.%Y_%H") + ".txt"),
+    "weight_string": varsList.weightStr,
+    "cut_string": varsList.cutStr
+    }
+)
 
 # Save used parameters to file
 parameter_file = os.path.join(args.dataset, "parameters_" + PARAMETERS["tag"] + ".json")
