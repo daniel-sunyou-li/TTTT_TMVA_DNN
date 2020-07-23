@@ -137,7 +137,8 @@ PARAMETERS = {
         "n_calls",
         "n_starts",
         "weight_string",
-        "cut_string"
+        "cut_string",
+        "variables"
         ],
 
     "epochs": 15,
@@ -166,7 +167,8 @@ PARAMETERS.update({
     "tag": timestamp.strftime("%d.%b.%Y_%H"),
     "log_file": os.path.join(args.dataset, "optimize_log_" + timestamp.strftime("%d.%b.%Y_%H") + ".txt"),
     "weight_string": varsList.weightStr,
-    "cut_string": varsList.cutStr
+    "cut_string": varsList.cutStr,
+    "variables": variables
     }
 )
 
