@@ -119,7 +119,7 @@ if args.num_vars == "all":
 else:
     if ":" in args.num_vars:
         indices = [int(x) for x in args.num_vars.split(":")]
-        variables = var_order[indices[0]:indices[1]]
+        variables = var_order[indices[0]:(indices[1] + 1)]
     else:
         variables = var_order[:int(args.num_vars)]
 print("Variables used in optimization:\n - {}".format("\n - ".join(variables)))
