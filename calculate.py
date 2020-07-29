@@ -99,6 +99,8 @@ for seed, seed_roc in seed_rocs.iteritems():
     print("Processing seed {}.\r".format(n)),
     n += 1
     for subseed_j in seed_roc[1].subseed_jobs(seed):
+        if subseed_j.subseed == seed:
+            continue
         if subseed_j.has_result:
             for var, included in subseed_j.subseed.states.iteritems():
                 if not included and seed.states[var]:
