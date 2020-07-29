@@ -252,14 +252,16 @@ def submit_new_jobs():
                                seed_job_name,
                                seed,
                                None))
-        
-        for i in range(len(variables)):
-            subseed_num = seed_num & ~(1 << i)
-            subseed = jt.Seed.from_binary("{:0{}b}".format(subseed_num, len(variables)), variables)
-            job_list.append(jt.Job(jf.path,
-                                   seed_job_name + "_Subseed_" + str(subseed_num),
-                                   seed,
-                                   subseed))
+
+        for i, var in enumerate(seed.variables):
+            if seed.states[var]:
+                subseed_num = seed_num & ~(1 << i)
+                subseed = jt.Seed.from_binary("{:0{}b}".format(subseed_num, len(variables)), variables)
+                job_list.append(jt.Job(jf.path,
+                                       seed_job_name + "_Subseed_" + str(subseed_num),
+                                       seed,
+                                       subseed))
+            
 
     # Eliminate all but one job in test mode
     if args.test:
