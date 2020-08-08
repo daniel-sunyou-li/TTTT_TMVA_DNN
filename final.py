@@ -40,7 +40,7 @@ background_files = [os.path.join(tree_folder, bkg) for bkg in (varsList.bkg2017_
 hpo_data = {}
 datasets = args.datasets
 if args.datasets == []:
-    datasets = [d for d in os.listdir() if os.path.isdir(d) and d.startswith("dataset")]
+    datasets = [d for d in os.listdir(os.getcwd()) if os.path.isdir(d) and d.startswith("dataset")]
 print("Using Datasets:\n - {}".format("\n - ".join(datasets)))
 for dataset in datasets:
     if os.path.exists(dataset):
