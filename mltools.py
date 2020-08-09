@@ -5,12 +5,16 @@ from pickle import dump as pickle_dump
 os.environ["KERAS_BACKEND"] = "tensorflow"
 
 from keras.models import Sequential
+from keras.models import load_model
 from keras.layers.core import Dense, Dropout
 from keras.layers import BatchNormalization
 from keras.optimizers import Adam
-from keras import backend
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 from ROOT import TFile
+
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score, roc_curve, auc
 
 import numpy as np
 
@@ -45,6 +49,7 @@ class MLTrainingInstance(object):
         self.background_paths = background_paths
 
     def load_cut_events(self, sig_path, bg_path):
+        # Save the cut signal and background events to pickled files
         if os.path.exists(sig_path) and os.path.exists(bg_path):
             with open(sig_path, "rb") as f:
                 self.signal_events = pickle_load(f)
@@ -52,10 +57,21 @@ class MLTrainingInstance(object):
                 self.background_events = pickle_load(f)
 
     def save_cut_events(self, sig_path, bg_path):
+        # Load pickled events files
         with open(sig_path, "wb") as f:
             pickle_dump(self.signal_events, f)
         with open(bg_path, "wb") as f:
             pickle_dump(self.background_events, f)
+
+    def select_ml_variables(self, varlist):
+        # Select which variables from ML_VARIABLES to use in training
+        events = []
+        positions = {v: VARIABLES.index(v) for v in varlist}
+        for e in self.signal_events:
+            events.append([e[positions[v]] for v in varlist])
+        for e in self.background_events:
+            events.append([e[positions[v]] for v in varlist])
+        return events
 
     def load_trees(self):
         # Load signal files
@@ -101,10 +117,13 @@ class MLTrainingInstance(object):
                                                                             len(all_signals),
                                                                             len(self.background_events),
                                                                             len(all_backgrounds)))
-
     def build_model(self):
         # Override with the code that builds the Keras model.
         pass
+
+    def train_model(self):
+        # Train the model on the singal and background data
+        pass        
 
 class HyperParameterModel(MLTrainingInstance):
     def __init__(self, parameters, signal_paths, background_paths, model_name=None):
@@ -143,16 +162,66 @@ class HyperParameterModel(MLTrainingInstance):
                 )
         # Final classification node
         self.model.add(Dense(
-            2,
+            1,
             activation="sigmoid"
             )
         )
         self.model.compile(
             optimizer=Adam(lr=self.parameters["learning_rate"]),
-            loss="categorical_crossentropy",
+            loss="binary_crossentropy",
             metrics=["accuracy"]
         )
 
         if self.model_name != None:
             self.model.save(self.model_name)
         self.model.summary()
+
+    def train_model(self):
+        signal_labels = np.full(len(self.signal_events), [1]).astype("bool")
+        background_labels = np.full(len(self.background_events), [0]).astype("bool")
+
+        all_x = np.array(self.select_ml_variables(self.parameters["variables"]))
+        all_y = np.concatenate((signal_labels, background_labels))
+
+        print "Splitting data."
+        train_x, test_x, train_y, test_y = train_test_split(
+            all_x, all_y,
+            test_size=0.3
+        )
+
+        model_checkpoint = ModelCheckpoint(
+            self.model_name,
+            verbose=0,
+            save_best_only=True,
+            save_weights_only=False,
+            mode="auto",
+            period=1
+        )
+
+        early_stopping = EarlyStopping(
+            monitor="val_loss",
+            patience=self.parameters["patience"]
+        )
+
+        # Train
+        print "Training."
+        history = self.model.fit(
+            np.array(train_x), np.array(train_y),
+            epochs=self.parameters["epochs"],
+            batch_size=2**self.parameters["batch_power"],
+            shuffle=True,
+            verbose=1,
+            callbacks = [early_stopping, model_checkpoint],
+            validation_split=0.25
+        )
+
+        # Test
+        print "Testing."
+        model_ckp = load_model(self.model_name)
+        self.loss, self.accuracy = model_ckp.evaluate(test_x, test_y, verbose=1)
+
+        self.fpr, self.tpr, _ = roc_curve(test_y.astype(int),
+                                          model_ckp.predict(test_x)[:,0])
+
+        self.roc_integral = auc(self.fpr, self.tpr)
+        

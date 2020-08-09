@@ -18,6 +18,7 @@ parser = ArgumentParser()
 parser.add_argument("-y", "--year", required=True, help="The dataset to use when training. Specify 2017 or 2018")
 parser.add_argument("datasets", nargs="*", default=[], help="The dataset folders to search for HPO information")
 parser.add_argument("-f", "--folder", default="auto", help="The name of the output folder.")
+parser.add_argument("--no-cut-save", action="store_true", help="Do not attempt to load or create saved cut event files.")
 args = parser.parse_args()
 
 print "Final Model Training"
@@ -69,6 +70,11 @@ if not os.path.exists(folder):
 # Assign configuration order
 config_order = list(sorted(hpo_data.keys(), key=lambda p: os.path.getmtime(p)))
 
+# Open output file
+summary_f = open(os.path.join(folder, "summary.txt"), "w")
+summary_f.write("Final Training Summary: {}\n\n".format(datetime.now().strftime("%d.%b.%Y")))
+summary_f.write("Index , Parameters , Model , AUC , Accuracy , Loss , True Pos. , False Pos.")
+
 # Go through all configurations
 for config_num, config_path in enumerate(config_order):
     print("Now processing configuration #{} from {}.".format(config_num + 1, config_path))
@@ -80,8 +86,35 @@ for config_num, config_path in enumerate(config_order):
     with open(config_path, "r") as f:
         parameters = load_json(f.read())
 
+    # Load variables list
+    with open(config_path.replace("optimized_parameters", "parameters"), "r") as f:
+        full_params = load_json(f.read())
+        parameters["variables"] = full_params["variables"]
+        parameters["patience"] = full_params["patience"][-1] if type(full_params["patience"]) == list else full_params["patience"]
+        parameters["epochs"] = full_params["epochs"][-1] if type(full_params["epochs"]) == list else full_params["epochs"]
+
     model = mltools.HyperParameterModel(parameters, signal_files, background_files, model_path)
-    model.apply_cut()
+    if not args.no_cut_save:
+        if not (os.path.exists(mltools.CUT_SAVE_SIGNAL) and os.path.exists(mltools.CUT_SAVE_BACKGROUND)):
+            print "Generating saved cut event files."
+            model.load_trees()
+            model.apply_cut()
+            model.save_cut_events(mltools.CUT_SAVE_SIGNAL, mltools.CUT_SAVE_BACKGROUND)
+        else:
+            print "Loading saved cut event files."
+            model.load_cut_events(mltools.CUT_SAVE_SIGNAL, mltools.CUT_SAVE_BACKGROUND)
+    else:
+        model.load_trees()
+        model.apply_cut()
+    
     model.build_model()
 
-    print("    Model saved to: {}".format(model_path))
+    model.train_model()
+
+    print("Configuration #{} finished with AUC {:.3f}, accuracy {:.3f} and loss {:.3f}".format(config_num, model.roc_integral, model.accuracy, model.loss))
+
+    print("->  Model saved to: {}".format(model_path))
+
+    summary_f.write(" , ".join([str(x) for x in [config_num, config_path, model_path, model.roc_integral, model.accuracy, model.loss, model.tpr, model.fpr]]) + "\n")
+
+f.close()
