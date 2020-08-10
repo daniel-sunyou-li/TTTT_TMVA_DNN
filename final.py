@@ -73,7 +73,7 @@ config_order = list(sorted(hpo_data.keys(), key=lambda p: os.path.getmtime(p)))
 # Open output file
 summary_f = open(os.path.join(folder, "summary.txt"), "w")
 summary_f.write("Final Training Summary: {}\n\n".format(datetime.now().strftime("%d.%b.%Y")))
-summary_f.write("Index , Parameters , Model , AUC , Accuracy , Loss , True Pos. , False Pos.")
+summary_f.write("Index , Parameters , Model , AUC , Accuracy , Loss \n")
 
 # Go through all configurations
 for config_num, config_path in enumerate(config_order):
@@ -115,6 +115,6 @@ for config_num, config_path in enumerate(config_order):
 
     print("->  Model saved to: {}".format(model_path))
 
-    summary_f.write(" , ".join([str(x) for x in [config_num, config_path, model_path, model.roc_integral, model.accuracy, model.loss, model.tpr, model.fpr]]) + "\n")
+    summary_f.write(" , ".join([str(x) for x in [config_num, config_path, model_path, model.roc_integral, model.accuracy, model.loss]]) + "\n")
 
 f.close()

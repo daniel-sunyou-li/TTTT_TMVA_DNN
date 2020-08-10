@@ -5,25 +5,13 @@ from json import loads as load_json
 from json import dumps as write_json
 from math import log
 
-os.environ["KERAS_BACKEND"] = "tensorflow"
-
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout
-from keras.layers import BatchNormalization
-from keras.optimizers import Adam
-from keras import backend
+import mltools
 
 from skopt.space import Real, Integer, Categorical
 from skopt.utils import use_named_args
 from skopt import gp_minimize
 
-from ROOT import TMVA, TFile, TCut
-
 import varsList
-
-TMVA.Tools.Instance()
-TMVA.PyMethodBase.PyInitialize()
-(TMVA.gConfig().GetIONames()).fWeightFileDir = "/weights"
 
 parser = ArgumentParser()
 parser.add_argument("dataset", help="The dataset folder to use variable importance results from.")
@@ -43,6 +31,8 @@ if year == "2017":
     tree_folder = varsList.inputDirLPC2017
 elif year == "2018":
     tree_folder = varsList.inputDirLPC2018
+signal_files = [os.path.join(tree_folder, sig) for sig in (varsList.sig2017_1 if year == "2017" else varsList.sig2018_1)]
+background_files = [os.path.join(tree_folder, bkg) for bkg in (varsList.bkg2017_1 if year == "2017" else varsList.bkg2018_1)]
 
 # Load dataset
 datafile_path = None
@@ -143,7 +133,7 @@ PARAMETERS = {
 
     "epochs": 15,
     "patience": 5,
-    "model_name": os.path.join(args.dataset, "dummy_opt_model.h5"),
+    "model_name": os.path.join(args.dataset, "hpo_model.h5"),
 
     "hidden_layers": [1, 3],
     "initial_nodes": [len(var_order), len(var_order) * 10],
@@ -213,128 +203,41 @@ for param, value in PARAMETERS.iteritems():
         opt_order[param] = i
         i += 1
 
-# Training Instance
-class TrainingInstance(object):
-    def __init__(self, X):
-        self.X = X
-        self._build_model()
-        self.loader = TMVA.DataLoader("tmva_data")
-        self._add_variables()        
-        self._add_trees()
-        self.loader.SetSignalWeightExpression(varsList.weightStr)
-        self.loader.SetBackgroundWeightExpression(varsList.weightStr)
-        self.cut = TCut(varsList.cutStr)
-
-        self.loader.PrepareTrainingAndTestTree( 
-            self.cut, self.cut, 
-            "SplitMode=Random:NormMode=NumEvents:!V"
-        )
-
-        self.factory = TMVA.Factory(
-            "Optimization",
-            "!V:!ROC:!Silent:Color:!DrawProgressBar:Transformations=I;:AnalysisType=Classification"
-            )
-
-        self.factory.BookMethod(
-            self.loader,
-            TMVA.Types.kPyKeras,
-            "PyKeras",
-            "!H:!V:VarTransform=G:FilenameModel=" + PARAMETERS["model_name"] + \
-            ":SaveBestOnly=true" + \
-            ":NumEpochs=" + str(PARAMETERS["epochs"]) + \
-            ":BatchSize=" + str(2**X["batch_power"]) + \
-            ":TriesEarlyStopping=" + str(PARAMETERS["patience"])
-            )
-
-    def get_result(self):
-        self.factory.TrainAllMethods()
-        self.factory.TestAllMethods()
-        self.factory.EvaluateAllMethods()
-
-        ROC = self.factory.GetROCIntegral(self.loader, "PyKeras")
-
-        self.factory.DeleteAllMethods()
-        self.factory.fMethodsMap.clear()
-
-        return ROC
-
-
-    def _add_variables(self):
-        for var in variables:
-            var_data = varsList.varList["DNN"][[v[0] for v in varsList.varList["DNN"]].index(var)]
-            self.loader.AddVariable(var_data[0], var_data[1], var_data[2], "F")
-
-    def _add_trees(self):
-        self.signals = []
-        self.signal_trees = []
-        self.backgrounds = []
-        self.background_trees = []
-        
-        for sig in varsList.sig2017_1 if year == "2017" else varsList.sig2018_1:
-            self.signals.append(TFile.Open(os.path.join(tree_folder, sig)))
-            self.signal_trees.append(self.signals[-1].Get("ljmet"))
-            self.signal_trees[-1].GetEntry(0)
-            self.loader.AddSignalTree(self.signal_trees[-1], 1)
-
-        for bkg in varsList.bkg2017_1 if year == "2017" else varsList.bkg2018_1:
-            self.backgrounds.append(TFile.Open(os.path.join(tree_folder, bkg)))
-            self.background_trees.append(self.backgrounds[-1].Get("ljmet"))
-            self.background_trees[-1].GetEntry(0)
-            if self.background_trees[-1].GetEntries() != 0:
-                self.loader.AddBackgroundTree(self.background_trees[-1], 1)
-
-
-    def _build_model(self):
-        self.model = Sequential()
-        self.model.add(Dense(
-            self.X["initial_nodes"],
-            input_dim=len(variables),
-            kernel_initializer="glorot_normal",
-            activation=self.X["activation_function"]
-            )
-        )
-        partition = int(self.X["initial_nodes"] / self.X["hidden_layers"])
-        for i in range(self.X["hidden_layers"]):
-            if self.X["regulator"] in ["normalization", "both"]:
-                self.model.add(BatchNormalization())
-            if self.X["regulator"] in ["dropout", "both"]:
-                self.model.add(Dropout(0.5))
-            if self.X["node_pattern"] == "dynamic":
-                self.model.add(Dense(
-                    self.X["initial_nodes"] - (partition * i),
-                    kernel_initializer="glorot_normal",
-                    activation=self.X["activation_function"]
-                    )
-                )
-            elif self.X["node_pattern"] == "static":
-                self.model.add(Dense(
-                    self.X["initial_nodes"],
-                    kernel_initializer="glorot_normal",
-                    activation=self.X["activation_function"]
-                    )
-                )
-        # Final classification node
-        self.model.add(Dense(
-            2,
-            activation="sigmoid"
-            )
-        )
-        self.model.compile(
-            optimizer=Adam(lr=self.X["learning_rate"]),
-            loss="categorical_crossentropy",
-            metrics=["accuracy"]
-        )
-
-        self.model.save(PARAMETERS["model_name"])
-        self.model.summary()
-            
 # Objective function
+
+# Persist cut events to speed up process
+signal_cut = None
+background_cut = None
+
 @use_named_args(opt_space)
 def objective(**X):
+    global signal_cut, background_cut
+    
     print("Configuration:\n{}\n".format(X))
-    instance = TrainingInstance(X)
-    result = instance.get_result()
-    print("Obtained ROC-Integral value: {}".format(result))
+    if not "variables" in X: X["variables"] = PARAMETERS["variables"]
+    if not "patience" in X: X["patience"] = PARAMETERS["patience"]
+    if not "epochs" in X: X["epochs"] = PARAMETERS["epochs"]
+    model = mltools.HyperParameterModel(X, signal_files, background_files, PARAMETERS["model_name"])
+    
+    if signal_cut == None or background_cut == None:
+        if not (os.path.exists(mltools.CUT_SAVE_SIGNAL) and os.path.exists(mltools.CUT_SAVE_BACKGROUND)):
+            print "Generating saved cut event files."
+            model.load_trees()
+            model.apply_cut()
+            model.save_cut_events(mltools.CUT_SAVE_SIGNAL, mltools.CUT_SAVE_BACKGROUND)
+        else:
+            print "Loading saved cut event files."
+            model.load_cut_events(mltools.CUT_SAVE_SIGNAL, mltools.CUT_SAVE_BACKGROUND)
+        signal_cut = model.signal_events[:]
+        background_cut = model.background_events[:]
+    else:
+        model.signal_events = signal_cut[:]
+        model.background_events = background_cut[:]
+
+    model.build_model()
+    model.train_model()
+    
+    print("Obtained ROC-Integral value: {}".format(model.roc_integral))
     logfile.write('{:7}, {:7}, {:7}, {:7}, {:9}, {:14}, {:10}, {:7}\n'.format(
         str(X["hidden_layers"]),
         str(X["initial_nodes"]),
@@ -343,10 +246,10 @@ def objective(**X):
         str(X["node_pattern"]),
         str(X["regulator"]),
         str(X["activation_function"]),
-        str(round(result, 5))
+        str(round(model.roc_integral, 5))
         )
     )
-    opt_metric = log(1 - result)
+    opt_metric = log(1 - model.roc_integral)
     print("    Metric: {}".format(round(opt_metric, 2)))
     return opt_metric
 
@@ -367,7 +270,7 @@ logfile.close()
 # Report results
 print("Writing optimized parameter log to: optimized_parameters_" + PARAMETERS["tag"] + ".txt and .json")
 with open(os.path.join(args.dataset, "optimized_params_" + PARAMETERS["tag"] + ".txt"), "w") as f:
-    f.write("TTTT TMVA DNN Hyper Parameter Optimization Parameters \n")
+    f.write("TTTT DNN Hyper Parameter Optimization Parameters \n")
     f.write("Static and Parameter Space stored in: {}\n".format(parameter_file))
     f.write("Optimized Parameters:\n")
     f.write("    Hidden Layers: {}\n".format(res_gp.x[opt_order["hidden_layers"]]))
