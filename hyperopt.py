@@ -6,6 +6,7 @@ from json import dumps as write_json
 from math import log
 
 import mltools
+from correlation import reweight_importances
 
 from skopt.space import Real, Integer, Categorical
 from skopt.utils import use_named_args
@@ -75,6 +76,11 @@ with open(datafile_path, "r") as f:
             else:
                 var_data[h].append(float(content[i]) if "." in content[i] else int(content[i]))
         line = f.readline().rstrip()
+
+# Modify significance values
+print var_data["importance"]
+var_data["importance"] = reweight_importances(year, var_data["variable name"], var_data["importance"])
+print var_data["importance"]
 
 # Determine variable sort order
 var_order = []
