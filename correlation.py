@@ -71,6 +71,16 @@ def get_correlation_matrix(year, variables):
     
     return sig_corr
 
+def reweight_importances(year, variables, importances):
+    # Re-weight the variable importances
+    corr_mat = get_correlation_matrix(int(year), variables)
+    row_sum_inv_sq = (corr_mat.sum(axis=1))**(-2)
+    weight_mat = np.array([
+        np.multiply(row_sum_inv_sq[i], corr_mat[i]) for i in range(len(corr_mat))
+    ])
+    weighted_sig = np.dot(weight_mat, importances)
+    return weighted_sig
+
 
 def get_correlated_groups(corr_mat, variables, cutoff):
     # Returns the groups of variables which are <cutoff> or more correlated
