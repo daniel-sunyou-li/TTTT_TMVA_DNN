@@ -77,11 +77,6 @@ with open(datafile_path, "r") as f:
                 var_data[h].append(float(content[i]) if "." in content[i] else int(content[i]))
         line = f.readline().rstrip()
 
-# Modify significance values
-print var_data["importance"]
-var_data["importance"] = reweight_importances(year, var_data["variable name"], var_data["importance"])
-print var_data["importance"]
-
 # Determine variable sort order
 var_order = []
 if os.path.exists(args.sort_order):
@@ -120,6 +115,11 @@ else:
         variables = var_order[:int(args.num_vars)]
 print("Variables used in optimization:\n - {}".format("\n - ".join(variables)))
 
+# Calculate re-weighted significance
+print("Original significance vector: {}".format([var_data["importance"][var_data["variable name"].index(v)] for v in variables]))
+reweighted_sig = reweight_importances(year, variables, [var_data["importance"][var_data["variable name"].index(v)] for v in variables])
+print("Reweighted significance vector: {}".format(reweighted_sig))
+
 # Determine static and hyper parameter
 timestamp = datetime.now()
 PARAMETERS = {
@@ -134,7 +134,8 @@ PARAMETERS = {
         "n_starts",
         "weight_string",
         "cut_string",
-        "variables"
+        "variables",
+        "reweighted_significance"
         ],
 
     "epochs": 15,
@@ -164,7 +165,8 @@ PARAMETERS.update({
     "log_file": os.path.join(args.dataset, "optimize_log_" + timestamp.strftime("%d.%b.%Y_%H") + ".txt"),
     "weight_string": varsList.weightStr,
     "cut_string": varsList.cutStr,
-    "variables": variables
+    "variables": variables,
+    "reweighted_significance": sum(reweighted_sig)
     }
 )
 
