@@ -40,8 +40,7 @@ VARIABLES = list(sorted(list(set(ML_VARIABLES).union(set(CUT_VARIABLES)))))
 CUT_VARIABLES = [(v, VARIABLES.index(v)) for v in CUT_VARIABLES]
 
 # Standard saved event locations
-CUT_SAVE_SIGNAL = os.path.join(os.getcwd(), "cut_signal.evts")
-CUT_SAVE_BACKGROUND = os.path.join(os.getcwd(), "cut_background.evts")
+CUT_SAVE_FILE = os.path.join(os.getcwd(), "cut_events.pkl")
 
 print("mltools using {} variables.".format(len(VARIABLES)))
 
@@ -50,31 +49,26 @@ class MLTrainingInstance(object):
         self.signal_paths = signal_paths
         self.background_paths = background_paths
 
-    def load_cut_events(self, sig_path, bg_path):
+    def load_cut_events(self, path):
         # Save the cut signal and background events to pickled files
-        # TODO: Track cut string in pickle file
-        if os.path.exists(sig_path) and os.path.exists(bg_path):
-            with open(sig_path, "rb") as f:
-                self.signal_events = pickle_load(f)
-            with open(bg_path, "rb") as f:
-                self.background_events = pickle_load(f)
+        if os.path.exists(path):
+            with open(path, "rb") as f:
+                cut_events = pickle_load(f)
+                if cut_events["condition"] != CUT_STRING:
+                    print("Warning: Cut condition in file {} is different from cut condition in program.".format(path))
+                    print "File will be regenerated."
+                    self.load_trees()
+                    self.apply_cut()
+                    self.save_cut_events()
+                    print "Cut condition file saved."
+                    return
+                self.cut_events = cut_events
 
-    def save_cut_events(self, sig_path, bg_path):
+    def save_cut_events(self, path):
         # Load pickled events files
-        with open(sig_path, "wb") as f:
-            pickle_dump(self.signal_events, f)
-        with open(bg_path, "wb") as f:
-            pickle_dump(self.background_events, f)
+        with open(path, "wb") as f:
+            pickle_dump(self.cut_events, f)
 
-    def select_ml_variables(self, varlist):
-        # Select which variables from ML_VARIABLES to use in training
-        events = []
-        positions = {v: VARIABLES.index(v) for v in varlist}
-        for e in self.signal_events:
-            events.append([e[positions[v]] for v in varlist])
-        for e in self.background_events:
-            events.append([e[positions[v]] for v in varlist])
-        return events
 
     def load_trees(self):
         # Load signal files
@@ -93,33 +87,47 @@ class MLTrainingInstance(object):
     def apply_cut(self):
         # Apply cut parameters to the loaded signals and backgrounds
         # Load in events
-        all_signals = None
-        for signal_tree in self.signal_trees.values():
+        all_signals = {}
+        for path, signal_tree in self.signal_trees.iteritems():
             sig_list = np.asarray(signal_tree.AsMatrix(VARIABLES))
-            if type(all_signals) == type(None):
-                all_signals = sig_list
+            if path in all_signals:
+                all_signals[path] = np.concatenate((all_signals[path], sig_list))
             else:
-                all_signals = np.concatenate((all_signals, sig_list))
-        all_backgrounds = None
-        for background_tree in self.background_trees.values():
+                all_signals[path] = sig_list
+        all_backgrounds = {}
+        for path, background_tree in self.background_trees.iteritems():
             bkg_list = np.asarray(background_tree.AsMatrix(VARIABLES))
-            if type(all_backgrounds) == type(None):
-                all_backgrounds = bkg_list
+            if path in all_backgrounds:
+                all_backgrounds[path] = np.concatenate((all_backgrounds[path], sig_list))
             else:
-                all_backgrounds = np.concatenate((all_backgrounds, bkg_list))
+                all_backgrounds[path] = sig_list
         # Apply cuts
-        self.signal_events = []
-        for event in all_signals:
-            if test_cut({var: event[i] for var, i in CUT_VARIABLES}):
-                self.signal_events.append(event)
-        self.background_events = []
-        for event in all_backgrounds:
-            if test_cut({var: event[i] for var, i in CUT_VARIABLES}):
-                self.background_events.append(event)
-        print("{}/{} signal and {}/{} background events passed cut.".format(len(self.signal_events),
-                                                                            len(all_signals),
-                                                                            len(self.background_events),
-                                                                            len(all_backgrounds)))
+        self.cut_events = {
+            "condition": CUT_STRING,
+            "signal": {},
+            "background": {}
+        }
+        n_s = 0
+        c_s = 0
+        for path, events in all_signals.iteritems():
+            self.cut_events["signal"][path] = []
+            n_s += len(events)
+            for event in events:
+                if test_cut({var: event[i] for var, i in CUT_VARIABLES}):
+                    self.cut_events["signal"][path].append(event)
+                    c_s += 1
+        n_b = 0
+        c_b = 0
+        for path, events in all_backgrounds.iteritems():
+            self.cut_events["background"][path] = []
+            n_b += len(events)
+            for event in events:
+                if test_cut({var: event[i] for var, i in CUT_VARIABLES}):
+                    self.cut_events["background"][path].append(event)
+                    c_b += 1
+
+        print("Signal {}/{}, Background {}/{}".format(c_s, n_s, c_b, n_b))
+                
     def build_model(self):
         # Override with the code that builds the Keras model.
         pass
@@ -133,6 +141,16 @@ class HyperParameterModel(MLTrainingInstance):
         MLTrainingInstance.__init__(self, signal_paths, background_paths)
         self.parameters = parameters
         self.model_name = model_name
+
+    def select_ml_variables(self, sig_events, bkg_events, varlist):
+        # Select which variables from ML_VARIABLES to use in training
+        events = []
+        positions = {v: VARIABLES.index(v) for v in varlist}
+        for e in sig_events:
+            events.append([e[positions[v]] for v in varlist])
+        for e in bkg_events:
+            events.append([e[positions[v]] for v in varlist])
+        return events
 
     def build_model(self):
         self.model = Sequential()
@@ -179,10 +197,20 @@ class HyperParameterModel(MLTrainingInstance):
         self.model.summary()
 
     def train_model(self):
-        signal_labels = np.full(len(self.signal_events), [1]).astype("bool")
-        background_labels = np.full(len(self.background_events), [0]).astype("bool")
+        # Join all signals and backgrounds
+        signal_events = []
+        for events in self.cut_events["signal"].values():
+            for event in events:
+                signal_events.append(event)
+        background_events = []
+        for events in self.cut_events["background"].values():
+            for event in events:
+                background_events.append(event)
+        
+        signal_labels = np.full(len(signal_events), [1]).astype("bool")
+        background_labels = np.full(len(background_events), [0]).astype("bool")
 
-        all_x = np.array(self.select_ml_variables(self.parameters["variables"]))
+        all_x = np.array(self.select_ml_variables(signal_events, background_events, self.parameters["variables"]))
         all_y = np.concatenate((signal_labels, background_labels))
 
         print "Splitting data."
