@@ -147,7 +147,7 @@ PARAMETERS = {
     "node_pattern": ["static", "dynamic"],
     "batch_power": [8, 11],
     "learning_rate": [1e-5, 1e-2],
-    "regulator": ["none", "dropout", "normalization", "both"],
+    "regulator": ["dropout", "none"],
     "activation_function": ["relu", "softplus", "elu"],
 
     "n_calls": 20,

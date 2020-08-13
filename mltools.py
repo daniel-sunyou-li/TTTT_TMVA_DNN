@@ -25,12 +25,14 @@ CUT_VARIABLES = ["leptonPt_MultiLepCalc", "isElectron", "isMuon",
                  "corr_met_MultiLepCalc", "MT_lepMet", "minDR_lepJet",
                  "AK4HT", "DataPastTriggerX", "MCPastTriggerX",
                  "NJetsCSVwithSF_MultiLepCalc", "NJets_JetSubCalc"]
+
+# TODO: maybe move to varslist?
 CUT_STRING = "((%(leptonPt_MultiLepCalc)s > 50 and %(isElectron)s == 1) or " + \
              "(%(leptonPt_MultiLepCalc)s > 50 and %(isMuon)s == 1)) and " + \
              "(%(corr_met_MultiLepCalc)s > 60 and %(MT_lepMet)s > 60 and " + \
              "%(minDR_lepJet)s > 0.4 and %(AK4HT)s > 510) and " + \
              "(%(DataPastTriggerX)s == 1 and %(MCPastTriggerX)s == 1) and " + \
-             "(%(NJetsCSVwithSF_MultiLepCalc)s >= 2 and %(NJets_JetSubCalc)s >=6)"
+             "(%(NJetsCSVwithSF_MultiLepCalc)s >= 2 and %(NJets_JetSubCalc)s >= 6)"
 test_cut = lambda d: eval(CUT_STRING % d)
 
 ML_VARIABLES = [x[0] for x in varsList.varList["DNN"]]
@@ -50,6 +52,7 @@ class MLTrainingInstance(object):
 
     def load_cut_events(self, sig_path, bg_path):
         # Save the cut signal and background events to pickled files
+        # TODO: Track cut string in pickle file
         if os.path.exists(sig_path) and os.path.exists(bg_path):
             with open(sig_path, "rb") as f:
                 self.signal_events = pickle_load(f)
@@ -142,8 +145,7 @@ class HyperParameterModel(MLTrainingInstance):
         )
         partition = int(self.parameters["initial_nodes"] / self.parameters["hidden_layers"])
         for i in range(self.parameters["hidden_layers"]):
-            if self.parameters["regulator"] in ["normalization", "both"]:
-                self.model.add(BatchNormalization())
+            self.model.add(BatchNormalization())
             if self.parameters["regulator"] in ["dropout", "both"]:
                 self.model.add(Dropout(0.5))
             if self.parameters["node_pattern"] == "dynamic":
