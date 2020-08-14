@@ -73,13 +73,41 @@ def get_correlation_matrix(year, variables):
 
 def reweight_importances(year, variables, importances):
     # Re-weight the variable importances
-    corr_mat = get_correlation_matrix(int(year), variables)
+    corr_mat = abs(get_correlation_matrix(int(year), variables)) / 100
     row_sum_inv_sq = (corr_mat.sum(axis=1))**(-2)
     weight_mat = np.array([
         np.multiply(row_sum_inv_sq[i], corr_mat[i]) for i in range(len(corr_mat))
     ])
     weighted_sig = np.dot(weight_mat, importances)
     return weighted_sig
+
+def reweight_importances(year, variables, importances):
+    # Re-weight the variable importances
+    corr_mat = abs(get_correlation_matrix(int(year), variables) / 100.0)
+    mod_corr_mat = np.zeros((len(corr_mat), len(corr_mat)))
+    for i in range(len(corr_mat)):
+        for j in range(len(corr_mat)):
+            if i == j:
+	        mod_corr_mat[i,j] = corr_mat[i,j]
+            elif j > i:
+                mod_corr_mat[i,j] = corr_mat[i,j]
+                for k in range(j):
+                    if k > i:
+                        mod_corr_mat[i,j] *= 1.0 - corr_mat[k,j]
+    
+    wgt_sig_mat = np.array([ np.multiply(importances,mod_corr_mat[i]) for i in range(len(corr_mat)) ])
+    weightLSig = np.zeros(len(corr_mat))
+    weightQSig = np.zeros(len(corr_mat))
+    for i in range(len(corr_mat)):
+        for j in range(len(corr_mat)):
+            if i == j:
+                weightLSig[i] = wgt_sig_mat[i,j]
+                weightQSig[i] = wgt_sig_mat[i,j]**2
+            if j > i:
+                weightLSig[i] -= wgt_sig_mat[i,j]
+                weightQSig[i] -= wgt_sig_mat[i,j]**2
+    
+    return weightLSig, np.sqrt(weightQSig)
 
 
 def get_correlated_groups(corr_mat, variables, cutoff):

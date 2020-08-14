@@ -116,9 +116,7 @@ else:
 print("Variables used in optimization:\n - {}".format("\n - ".join(variables)))
 
 # Calculate re-weighted significance
-print("Original significance vector: {}".format([var_data["importance"][var_data["variable name"].index(v)] for v in variables]))
-reweighted_sig = reweight_importances(year, variables, [var_data["importance"][var_data["variable name"].index(v)] for v in variables])
-print("Reweighted significance vector: {}".format(reweighted_sig))
+weightLSig, weightQSig = reweight_importances(year, variables, [var_data["importance"][var_data["variable name"].index(v)] for v in variables])
 
 # Determine static and hyper parameter
 timestamp = datetime.now()
@@ -135,7 +133,8 @@ PARAMETERS = {
         "weight_string",
         "cut_string",
         "variables",
-        "reweighted_significance"
+        "weightLSig",
+        "weightQSig
         ],
 
     "epochs": 15,
@@ -166,7 +165,8 @@ PARAMETERS.update({
     "weight_string": varsList.weightStr,
     "cut_string": varsList.cutStr,
     "variables": variables,
-    "reweighted_significance": sum(reweighted_sig)
+    "weightLSig": sum(weightLSig),
+    "weightQSig": sum(weightQSig)
     }
 )
 

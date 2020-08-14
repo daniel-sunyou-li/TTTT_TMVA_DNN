@@ -98,9 +98,9 @@ class MLTrainingInstance(object):
         for path, background_tree in self.background_trees.iteritems():
             bkg_list = np.asarray(background_tree.AsMatrix(VARIABLES))
             if path in all_backgrounds:
-                all_backgrounds[path] = np.concatenate((all_backgrounds[path], sig_list))
+                all_backgrounds[path] = np.concatenate((all_backgrounds[path], bkg_list))
             else:
-                all_backgrounds[path] = sig_list
+                all_backgrounds[path] = bkg_list
         # Apply cuts
         self.cut_events = {
             "condition": CUT_STRING,
