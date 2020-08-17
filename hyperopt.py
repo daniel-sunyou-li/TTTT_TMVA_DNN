@@ -116,9 +116,7 @@ else:
 print("Variables used in optimization:\n - {}".format("\n - ".join(variables)))
 
 # Calculate re-weighted significance
-print("Original significance vector: {}".format([var_data["importance"][var_data["variable name"].index(v)] for v in variables]))
-reweighted_sig = reweight_importances(year, variables, [var_data["importance"][var_data["variable name"].index(v)] for v in variables])
-print("Reweighted significance vector: {}".format(reweighted_sig))
+weightLSig, weightQSig = reweight_importances(year, variables, [var_data["importance"][var_data["variable name"].index(v)] for v in variables])
 
 # Determine static and hyper parameter
 timestamp = datetime.now()
@@ -135,7 +133,8 @@ PARAMETERS = {
         "weight_string",
         "cut_string",
         "variables",
-        "reweighted_significance"
+        "weightLSig",
+        "weightQSig
         ],
 
     "epochs": 15,
@@ -147,7 +146,7 @@ PARAMETERS = {
     "node_pattern": ["static", "dynamic"],
     "batch_power": [8, 11],
     "learning_rate": [1e-5, 1e-2],
-    "regulator": ["none", "dropout", "normalization", "both"],
+    "regulator": ["dropout", "none"],
     "activation_function": ["relu", "softplus", "elu"],
 
     "n_calls": 20,
@@ -166,7 +165,8 @@ PARAMETERS.update({
     "weight_string": varsList.weightStr,
     "cut_string": varsList.cutStr,
     "variables": variables,
-    "reweighted_significance": sum(reweighted_sig)
+    "weightLSig": sum(weightLSig),
+    "weightQSig": sum(weightQSig)
     }
 )
 
@@ -214,12 +214,11 @@ for param, value in PARAMETERS.iteritems():
 # Objective function
 
 # Persist cut events to speed up process
-signal_cut = None
-background_cut = None
+cut_events = None
 
 @use_named_args(opt_space)
 def objective(**X):
-    global signal_cut, background_cut
+    global cut_events
     
     print("Configuration:\n{}\n".format(X))
     if not "variables" in X: X["variables"] = PARAMETERS["variables"]
@@ -227,20 +226,18 @@ def objective(**X):
     if not "epochs" in X: X["epochs"] = PARAMETERS["epochs"]
     model = mltools.HyperParameterModel(X, signal_files, background_files, PARAMETERS["model_name"])
     
-    if signal_cut == None or background_cut == None:
-        if not (os.path.exists(mltools.CUT_SAVE_SIGNAL) and os.path.exists(mltools.CUT_SAVE_BACKGROUND)):
-            print "Generating saved cut event files."
+    if cut_events == None:
+        if not os.path.exists(mltools.CUT_SAVE_FILE):
+            print "Generating saved cut event file."
             model.load_trees()
             model.apply_cut()
-            model.save_cut_events(mltools.CUT_SAVE_SIGNAL, mltools.CUT_SAVE_BACKGROUND)
+            model.save_cut_events(mltools.CUT_SAVE_FILE)
         else:
             print "Loading saved cut event files."
-            model.load_cut_events(mltools.CUT_SAVE_SIGNAL, mltools.CUT_SAVE_BACKGROUND)
-        signal_cut = model.signal_events[:]
-        background_cut = model.background_events[:]
+            model.load_cut_events(mltools.CUT_SAVE_FILE)
+        cut_events = model.cut_events.copy()
     else:
-        model.signal_events = signal_cut[:]
-        model.background_events = background_cut[:]
+        model.cut_events = cut_events.copy()
 
     model.build_model()
     model.train_model()
