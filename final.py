@@ -129,8 +129,8 @@ for config_num, config_path in enumerate(config_order):
         "roc_integral": model.roc_integral[model.best_fold],
         "loss": model.loss[model.best_fold],
         "accuracy": model.accuracy[model.best_fold],
-        "fpr": ",".join(model.fpr[model.best_fold]),
-        "tpr": ",".join(model.tpr[model.best_fold])
+        "fpr": ",".join([str(x) for x in model.fpr[model.best_fold]]),
+        "tpr": ",".join([str(x) for x in model.tpr[model.best_fold]])
     }
 
     print("Preserving best model file as {}".format(model_path))
@@ -140,7 +140,7 @@ for config_num, config_path in enumerate(config_order):
 summary_f.close()
 
 print("Writing final data file to {}".format(os.path.join(folder, "data.json")))
-with open(os.path.join(folder, "data.json"), "r") as f:
+with open(os.path.join(folder, "data.json"), "w") as f:
     dump_json(data, f, indent=2)
 
 print("Done.")

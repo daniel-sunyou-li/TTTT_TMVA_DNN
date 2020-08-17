@@ -277,6 +277,12 @@ class CrossValidationModel(HyperParameterModel):
             "signal": {},
             "background": {}
         }
+
+        for path, events in self.cut_events["signal"].iteritems():
+            self.cut_events["signal"][path] = np.array(events)
+
+        for path, events in self.cut_events["background"].iteritems():
+            self.cut_events["background"][path] = np.array(events)
         
         for path, events in self.cut_events["signal"].iteritems():
             k = 0
@@ -343,7 +349,7 @@ class CrossValidationModel(HyperParameterModel):
         self.best_fold = -1
 
         for k, events in enumerate(fold_data):
-            print("CV Iteration {} of {}".format(k, self.num_folds))  
+            print("CV Iteration {} of {}".format(k + 1, self.num_folds))  
             clear_session()
 
             model_name = os.path.join(self.model_folder, "fold_{}.h5".format(k))
