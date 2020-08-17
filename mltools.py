@@ -10,11 +10,13 @@ from keras.layers.core import Dense, Dropout
 from keras.layers import BatchNormalization
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.backend import clear_session
 
 from ROOT import TFile
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, roc_curve, auc
+from sklearn.model_selection import ShuffleSplit
 
 import numpy as np
 
@@ -152,11 +154,11 @@ class HyperParameterModel(MLTrainingInstance):
             events.append([e[positions[v]] for v in varlist])
         return events
 
-    def build_model(self):
+    def build_model(self, input_size="auto"):
         self.model = Sequential()
         self.model.add(Dense(
             self.parameters["initial_nodes"],
-            input_dim=len(self.parameters["variables"]),
+            input_dim=len(self.parameters["variables"]) if input_size == "auto" else input_size,
             kernel_initializer="glorot_normal",
             activation=self.parameters["activation_function"]
             )
@@ -254,4 +256,141 @@ class HyperParameterModel(MLTrainingInstance):
                                           model_ckp.predict(test_x)[:,0])
 
         self.roc_integral = auc(self.fpr, self.tpr)
+
+class CrossValidationModel(HyperParameterModel):
+    def __init__(self, parameters, signal_paths, background_paths, model_folder, num_folds=5):
+        HyperParameterModel.__init__(self, parameters, signal_paths, background_paths, None)
+        
+        self.model_folder = model_folder
+        self.num_folds = num_folds
+
+        if not os.path.exists(self.model_folder):
+            os.mkdir(self.model_folder)
+
+    def train_model(self):
+        shuffle = ShuffleSplit(n_splits=self.num_folds, test_size=float(1.0/self.num_folds), random_state=0)
+
+        # Set up and store k-way cross validation events
+        # Event inclusion masks
+        print("Splitting events into {} sets for cross-validation.".format(self.num_folds))
+        fold_mask = {
+            "signal": {},
+            "background": {}
+        }
+        
+        for path, events in self.cut_events["signal"].iteritems():
+            k = 0
+            fold_mask["signal"][path] = {}
+            for train, test in shuffle.split(events):
+                fold_mask["signal"][path][k] = {
+                    "train": train,
+                    "test": test
+                }
+                k += 1
+
+        for path, events in self.cut_events["background"].iteritems():
+            k = 0
+            fold_mask["background"][path] = {}
+            for train, test in shuffle.split(events):
+                fold_mask["background"][path][k] = {
+                    "train": train,
+                    "test": test
+                }
+                k += 1
+
+        # Event lists
+        fold_data = []
+        for k in range(self.num_folds):
+            sig_train_k = np.concatenate([
+                self.cut_events["signal"][path][fold_mask["signal"][path][k]["train"]] for path in self.cut_events["signal"]
+            ])
+            sig_test_k = np.concatenate([
+                self.cut_events["signal"][path][fold_mask["signal"][path][k]["test"]] for path in self.cut_events["signal"]
+            ])
+            bkg_train_k = np.concatenate([
+                self.cut_events["background"][path][fold_mask["background"][path][k]["train"]] for path in self.cut_events["background"]
+            ])
+            bkg_test_k = np.concatenate([
+                self.cut_events["background"][path][fold_mask["background"][path][k]["test"]] for path in self.cut_events["background"]
+            ])
+            
+            fold_data.append({
+                "train_x": np.concatenate((
+                    sig_train_k, bkg_train_k
+                )),
+                "test_x": np.concatenate((
+                    sig_test_k, bkg_test_k
+                )),
+
+                "train_y": np.concatenate((
+                    np.full(np.shape(sig_train_k)[0], 1).astype("bool"),
+                    np.full(np.shape(bkg_train_k)[0], 0).astype("bool")
+                )),
+                "test_y": np.concatenate((
+                    np.full(np.shape(sig_test_k)[0], 1).astype("bool"),
+                    np.full(np.shape(bkg_test_k)[0], 0).astype("bool")
+                ))
+            })
+
+        # Train each fold
+        print "Beginning Training and Evaluation."
+        self.model_paths = []
+        self.loss = []
+        self.accuracy = []
+        self.fpr = []
+        self.tpr = []
+        self.roc_integral = []
+        self.best_fold = -1
+
+        for k, events in enumerate(fold_data):
+            print("CV Iteration {} of {}".format(k, self.num_folds))  
+            clear_session()
+
+            model_name = os.path.join(self.model_folder, "fold_{}.h5".format(k))
+
+            self.build_model(events["train_x"].shape[1])
+
+            model_checkpoint = ModelCheckpoint(
+                model_name,
+                verbose=0,
+                save_best_only=True,
+                save_weights_only=False,
+                mode="auto",
+                period=1
+            )
+
+            early_stopping = EarlyStopping(
+                monitor="val_loss",
+                patience=self.parameters["patience"]
+            )
+
+            history = self.model.fit(
+                events["train_x"], events["train_y"],
+                epochs=self.parameters["epochs"],
+                batch_size=2**self.parameters["batch_power"],
+                shuffle=True,
+                verbose=1,
+                callbacks = [early_stopping, model_checkpoint],
+                validation_split=0.25
+            )
+
+            model_ckp = load_model(model_name)
+            loss, accuracy = model_ckp.evaluate(events["test_x"], events["test_y"], verbose=1)
+
+            fpr, tpr, _ = roc_curve(events["test_y"].astype(int),
+                                    model_ckp.predict(events["test_x"])[:,0])
+
+            roc_integral = auc(fpr, tpr)
+
+            if self.best_fold == -1 or roc_integral > max(self.roc_integral):
+                self.best_fold = k
+
+            self.model_paths.append(model_name)
+            self.loss.append(loss)
+            self.accuracy.append(accuracy)
+            self.fpr.append(fpr)
+            self.tpr.append(tpr)
+            self.roc_integral.append(roc_integral)
+
+        print "Finished."
         
