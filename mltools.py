@@ -45,6 +45,8 @@ CUT_VARIABLES = [(v, VARIABLES.index(v)) for v in CUT_VARIABLES]
 # Standard saved event locations
 CUT_SAVE_FILE = os.path.join(os.getcwd(), "cut_events.pkl")
 
+SAVE_FPR_TPR_POINTS = 20
+
 print("mltools using {} variables.".format(len(VARIABLES)))
 
 class MLTrainingInstance(object):
@@ -371,7 +373,8 @@ class CrossValidationModel(HyperParameterModel):
                 patience=self.parameters["patience"]
             )
 
-            shuffled_x, shuffled_y = shuffle_data(events["train_x"], events["train_y"], random_state=0)           
+            shuffled_x, shuffled_y = shuffle_data(events["train_x"], events["train_y"], random_state=0)
+            shuffled_test_x, shuffled_test_y = shuffle_data(events["test_x"], events["test_y"], random_state=0)
 
             history = self.model.fit(
                 shuffled_x, shuffled_y,
@@ -384,10 +387,10 @@ class CrossValidationModel(HyperParameterModel):
             )
 
             model_ckp = load_model(model_name)
-            loss, accuracy = model_ckp.evaluate(events["test_x"], events["test_y"], verbose=1)
+            loss, accuracy = model_ckp.evaluate(shuffled_test_x, shuffled_test_y, verbose=1)
 
-            fpr, tpr, _ = roc_curve(events["test_y"].astype(int),
-                                    model_ckp.predict(events["test_x"])[:,0])
+            fpr, tpr, _ = roc_curve(shuffled_test_y.astype(int),
+                                    model_ckp.predict(shuffled_test_x)[:,0])
 
             roc_integral = auc(fpr, tpr)
 
@@ -397,8 +400,8 @@ class CrossValidationModel(HyperParameterModel):
             self.model_paths.append(model_name)
             self.loss.append(loss)
             self.accuracy.append(accuracy)
-            self.fpr.append(fpr)
-            self.tpr.append(tpr)
+            self.fpr.append(fpr[0::int(len(fpr)/SAVE_FPR_TPR_POINTS)])
+            self.tpr.append(tpr[0::int(len(tpr)/SAVE_FPR_TPR_POINTS)])
             self.roc_integral.append(roc_integral)
 
         print "Finished."
