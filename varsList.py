@@ -4,9 +4,9 @@
 varList = {}
 
 # edit me 
-bruxUserName = "dli50"
-lpcUserName = "dsunyou"
-eosUserName = "dali"
+bruxUserName = "afurman2"
+lpcUserName = "afurman"
+eosUserName = "afurman"
 
 step2Sample2017   = "FWLJMET102X_1lep2017_Oct2019_4t_05072020_step2"                    # current 2017 sample
 step2Sample2018   = "FWLJMET102X_1lep2018_Oct2019_4t_05072020_step2"                    # current 2018 sample
@@ -128,7 +128,7 @@ bkg2017_2 = [
 bkg2018_0 = [
   sample.split("hadd")[0] + "split0.root" for sample in bkg2018
 ]
-bkg2018_1 = [
+bkg12018_1 = [
   sample.split("hadd")[0] + "split1.root" for sample in bkg2018
 ]
 bkg2018_2 = [
@@ -231,4 +231,4 @@ cutStr =  "( ( leptonPt_MultiLepCalc > 50 && isElectron == 1 ) || " + \
           "( AK4HT > 510 ) && " + \
           "( DataPastTriggerX == 1 ) && ( MCPastTriggerX == 1 ) && " + \
           "( NJetsCSVwithSF_MultiLepCalc >= 2 ) &&" + \
-          "( NJets_JetSubCalc >= 4 )"                                     
+          "( NJets_JetSubCalc >= 6 )"                                     
