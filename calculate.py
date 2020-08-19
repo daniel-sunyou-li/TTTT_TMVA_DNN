@@ -128,9 +128,9 @@ print "Importances computed."
 print "Writing to output files."
 
 num_vars = len(importances.keys())
-sorted_vars = sorted(importances.keys(), key=lambda k: importance_stats[k][sort_order])
+sorted_vars = list(sorted(importances.keys(), key=lambda k: importance_stats[k][sort_order]))
 if not sort_increasing:
-    sorted_vars = reversed(sorted_vars)
+    sorted_vars = list(reversed(sorted_vars))
 
 # Variable Importance File
 with open(os.path.join(ds_folder, "VariableImportanceResults_" + str(num_vars) + "vars.txt"), "w") as f:
