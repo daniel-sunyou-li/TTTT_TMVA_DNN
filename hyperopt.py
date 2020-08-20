@@ -142,7 +142,7 @@ PARAMETERS = {
     "model_name": os.path.join(args.dataset, "hpo_model.h5"),
 
     "hidden_layers": [1, 3],
-    "initial_nodes": [len(var_order), len(var_order) * 10],
+    "initial_nodes": [len(variables), len(variables) * 10],
     "node_pattern": ["static", "dynamic"],
     "batch_power": [8, 11],
     "learning_rate": [1e-5, 1e-2],

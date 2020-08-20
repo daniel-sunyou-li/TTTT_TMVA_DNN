@@ -42,10 +42,10 @@ def voms_init():
         
 def compile_splitter():
     # compile the sample splitting c++ script
-    if "splitROOT.out" in os.listdir(os.getcwd() + "/Tools/"):
-        sys_call("rm {}/Tools/splitROOT.out".format(os.getcwd()), shell=True)
+    if "splitROOT.out" in os.listdir(os.getcwd() + "/setup/"):
+        sys_call("rm {}/setup/splitROOT.out".format(os.getcwd()), shell=True)
     print "[   ] Compiling splitROOT.cpp..."
-    if sys_call("g++ `root-config --cflags` `root-config --libs` -o ./Tools/splitROOT.out ./Tools/splitROOT.cpp", shell=True) == 0:
+    if sys_call("g++ `root-config --cflags` `root-config --libs` -o ./setup/splitROOT.out ./setup/splitROOT.cpp", shell=True) == 0:
         print "[OK ] Compiled splitROOT.CPP"
     else:
         print "[ERR] Compiling splitROOT.cpp failed!"
@@ -145,7 +145,7 @@ def split_root(years = ["2017", "2018"]):
         print("[   ] Splitting {} ROOT files...".format(year))
         d = lpcHomeDir + (varsList.step2Sample2017 if year == "2017" else varsList.step2Sample2018)
         for sample in (varsList.sig2017 + varsList.bkg2017 if year == "2017" else varsList.sig2018 + varsList.bkg2018):
-            if sys_call("./Tools/splitROOT.out {} {} {} {}".format(
+            if sys_call("./setup/splitROOT.out {} {} {} {}".format(
                 d,                           # location of sample to split
                 d,                           # destination of split sample(s)
                 sample,                      # sample to split
