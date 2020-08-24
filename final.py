@@ -126,11 +126,13 @@ for config_num, config_path in enumerate(config_order):
         "model_path": model_path,
         "parameters": parameters,
 
-        "roc_integral": model.roc_integral[model.best_fold],
-        "loss": model.loss[model.best_fold],
-        "accuracy": model.accuracy[model.best_fold],
-        "fpr": ",".join([str(x) for x in model.fpr[model.best_fold]]),
-        "tpr": ",".join([str(x) for x in model.tpr[model.best_fold]])
+        
+        "best_model": model.best_fold,
+        "roc_integral": model.roc_integral,
+        "loss": model.loss,
+        "accuracy": model.accuracy,
+        "fpr": [",".join([str(x) for x in fpr]) for fpr in model.fpr],
+        "tpr": [",".join([str(x) for x in tpr]) for tpr in model.tpr]
     }
 
     print("Preserving best model file as {}".format(model_path))
