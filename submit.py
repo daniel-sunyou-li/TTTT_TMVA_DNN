@@ -255,7 +255,8 @@ def submit_new_jobs():
 
         for i, var in enumerate(seed.variables):
             if seed.states[var]:
-                subseed_num = seed_num & ~(1 << i)
+                I = len(variables) - i - 1
+                subseed_num = seed_num & ~(1 << I)
                 subseed = jt.Seed.from_binary("{:0{}b}".format(subseed_num, len(variables)), variables)
                 job_list.append(jt.Job(jf.path,
                                        seed_job_name + "_Subseed_" + str(subseed_num),
