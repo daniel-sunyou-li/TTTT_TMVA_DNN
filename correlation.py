@@ -116,32 +116,22 @@ def get_correlated_groups(corr_mat, variables, cutoff):
 
     # Find pairs of correlated variables
     pairs = []
-    in_pairs = lambda p: len([x for x in pairs if x[0] == p]) != 0
     for i in range(shape[0]):
-        for j in range(i + 1, shape[1]):
-            if corr_mat[i,j] >= cutoff:
-                pair = set([variables[i], variables[j]])
-                if not in_pairs(pair):
-                    pairs.append((pair, corr_mat[i, j]))
+        for j in range(i+1, shape[1]):
+			if abs(corr_mat[i,j]) >= cutoff:
+				pairs.append([variables[i],variables[j]])
 
     print("Found {} correlated pairs.".format(len(pairs)))
 
     # Find correlated groups
-    correlated = []
-    for var in variables:
-        var_pairs = [p[0] for p in pairs if var in p[0]]
-        if len(var_pairs) > 1:
-            c_grp = set()
-            for v_pair in var_pairs:
-                c_grp.update(v_pair)
-            if not c_grp in correlated:
-                print("Found group {}".format(c_grp))
-                correlated.append(c_grp)
-        elif len(var_pairs) == 1:
-            print("Listing correlated pair {}".format(var_pairs[0]))
-            correlated.append(var_pairs[0])
-            
-    return correlated, pairs
+    groups = pairs
+	for pair in pairs:
+		for i, group in enumerate(groups):
+			if len( set(pair) & set(group) ) > 0:
+				groups[i] = sorted(list(set(group+pair)))
+				
+	correlated_groups = list(set(tuple(group) for group in groups))
+	return correlated_groups, pairs
                     
 def generate_uncorrelated_seeds(count, variables, cutoff, year):
     # Generates <count> uncorrelated Seed objects using the specified variables
