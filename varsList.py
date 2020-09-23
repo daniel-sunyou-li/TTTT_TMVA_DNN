@@ -8,15 +8,16 @@ bruxUserName = "afurman2"
 lpcUserName = "afurman"
 eosUserName = "afurman"
 
-step2Sample2017   = "FWLJMET102X_1lep2017_Oct2019_4t_05072020_step2"                    # current 2017 sample
-step2Sample2018   = "FWLJMET102X_1lep2018_Oct2019_4t_05072020_step2"                    # current 2018 sample
-inputDirBRUX2017  = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2017 + "/nominal/"  # Brown Linux path
-inputDirBRUX2018  = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2018 + "/nominal/"  
-inputDirLPC2017   = "~/nobackup/" + step2Sample2017 + "/"                               # LHC Physics Center path
-inputDirEOS2017   = step2Sample2017		                                                  # EOS storage path
-inputDirLPC2018   = "~/nobackup/" + step2Sample2018 + "/"                               
-inputDirEOS2018   = step2Sample2018		                                                  
-inputDirCondor    = "./"                                                                # Condor remote node path 
+step2Sample2017    = "FWLJMET102X_1lep2017_Oct2019_4t_08122020_step2"                    # current 2017 sample
+step2Sample2018    = "FWLJMET102X_1lep2018_Oct2019_4t_08122020_step2"                    # current 2018 sample
+inputDirBRUX2017   = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2017 + "/nominal/"  # Brown Linux path
+inputDirBRUX2018   = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2018 + "/nominal/"  
+inputDirLPC2017    = "~/nobackup/" + step2Sample2017 + "/"                               # LHC Physics Center path
+inputDirEOS2017    = step2Sample2017		                                                  # EOS storage path
+inputDirLPC2018    = "~/nobackup/" + step2Sample2018 + "/"                               
+inputDirEOS2018    = step2Sample2018		                                                  
+inputDirCondor2017 = "root://cmseos.fnal.gov///store/user/" + lpcUserName + "/" + step2Sample2017 + "/" # Condor remote node path to EOS
+inputDirCondor2018 = "root://cmseos.fnal.gov///store/user/" + lpcUserName + "/" + step2Sample2018 + "/"
 
 # full signal sample
 sig2017 = [
@@ -128,7 +129,7 @@ bkg2017_2 = [
 bkg2018_0 = [
   sample.split("hadd")[0] + "split0.root" for sample in bkg2018
 ]
-bkg12018_1 = [
+bkg2018_1 = [
   sample.split("hadd")[0] + "split1.root" for sample in bkg2018
 ]
 bkg2018_2 = [
@@ -217,7 +218,7 @@ varList['DNN'] = [
 ]
 
 weightStr = "triggerXSF * pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPrefiringProb_CommonCalc * " + \
-            "(MCWeight_MultiLepCalc / abs(MCWeight_MultiLepCalc) ) * xsecEff"
+            "(MCWeight_MultiLepCalc / abs(MCWeight_MultiLepCalc) ) * xsecEff * tthfWeight * njetsWeight"
 
 # general cut, add selection based cuts in training scripts
 cutStr =  "( ( leptonPt_MultiLepCalc > 50 && isElectron == 1 ) || " + \
