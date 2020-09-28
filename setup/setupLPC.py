@@ -159,7 +159,7 @@ def eos_transfer(years = ["2017", "2018"]):
     for year in years:
         d = (varsList.step2Sample2017 if year == "2017" else varsList.step2Sample2018)
         #Make EOS dir
-        sys_call("eosmkdir root://cmseos.fnal.gov//store/user/{}".format(varsList.eosUserName + "/" + d + "/"), shell=True)
+        sys_call("eos root://cmseos.fnal.gov mkdir /store/user/{}".format(varsList.eosUserName + "/" + d + "/"), shell=True)
         
         # transfer one of the split samples to EOS
         print "[   ] Transferring to EOS..."
