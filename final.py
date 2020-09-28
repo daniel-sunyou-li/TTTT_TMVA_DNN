@@ -4,6 +4,7 @@ from json import loads as load_json
 from json import dump as dump_json
 from datetime import datetime
 from shutil import rmtree, copy
+import numpy as np
 
 import varsList
 import mltools
@@ -119,7 +120,7 @@ for config_num, config_path in enumerate(config_order):
                                                                                    " (best)" if k == model.best_fold else ""))
         summary_f.write(" , ".join([str(x) for x in [str(config_num) + "." + str(k), config_path, model_path if k == model.best_fold else "unsaved",
                                                      model.roc_integral[k], model.accuracy[k], model.loss[k]]]) + "\n")
-
+    print("AUC = {:.4f} \u00B1 {:.4f}".format(np.mean(model.roc_integral),np.std(model.roc_integral)))
     data[config_path] = {
         "config_id": config_num,
         "config_path": config_path,
