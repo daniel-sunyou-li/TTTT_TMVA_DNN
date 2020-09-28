@@ -88,7 +88,7 @@ def reweight_importances(year, variables, importances):
     for i in range(len(corr_mat)):
         for j in range(len(corr_mat)):
             if i == j:
-	        mod_corr_mat[i,j] = corr_mat[i,j]
+	        	mod_corr_mat[i,j] = corr_mat[i,j]
             elif j > i:
                 mod_corr_mat[i,j] = corr_mat[i,j]
                 for k in range(j):
@@ -107,8 +107,9 @@ def reweight_importances(year, variables, importances):
                 weightLSig[i] -= wgt_sig_mat[i,j]
                 weightQSig[i] -= wgt_sig_mat[i,j]**2
     
+    print("Weighted Quadratic Sum: {}".format(np.sum(np.sqrt(weightQSig))))
+    print("Weighted Linear Sum: {}".format(np.sum(weightLSig)))
     return weightLSig, np.sqrt(weightQSig)
-
 
 def get_correlated_groups(corr_mat, variables, cutoff):
     # Returns the groups of variables which are <cutoff> or more correlated
@@ -120,8 +121,6 @@ def get_correlated_groups(corr_mat, variables, cutoff):
         for j in range(i+1, shape[1]):
 			if abs(corr_mat[i,j]) >= cutoff:
 				pairs.append([variables[i],variables[j]])
-
-    print("Found {} correlated pairs.".format(len(pairs)))
 
     # Find correlated groups
     groups = pairs
@@ -161,6 +160,3 @@ def generate_uncorrelated_seeds(count, variables, cutoff, year):
                         seed.exclude(gv)
 
     return seeds
-
-    
-        
