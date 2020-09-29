@@ -71,7 +71,6 @@ def condor_job(fileName,resultDir,inputDir,condorDir):
 # main concern is the file referencing, which can be handled by cmseos
     dict = {
         "FILENAME" : fileName,
-        "RUNDIR"   : os.getcwd(),
         "RESULTDIR": resultDir,
         "INPUTDIR" : inputDir,
         "CONDORDIR": condorDir
@@ -80,22 +79,20 @@ def condor_job(fileName,resultDir,inputDir,condorDir):
     jdf = open(jdfName, "w")
     jdf.write(
 """universe = vanilla
-Executable = %(RUNDIR)s/application.sh
+Executable = application.sh
 Should_Transfer_Files = Yes
 WhenToTransferOutput = ON_EXIT
 request_memory = 3072
 Transfer_Input_Files = %(RESULTDIR)s/application.C
-Output = %(FILENAME)s.out
-Error = %(FILENAME)s.err
-Log = %(FILENAME)s.log
+Output = %(CONDORDIR)s/%(FILENAME)s.out
+Error = %(CONDORDIR)s/%(FILENAME)s.err
+Log = %(CONDORDIR)s/%(FILENAME)s.log
 Notification = Never
 Arguments = %(INPUTDIR)s %(RESULTDIR)s %(FILENAME)s.root $(CONDORDIR)s
 Queue 1"""%dict
     )
     jdf.close()
-    os.chdir(condorDir)
-    os.system("condor_submit %(FILENAME)s.job"%dict)
-    os.chdir(dict["RUNDIR"])
+    os.system("%(CONDORDIR)s/condor_submit %(FILENAME)s.job"%dict)
     
 def submit_jobs(templateFile,variables,files,inputDir,resultDir,condorDir,sampleDir):
     os.system("mkdir -p " + condorDir)
