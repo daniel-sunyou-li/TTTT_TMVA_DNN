@@ -70,6 +70,7 @@ def condor_job(fileName,resultDir,inputDir,condorDir):
 # I think this is adapted for BRUX currently, so need to adapt it to LPC
 # main concern is the file referencing, which can be handled by cmseos
     dict = {
+        "WGTFILE"  : weightFile,
         "FILENAME" : fileName,
         "RESULTDIR": resultDir,
         "INPUTDIR" : inputDir,
@@ -83,7 +84,7 @@ Executable = application.sh
 Should_Transfer_Files = Yes
 WhenToTransferOutput = ON_EXIT
 request_memory = 3072
-Transfer_Input_Files = %(RESULTDIR)s/application.C
+Transfer_Input_Files = step3.py, varsList.py, %(WGTFILE)s
 Output = %(CONDORDIR)s/%(FILENAME)s.out
 Error = %(CONDORDIR)s/%(FILENAME)s.err
 Log = %(CONDORDIR)s/%(FILENAME)s.log
