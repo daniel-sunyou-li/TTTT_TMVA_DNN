@@ -13,7 +13,7 @@ eval `scramv1 runtime -sh`
 source /cvmfs/sft.cern.ch/lcg/contrib/gcc/7.3.0/x86_64-centos7-gcc7-opt/setup.sh
 source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.16.00/x86_64-centos7-gcc48-opt/bin/thisroot.sh
 
-root -l -b -q ./application.C\(\"DNN\",\"$inputDir/$fileName.root\",$outName\)
+python step3.py -i $inputDir -f $fileName -o $outName
 
 echo Transferring $outName to $inputDir/step3/ ...
 cp $outName $inputDir/step3/
