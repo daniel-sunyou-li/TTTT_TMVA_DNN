@@ -24,7 +24,7 @@ else:
     print("No parameters .json file was found, exiting program...")
     sys.exit()
 weightFile = None
-weightCheck = glob.glob("{}/weights.xml".format(args.folder))
+weightCheck = glob.glob("{}/*.xml".format(args.folder))
 if len(weightCheck) > 0:
     weightFile = open(weightCheck[0])
     weightFile = load_json(weightFile.read())
