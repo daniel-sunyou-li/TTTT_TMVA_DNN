@@ -24,6 +24,7 @@ print("TTTT Condor Job using {} data.".format(year))
 TMVA.Tools.Instance()
 TMVA.PyMethodBase.PyInitialize()
 
+inputDir = varsList.inputDirCondor2017 if year == 2017 else varsList.inputDirCondor2018
 loader = TMVA.DataLoader("tmva_data")
 factory = TMVA.Factory("VariableImportance",
                        "!V:!ROC:Silent:!Color:!DrawProgressBar:Transformations=I;:AnalysisType=Classification")
@@ -41,13 +42,13 @@ signal_trees = []
 backgrounds = []
 background_trees = []  
 for sig in varsList.sig2017_0 if year == 2017 else varsList.sig2018_0:
-    signals.append(TFile.Open(sig))
+    signals.append(TFile.Open(inputDir + sig))
     signal_trees.append(signals[-1].Get("ljmet"))
     signal_trees[-1].GetEntry(0)
     loader.AddSignalTree(signal_trees[-1], 1)
 
 for bkg in varsList.bkg2017_0 if year == 2017 else varsList.bkg2018_0:
-    backgrounds.append(TFile.Open(bkg))
+    backgrounds.append(TFile.Open(inputDir + bkg))
     background_trees.append(backgrounds[-1].Get("ljmet"))
     background_trees[-1].GetEntry(0)
     if background_trees[-1].GetEntries() != 0:
