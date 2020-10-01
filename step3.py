@@ -11,12 +11,6 @@ import os, sys
 os.environ["KERAS_BACKEND"] = "tensorflow"
 
 import keras
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout
-from keras.layers import BatchNormalization
-from keras.optimizers = import Adam
-from sklearn.metrics import roc_auc_score, roc_curve, auc
-
 import varsList
 
 # read in arguments
@@ -36,9 +30,10 @@ if len(jsonCheck) > 0:
 model = None
 modelCheck = glob.glob("*.h5")
 if len(modelCheck) > 0:
+    print("Using model: {}".format(modelCheck[0]))
     model = keras.models.load_model(modelCheck[0])
     
-variables = jsonFile[list(jsonFile.keys())[0]]["parameters"]["variables"]
+variables = list(jsonFile["variables"])
 
 print("Using {} variables".format(len(variables)))
 for i, variable in enumerate(variables): print(" {:<4} {}".format(i+".",variable))
@@ -51,7 +46,7 @@ outName  = args.outName
 
 rootFile = TFile.Open(inputDir + "/" + fileName)
 rootTree = rootFile.Get("ljmet")
-events = np.asarray( rootTree.AsMatrix( variables ) )
+events = np.asarray( rootTree.AsMatrix( [variable.encode("ascii","ignore") for variable in variables] ) )
 
 discriminators = model.predict(events)
 
@@ -59,9 +54,14 @@ out = TFile( outName, "RECREATE" );
 out.cd()
 new_tree = rootTree.CloneTree(0);
 
-new_tree.Branch( "DNN_disc", discriminators, "DNN_disc/F" );
+DNN_disc = array("f", [0])
+
+new_tree.Branch( "DNN_disc", DNN_disc, "DNN_disc/F" );
+
+print("Processing {} events...".format(len(discriminators)))
 
 for i in range(rootTree.GetEntries()):
+    DNN_disc[0] = discriminators[i]
     new_tree.Fill()
     
 out.Write()
