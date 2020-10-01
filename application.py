@@ -1,6 +1,7 @@
 # import libraries and other scripts
 import glob, os, sys
 import varsList
+import numpy as np
 from datetime import datetime
 from argparse import ArgumentParser
 from json import loads as load_json
