@@ -87,7 +87,7 @@ Arguments = %(CONDORDIR)s %(FILENAME)s %(OUTPUTDIR)s
 Queue 1"""%dict
     )
     jdf.close()
-    os.system("{}/condor_submit {}.job".format(logDir,fileName))
+    os.system("condor_submit {}/{}.job".format(logDir,fileName))
     
 def submit_jobs(files,condorDir,logrDir,sampleDir):
     os.system("mkdir -p " + logrDir)
