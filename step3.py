@@ -42,7 +42,7 @@ for i, variable in enumerate(variables): print(" {:<4} {}".format(str(i)+".",var
 inputDir   = args.inputDir
 fileName   = args.fileName
 outDir     = args.outDir
-step3_file = fileName.replace("step2","step3") 
+step3_file = fileName + "_step3.root" 
 
 # load in the sample
 
@@ -69,4 +69,4 @@ for i in range(rootTree.GetEntries()):
 out.Write()
 out.Close()
 
-os.system("cp {} {}".format(step3_file + ".root", inputDir.replace("step2","step3")))
+os.system("xrdcp {} /store/user/{}/{}".format(step3_file,varsList.eosUserName,outDir))
