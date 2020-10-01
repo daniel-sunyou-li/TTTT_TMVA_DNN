@@ -69,6 +69,7 @@ def condor_job(fileName,condorDir,outputDir,logDir):
         "CONDORDIR" : condorDir,      # changes with sample
         "OUTPUTDIR" : outputDir,     # stays the same across all samples
         "LOGDIR"    : logDir         # stays the same across all samples
+        "EOSNAME"   : varsList.eosUserName
     }
     jdfName = "{}/{}.job".format(logDir,fileName)
     jdf = open(jdfName, "w")
@@ -78,12 +79,12 @@ Executable = application.sh
 Should_Transfer_Files = Yes
 WhenToTransferOutput = ON_EXIT
 request_memory = 3072
-Transfer_Input_Files = step3.py, varsList.py, %(MODEL)s, %(PARAMFILE)s
+Transfer_Input_Files = %(MODEL)s, %(PARAMFILE)s
 Output = %(LOGDIR)s/%(FILENAME)s.out
 Error = %(LOGDIR)s/%(FILENAME)s.err
 Log = %(LOGDIR)s/%(FILENAME)s.log
 Notification = Never
-Arguments = %(CONDORDIR)s %(FILENAME)s %(OUTPUTDIR)s
+Arguments = %(CONDORDIR)s %(FILENAME)s %(OUTPUTDIR)s %(EOSNAME)s
 Queue 1"""%dict
     )
     jdf.close()
