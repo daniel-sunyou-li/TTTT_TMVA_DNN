@@ -68,7 +68,7 @@ def condor_job(fileName,condorDir,outputDir,logDir):
         "FILENAME"  : fileName,      # changes with sample
         "CONDORDIR" : condorDir,      # changes with sample
         "OUTPUTDIR" : outputDir,     # stays the same across all samples
-        "LOGDIR"    : logDir         # stays the same across all samples
+        "LOGDIR"    : logDir,         # stays the same across all samples
         "EOSNAME"   : varsList.eosUserName
     }
     jdfName = "{}/{}.job".format(logDir,fileName)
