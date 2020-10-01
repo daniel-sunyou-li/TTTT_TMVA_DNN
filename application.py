@@ -20,18 +20,8 @@ args = parser.parse_args()
 if args.verbose:
     print("Running step 3 application for the .h5 DNN, producing new step3 ROOT files...")
 
-# define variables and containers
-varList = np.asarray(varsList.varList["DNN"])[:,0]
-# need to check with Adam how the order of the variables is sorted in mltools.py since it's not obvious to memoryview
-# need to make sure that the variable ordering in application.C matches the expected input for the trained model/weights
-variables    = list(jsonFile["variables"])
-condorDir    = varsList.condorDirLPC2018 if year == "2018" else varsList.condorDirLPC2017 # location where samples stored on EOS
-files        = varsList.sig2018_1 if year == "2018" else varsList.sig2017_1 # split1 for ROOT samples
-resultDir    = args.folder # location where model/weights stored and where new files are output
-logDir       = args.log    # location where condor job outputs are stored
-sampleDir    = varsList.step2Sample2018 if year == "2018" else varsList.step2Sample2017 # sample directory name
-
 # check for parameters from json file
+jsonFile = None
 jsonCheck = glob.glob("{}/parameters*.json".format(resultDir))
 if len(jsonCheck) > 0:
     if args.verbose:
@@ -51,6 +41,17 @@ else:
     print("No model found, exiting program...")
     sys.exit() 
 
+# define variables and containers
+varList = np.asarray(varsList.varList["DNN"])[:,0]
+# need to check with Adam how the order of the variables is sorted in mltools.py since it's not obvious to memoryview
+# need to make sure that the variable ordering in application.C matches the expected input for the trained model/weights
+variables    = list(jsonFile["variables"])
+condorDir    = varsList.condorDirLPC2018 if year == "2018" else varsList.condorDirLPC2017 # location where samples stored on EOS
+files        = varsList.sig2018_1 if year == "2018" else varsList.sig2017_1 # split1 for ROOT samples
+resultDir    = args.folder # location where model/weights stored and where new files are output
+logDir       = args.log    # location where condor job outputs are stored
+sampleDir    = varsList.step2Sample2018 if year == "2018" else varsList.step2Sample2017 # sample directory name
+    
 # display variables being used
 if args.verbose:
     print("Using {} variables:".format(len(variables)))
