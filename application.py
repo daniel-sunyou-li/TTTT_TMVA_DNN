@@ -11,48 +11,61 @@ parser = ArgumentParser()
 parser.add_argument("-y","--year",required=True,help="The sample year (2017 or 2018)")
 parser.add_argument("-f","--folder",required=True,help="Folder where model/weights, results are stored")
 parser.add_argument("-l","--log",default="application_log_" + datetime.now().strftime("%d.%b.%Y"),help="Condor job log folder")
+parser.add_argument("-v","--verbose",default=False,help="Verbosity option")
 
 args = parser.parse_args()
 
-# load-in parameters from json file
-jsonFile = None
+# start message
+if args.verbose:
+    print("Running step 3 application for the .h5 DNN, producing new step3 ROOT files...")
+
+# check for parameters from json file
 jsonCheck = glob.glob("{}/parameters*.json".format(args.folder))
 if len(jsonCheck) > 0:
+    if args.verbose:
+        print("Using parameters file: {}".format(jsonCheck[0]))
     jsonFile = open(jsonCheck[0])
     jsonFile = load_json(jsonFile.read())
 else:
     print("No parameters .json file was found, exiting program...")
     sys.exit()
-weightFile = None
-weightCheck = glob.glob("{}/*.xml".format(args.folder))
-if len(weightCheck) > 0:
-    weightFile = open(weightCheck[0])
-    weightFile = load_json(weightFile.read())
+# check for .h5 model
+model = None
+modelCheck = glob.glob("{}/*.h5".format(args.folder))
+if len(modelCheck) > 0:
+    if args.verbose:
+        print("Using model: {}".format(modelCheck[0]))
 else:
-    print("No trained weights .xml file was found, exiting program...")
+    print("No model found, exiting program...")
     sys.exit() 
 
 # define variables and containers
 varList = np.asarray(varsList.varList["DNN"])[:,0]
 # need to check with Adam how the order of the variables is sorted in mltools.py since it's not obvious to memoryview
 # need to make sure that the variable ordering in application.C matches the expected input for the trained model/weights
-variables    = jsonFile[list(jsonFile.keys())[0]]["parameters"]["variables"]
+variables    = list(jsonFile["variables"])
 inputDir     = varsList.condorDirLPC2018 if year == "2018" else varsList.condorDirLPC2017 # location where samples stored on EOS
 files        = [file.split(".")[0] for file in list(glob.glob("inputDir/*.root"))] # all ROOT sample file names
 resultDir    = args.folder # location where model/weights stored and where new files are output
 condorDir    = args.log    # location where condor job outputs are stored
 sampleDir    = varsList.step2Sample2018 if year == "2018" else varsList.step2Sample2017 # sample directory name
 
-def condor_job(fileName,resultDir,inputDir,condorDir):
+# display variables being used
+if args.verbose:
+    print("Using {} variables:".format(len(variables)))
+    for i, variable in enumerate(variables): print("{:<4} {}".format(str(i)+".",variable))
+
+def condor_job(fileName,resultDir,inputDir,outputDir,condorDir):
 # I think this is adapted for BRUX currently, so need to adapt it to LPC
 # main concern is the file referencing, which can be handled by cmseos
     dict = {
-        "WGTFILE"  : weightCheck[0],
-        "PARAMFILE": jsonCheck[0],
-        "FILENAME" : fileName,
-        "RESULTDIR": resultDir,
-        "INPUTDIR" : inputDir,
-        "CONDORDIR": condorDir
+        "MODEL"    : modelCheck[0], # stays the same across all samples
+        "PARAMFILE": jsonCheck[0],  # stays the same across all samples
+        "FILENAME" : fileName,      # changes with sample
+        "RESULTDIR": resultDir,     # stays the same across all samples
+        "INPUTDIR" : inputDir,      # changes with sample
+        "OUTPUTDIR": outputDir,     # stays the same across all samples
+        "CONDORDIR": condorDir      # stays the same across all samples
     }
     jdfName = "{}/{}.job".format(condorDir,fileName)
     jdf = open(jdfName, "w")
@@ -62,28 +75,29 @@ Executable = application.sh
 Should_Transfer_Files = Yes
 WhenToTransferOutput = ON_EXIT
 request_memory = 3072
-Transfer_Input_Files = step3.py, varsList.py, $(WGTFILE)s, $(PARAMFILE)s
+Transfer_Input_Files = step3.py, varsList.py, $(MODEL)s, $(PARAMFILE)s
 Output = %(CONDORDIR)s/%(FILENAME)s.out
 Error = %(CONDORDIR)s/%(FILENAME)s.err
 Log = %(CONDORDIR)s/%(FILENAME)s.log
 Notification = Never
-Arguments = %(INPUTDIR)s %(RESULTDIR)s %(FILENAME)s.root $(CONDORDIR)s
+Arguments = %(INPUTDIR)s %(RESULTDIR)s %(FILENAME)s $(OUTPUTDIR)s
 Queue 1"""%dict
     )
     jdf.close()
     os.system("%(CONDORDIR)s/condor_submit %(FILENAME)s.job"%dict)
     
-def submit_jobs(templateFile,variables,files,inputDir,resultDir,condorDir,sampleDir):
+def submit_jobs(files,inputDir,resultDir,condorDir,sampleDir):
     os.system("mkdir -p " + condorDir)
-    os.system("eos root://cmseos.fnal.gov mkdir store/user/{}/{}/step3/".format(varsList.eosUserName,sampleDir)) 
-    make_application_config(templateFile,resultDir,variables)
+    outputDir = sampleDir.replace("step2","step3")
+    if args.verbose: print("Making new EOS directory: store/user/{}/{}/".format(varsList.eosUserName,outputDir))
+    os.system("eos root://cmseos.fnal.gov mkdir store/user/{}/{}/".format(varsList.eosUserName,outputDir)) 
     jobCount = 0
     for file in files:
-        print("Submitting Condor job for {}".format(file))
-        condor_job(file,folder,inputDir,resultDir,condorDir)
+        if args.verbose: print("Submitting Condor job for {}".format(file))
+        condor_job(file,resultDir,inputDir,outputDir,condorDir)
         jobCount += 1
     print("{} jobs submitted...".format(jobCount))
-    print("Application Condor job logs stored in {}".format(condorDir))
+    if args.verbose: print("Application Condor job logs stored in {}".format(condorDir))
     
 # run the submission
-submit_jobs(templateFile,variables,files,inputDir,resultDir,condorDir,sampleDir)
+submit_jobs(files,inputDir,resultDir,condorDir,sampleDir)
