@@ -22,7 +22,7 @@ if args.verbose:
 
 # set some paths
 condorDir    = varsList.inputDirCondor2018 if args.year == "2018" else varsList.inputDirCondor2017 # location where samples stored on EOS
-files        = varsList.sig2018_1 if args.year == "2018" else varsList.sig2017_1 # split1 for ROOT samples
+files        = varsList.sig2018_0 if args.year == "2018" else varsList.sig2017_0 # split0 for ROOT samples
 resultDir    = args.folder # location where model/weights stored and where new files are output
 logDir       = args.log    # location where condor job outputs are stored
 sampleDir    = varsList.step2Sample2018 if args.year == "2018" else varsList.step2Sample2017 # sample directory name
