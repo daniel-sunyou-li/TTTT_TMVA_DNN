@@ -20,6 +20,13 @@ args = parser.parse_args()
 if args.verbose:
     print("Running step 3 application for the .h5 DNN, producing new step3 ROOT files...")
 
+# set some paths
+condorDir    = varsList.inputDirCondor2018 if args.year == "2018" else varsList.inputDirCondor2017 # location where samples stored on EOS
+files        = varsList.sig2018_1 if args.year == "2018" else varsList.sig2017_1 # split1 for ROOT samples
+resultDir    = args.folder # location where model/weights stored and where new files are output
+logDir       = args.log    # location where condor job outputs are stored
+sampleDir    = varsList.step2Sample2018 if args.year == "2018" else varsList.step2Sample2017 # sample directory name
+    
 # check for parameters from json file
 jsonFile = None
 jsonCheck = glob.glob("{}/parameters*.json".format(resultDir))
@@ -46,11 +53,6 @@ varList = np.asarray(varsList.varList["DNN"])[:,0]
 # need to check with Adam how the order of the variables is sorted in mltools.py since it's not obvious to memoryview
 # need to make sure that the variable ordering in application.C matches the expected input for the trained model/weights
 variables    = list(jsonFile["variables"])
-condorDir    = varsList.condorDirLPC2018 if year == "2018" else varsList.condorDirLPC2017 # location where samples stored on EOS
-files        = varsList.sig2018_1 if year == "2018" else varsList.sig2017_1 # split1 for ROOT samples
-resultDir    = args.folder # location where model/weights stored and where new files are output
-logDir       = args.log    # location where condor job outputs are stored
-sampleDir    = varsList.step2Sample2018 if year == "2018" else varsList.step2Sample2017 # sample directory name
     
 # display variables being used
 if args.verbose:
@@ -76,16 +78,16 @@ Executable = application.sh
 Should_Transfer_Files = Yes
 WhenToTransferOutput = ON_EXIT
 request_memory = 3072
-Transfer_Input_Files = step3.py, varsList.py, $(MODEL)s, $(PARAMFILE)s
+Transfer_Input_Files = step3.py, varsList.py, %(MODEL)s, %(PARAMFILE)s
 Output = %(LOGDIR)s/%(FILENAME)s.out
 Error = %(LOGDIR)s/%(FILENAME)s.err
 Log = %(LOGDIR)s/%(FILENAME)s.log
 Notification = Never
-Arguments = %(CONDORDIR)s %(FILENAME)s $(OUTPUTDIR)s
+Arguments = %(CONDORDIR)s %(FILENAME)s %(OUTPUTDIR)s
 Queue 1"""%dict
     )
     jdf.close()
-    os.system("%(LOGDIR)s/condor_submit %(FILENAME)s.job"%dict)
+    os.system("{}/condor_submit {}.job".format(logDir,fileName))
     
 def submit_jobs(files,condorDir,logrDir,sampleDir):
     os.system("mkdir -p " + logrDir)
