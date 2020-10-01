@@ -17,13 +17,14 @@ import varsList
 parser = ArgumentParser()
 parser.add_argument("-i","--inputDir",required=True)
 parser.add_argument("-f","--fileName",required=True)
-parser.add_argument("-o","--outName",required=True)
+parser.add_argument("-o","--outDir",required=True)
 args = parser.parse_args()
 
 # load the .json parameters
 jsonFile = None
-jsonCheck = glob.glob("parameters*.json")
+jsonCheck = glob.glob("*.json")
 if len(jsonCheck) > 0:
+    print("Using parameters file: {}".format(jsonCheck[0]))
     jsonFile = open(jsonCheck[0])
     jsonFile = load_json(jsonFile.read())
 # load in the model
@@ -36,21 +37,22 @@ if len(modelCheck) > 0:
 variables = list(jsonFile["variables"])
 
 print("Using {} variables".format(len(variables)))
-for i, variable in enumerate(variables): print(" {:<4} {}".format(i+".",variable))
+for i, variable in enumerate(variables): print(" {:<4} {}".format(str(i)+".",variable))
 
-inputDir = args.inputDir
-fileName = args.fileName
-outName  = args.outName
+inputDir   = args.inputDir
+fileName   = args.fileName
+outDir     = args.outDir
+step3_file = fileName.replace("step2","step3") 
 
 # load in the sample
 
-rootFile = TFile.Open(inputDir + "/" + fileName)
+rootFile = TFile.Open(inputDir + "/" + fileName + ".root")
 rootTree = rootFile.Get("ljmet")
-events = np.asarray( rootTree.AsMatrix( [variable.encode("ascii","ignore") for variable in variables] ) )
+events = np.asarray( rootTree.AsMatrix( [ variable.encode("ascii","ignore") for variable in variables ] ) )
 
 discriminators = model.predict(events)
 
-out = TFile( outName, "RECREATE" );
+out = TFile( step3_file, "RECREATE" );
 out.cd()
 new_tree = rootTree.CloneTree(0);
 
@@ -66,3 +68,5 @@ for i in range(rootTree.GetEntries()):
     
 out.Write()
 out.Close()
+
+os.system("cp {} {}".format(step3_file + ".root", inputDir.replace("step2","step3")))
