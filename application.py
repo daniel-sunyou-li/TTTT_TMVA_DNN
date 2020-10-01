@@ -59,12 +59,12 @@ def condor_job(fileName,condorDir,outputDir,logDir):
 # I think this is adapted for BRUX currently, so need to adapt it to LPC
 # main concern is the file referencing, which can be handled by cmseos
     dict = {
-        "MODEL"    : modelCheck[0], # stays the same across all samples
-        "PARAMFILE": jsonCheck[0],  # stays the same across all samples
-        "FILENAME" : fileName,      # changes with sample
-        "INPUTDIR" : condorDir,      # changes with sample
-        "OUTPUTDIR": outputDir,     # stays the same across all samples
-        "LOGDIR"   : logDir         # stays the same across all samples
+        "MODEL"     : modelCheck[0], # stays the same across all samples
+        "PARAMFILE" : jsonCheck[0],  # stays the same across all samples
+        "FILENAME"  : fileName,      # changes with sample
+        "CONDORDIR" : condorDir,      # changes with sample
+        "OUTPUTDIR" : outputDir,     # stays the same across all samples
+        "LOGDIR"    : logDir         # stays the same across all samples
     }
     jdfName = "{}/{}.job".format(logDir,fileName)
     jdf = open(jdfName, "w")
@@ -79,7 +79,7 @@ Output = %(LOGDIR)s/%(FILENAME)s.out
 Error = %(LOGDIR)s/%(FILENAME)s.err
 Log = %(LOGDIR)s/%(FILENAME)s.log
 Notification = Never
-Arguments = %(INPUTDIR)s %(FILENAME)s $(OUTPUTDIR)s
+Arguments = %(CONDORDIR)s %(FILENAME)s $(OUTPUTDIR)s
 Queue 1"""%dict
     )
     jdf.close()
