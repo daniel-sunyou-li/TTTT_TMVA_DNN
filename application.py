@@ -19,26 +19,6 @@ args = parser.parse_args()
 if args.verbose:
     print("Running step 3 application for the .h5 DNN, producing new step3 ROOT files...")
 
-# check for parameters from json file
-jsonCheck = glob.glob("{}/parameters*.json".format(args.folder))
-if len(jsonCheck) > 0:
-    if args.verbose:
-        print("Using parameters file: {}".format(jsonCheck[0]))
-    jsonFile = open(jsonCheck[0])
-    jsonFile = load_json(jsonFile.read())
-else:
-    print("No parameters .json file was found, exiting program...")
-    sys.exit()
-# check for .h5 model
-model = None
-modelCheck = glob.glob("{}/*.h5".format(args.folder))
-if len(modelCheck) > 0:
-    if args.verbose:
-        print("Using model: {}".format(modelCheck[0]))
-else:
-    print("No model found, exiting program...")
-    sys.exit() 
-
 # define variables and containers
 varList = np.asarray(varsList.varList["DNN"])[:,0]
 # need to check with Adam how the order of the variables is sorted in mltools.py since it's not obvious to memoryview
@@ -50,19 +30,38 @@ resultDir    = args.folder # location where model/weights stored and where new f
 condorDir    = args.log    # location where condor job outputs are stored
 sampleDir    = varsList.step2Sample2018 if year == "2018" else varsList.step2Sample2017 # sample directory name
 
+# check for parameters from json file
+jsonCheck = glob.glob("{}/parameters*.json".format(resultDir))
+if len(jsonCheck) > 0:
+    if args.verbose:
+        print("Using parameters file: {}".format(jsonCheck[0]))
+    jsonFile = open(jsonCheck[0])
+    jsonFile = load_json(jsonFile.read())
+else:
+    print("No parameters .json file was found, exiting program...")
+    sys.exit()
+# check for .h5 model
+model = None
+modelCheck = glob.glob("{}/*.h5".format(resultDir))
+if len(modelCheck) > 0:
+    if args.verbose:
+        print("Using model: {}".format(modelCheck[0]))
+else:
+    print("No model found, exiting program...")
+    sys.exit() 
+
 # display variables being used
 if args.verbose:
     print("Using {} variables:".format(len(variables)))
     for i, variable in enumerate(variables): print("{:<4} {}".format(str(i)+".",variable))
 
-def condor_job(fileName,resultDir,inputDir,outputDir,condorDir):
+def condor_job(fileName,inputDir,outputDir,condorDir):
 # I think this is adapted for BRUX currently, so need to adapt it to LPC
 # main concern is the file referencing, which can be handled by cmseos
     dict = {
         "MODEL"    : modelCheck[0], # stays the same across all samples
         "PARAMFILE": jsonCheck[0],  # stays the same across all samples
         "FILENAME" : fileName,      # changes with sample
-        "RESULTDIR": resultDir,     # stays the same across all samples
         "INPUTDIR" : inputDir,      # changes with sample
         "OUTPUTDIR": outputDir,     # stays the same across all samples
         "CONDORDIR": condorDir      # stays the same across all samples
@@ -80,13 +79,13 @@ Output = %(CONDORDIR)s/%(FILENAME)s.out
 Error = %(CONDORDIR)s/%(FILENAME)s.err
 Log = %(CONDORDIR)s/%(FILENAME)s.log
 Notification = Never
-Arguments = %(INPUTDIR)s %(RESULTDIR)s %(FILENAME)s $(OUTPUTDIR)s
+Arguments = %(INPUTDIR)s %(FILENAME)s $(OUTPUTDIR)s
 Queue 1"""%dict
     )
     jdf.close()
     os.system("%(CONDORDIR)s/condor_submit %(FILENAME)s.job"%dict)
     
-def submit_jobs(files,inputDir,resultDir,condorDir,sampleDir):
+def submit_jobs(files,inputDir,condorDir,sampleDir):
     os.system("mkdir -p " + condorDir)
     outputDir = sampleDir.replace("step2","step3")
     if args.verbose: print("Making new EOS directory: store/user/{}/{}/".format(varsList.eosUserName,outputDir))
@@ -94,10 +93,10 @@ def submit_jobs(files,inputDir,resultDir,condorDir,sampleDir):
     jobCount = 0
     for file in files:
         if args.verbose: print("Submitting Condor job for {}".format(file))
-        condor_job(file,resultDir,inputDir,outputDir,condorDir)
+        condor_job(file,inputDir,outputDir,condorDir)
         jobCount += 1
     print("{} jobs submitted...".format(jobCount))
     if args.verbose: print("Application Condor job logs stored in {}".format(condorDir))
     
 # run the submission
-submit_jobs(files,inputDir,resultDir,condorDir,sampleDir)
+submit_jobs(files,inputDir,condorDir,sampleDir)
