@@ -11,7 +11,7 @@ parser = ArgumentParser()
 parser.add_argument("-y","--year",required=True,help="The sample year (2017 or 2018)")
 parser.add_argument("-f","--folder",required=True,help="Folder where model/weights, results are stored")
 parser.add_argument("-l","--log",default="application_log_" + datetime.now().strftime("%d.%b.%Y"),help="Condor job log folder")
-parser.add_argument("-v","--verbose",default=False,help="Verbosity option")
+parser.add_argument("-v","--verbose", action="store_true", help="Verbosity option")
 
 args = parser.parse_args()
 
