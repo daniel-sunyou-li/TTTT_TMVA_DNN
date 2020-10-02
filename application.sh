@@ -18,3 +18,5 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 source /cvmfs/cms.cern.ch/lcg/views/LCG_94/x86_64-centos7-gcc8-opt/setup.sh
 
 python step3.py -i $condorDir -f $fileName -o $outputDir
+
+xrdcp -f $fileName\_step3.root root://cmseos.fnal.gov//store/user/$eosUserName/$outputDir
