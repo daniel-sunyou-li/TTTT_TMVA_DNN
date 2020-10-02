@@ -136,23 +136,23 @@ bkg2018_2 = [
   sample.split("hadd")[0] + "split2.root" for sample in bkg2018
 ]
 
-# all samples for step3
+# all samples for step3, ( Name, # Processed MC events, xsec [pb] )
 all2017 = {
-  "TTTT": ("TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"),
+  "TTTT": ("TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root", 849964.0, 0.012),
   
-  "TTHH": ("TTHH_TuneCP5_13TeV-madgraph-pythia8_hadd.root"),
-  "TTTJ": ("TTTJ_TuneCP5_13TeV-madgraph-pythia8_hadd.root"),
-  "TTTW": ("TTTW_TuneCP5_13TeV-madgraph-pythia8_hadd.root"),
-  "TTWH": ("TTWH_TuneCP5_13TeV-madgraph-pythia8_hadd.root"),
-  "TTWl": ("TTWJetsToLNu_TuneCP5_PSweights_13TeV-amcatnloFXFX-madspin-pythia8_hadd.root"),
-  "TTWW": ("TTWW_TuneCP5_13TeV-madgraph-pythia8_hadd.root"),
-  "TTWZ": ("TTWZ_TuneCP5_13TeV-madgraph-pythia8_hadd.root"),
-  "TTZH": ("TTZH_TuneCP5_13TeV-madgraph-pythia8_hadd.root"),
-  "TTZZ": ("TTZZ_TuneCP5_13TeV-madgraph-pythia8_hadd.root"),
-  "TTZlM10": ("TTZToLLNuNu_M-10_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root"),
-  "TTZlM1to10": ("TTZToLL_M-1to10_TuneCP5_13TeV-amcatnlo-pythia8_hadd.root"),
-  "TTHnoB": ("ttHToNonbb_M125_TuneCP5_13TeV-powheg-pythia8_hadd.root"),
-  "TTHB": ("ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8_hadd.root"),
+  "TTHH": ( "TTHH_TuneCP5_13TeV-madgraph-pythia8_hadd.root", 199371.0, 0.0007408 ),
+  "TTTJ": ( "TTTJ_TuneCP5_13TeV-madgraph-pythia8_hadd.root", 198546.0, 0.0004741 ),
+  "TTTW": ( "TTTW_TuneCP5_13TeV-madgraph-pythia8_hadd.root", 199699.0, 0.0007330 ),
+  "TTWH": ( "TTWH_TuneCP5_13TeV-madgraph-pythia8_hadd.root", 198978.0, 0.0013590 ),
+  "TTWl": ( "TTWJetsToLNu_TuneCP5_PSweights_13TeV-amcatnloFXFX-madspin-pythia8_hadd.root", 2686141.0, 0.2043 ),
+  "TTWW": ( "TTWW_TuneCP5_13TeV-madgraph-pythia8_hadd.root", 199008.0, 0.0078830 ),
+  "TTWZ": ( "TTWZ_TuneCP5_13TeV-madgraph-pythia8_hadd.root", 198756.0, 0.0029740 ),
+  "TTZH": ( "TTZH_TuneCP5_13TeV-madgraph-pythia8_hadd.root", 199285.0, 0.0012530 ),
+  "TTZZ": ( "TTZZ_TuneCP5_13TeV-madgraph-pythia8_hadd.root", 199363.0, 0.0015720 ),
+  "TTZlM10": ( "TTZToLLNuNu_M-10_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root", 5239484.0, 0.2529 ),
+  "TTZlM1to10": ( "TTZToLL_M-1to10_TuneCP5_13TeV-amcatnlo-pythia8_hadd.root", 129114.0, 0.2529 ),
+  "TTHnoB": ( "ttHToNonbb_M125_TuneCP5_13TeV-powheg-pythia8_hadd.root", 7814711.0, 0.215 ),
+  "TTHB": ( "ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8_hadd.root", 7833734.0, 0.2934 ),
   
   "DataE": ("SingleElectron_hadd.root"),
   "DataM": ("SingleMuon_hadd.root"),
@@ -372,8 +372,17 @@ varList['DNN'] = [
   ('HOTGoodTrijet2_dRtrijetJetnotdijet','','',0,4,51)
 ]
 
+# weight event count
+
 weightStr = "triggerXSF * pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPrefiringProb_CommonCalc * " + \
             "(MCWeight_MultiLepCalc / abs(MCWeight_MultiLepCalc) ) * xsecEff * tthfWeight * njetsWeight"
+
+# step3 weight event
+targetLumi = 41530. # 1/pb
+
+weight2017 = {
+  sample: targetLumi * all2017[sample][1] / all2017[sample][2] for sample in all2017 
+}
 
 # general cut, add selection based cuts in training scripts
 cutStr =  "( ( leptonPt_MultiLepCalc > 50 && isElectron == 1 ) || " + \
