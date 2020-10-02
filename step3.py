@@ -68,5 +68,3 @@ for i in range(rootTree.GetEntries()):
     
 out.Write()
 out.Close()
-
-os.system("xrdcp {} /store/user/{}/{}".format(step3_file,varsList.eosUserName,outDir))
