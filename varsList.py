@@ -355,11 +355,12 @@ all2018 = {
   "QCDht1500": ( "QCD_HT1500to2000_TuneCP5_13TeV-madgraphMLM-pythia8_hadd.root" ),
   "QCDht2000": ( "QCD_HT2000toInf_TuneCP5_13TeV-madgraphMLM-pythia8_hadd.root" ),
   
-  "ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-madgraph-pythia8_hadd.root" ),
+  "Ts": ( "ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-madgraph-pythia8_hadd.root" ),
   "ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8_hadd.root" ),
   "ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8_hadd.root" ),
   "ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8_hadd.root" ),
   "ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8_hadd.root" ),
+  
   "SingleMuon_hadd.root" ),
   "TTHH_TuneCP5_13TeV-madgraph-pythia8_hadd.root" ),
   "TTTJ_TuneCP5_13TeV-madgraph-pythia8_hadd.root" ),
