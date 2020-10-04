@@ -337,6 +337,7 @@ all2017 = {
 }
 
 all2018 = {
+  "DataM": ( "SingleMuon_hadd.root" ),
   "DataE": ( "EGamma_hadd.root" ),
   "DataJ": ( "JetHT_hadd.root" ),  
 
@@ -356,13 +357,12 @@ all2018 = {
   "QCDht2000": ( "QCD_HT2000toInf_TuneCP5_13TeV-madgraphMLM-pythia8_hadd.root" ),
   
   "Ts": ( "ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-madgraph-pythia8_hadd.root" ),
-  "ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8_hadd.root" ),
-  "ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8_hadd.root" ),
-  "ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8_hadd.root" ),
-  "ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8_hadd.root" ),
+  "Tbt": ( "ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8_hadd.root" ),
+  "Tt": ( "ST_t-channel_top_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8_hadd.root" ),
+  "TbtW": ( "ST_tW_antitop_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8_hadd.root" ),
+  "TtW": ( "ST_tW_top_5f_inclusiveDecays_TuneCP5_13TeV-powheg-pythia8_hadd.root" ),
   
-  "SingleMuon_hadd.root" ),
-  "TTHH_TuneCP5_13TeV-madgraph-pythia8_hadd.root" ),
+  "": ( "TTHH_TuneCP5_13TeV-madgraph-pythia8_hadd.root" ),
   "TTTJ_TuneCP5_13TeV-madgraph-pythia8_hadd.root" ),
   "TTTT_TuneCP5_13TeV-amcatnlo-pythia8_hadd.root" ),
   "TTTW_TuneCP5_13TeV-madgraph-pythia8_hadd.root" ),
