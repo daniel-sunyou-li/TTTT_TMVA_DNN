@@ -483,8 +483,8 @@ all2018 = {
 
 #[<variable in trees>, <variable name for axes and titles>, <unit>]
 
-varList['DNN'] = [
-  ('AK4HTpMETpLepPt','S_{T}','GeV',0,4000,101),
+varList["DNN"] = [
+  ("AK4HTpMETpLepPt", "S_{T} [GeV]" , 0, 4000, 101),
   ('minMleppBjet','min[M(l,b)]','GeV',0,1000,101),
   ('mass_minBBdr','M(b,b) with min[#DeltaR(b,b)]','GeV',0,1400,51),
   ('deltaR_lepBJet_maxpt','#DeltaR(l,b)] with max[p_{T}(l,b)]','',0,6.0,51),
