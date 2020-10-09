@@ -8,20 +8,16 @@ bruxUserName = "dli50"
 lpcUserName = "dsunyou"
 eosUserName = "dali"
 
-step1Sample2017    = "FWLJMET102X_1lep2017_Oct2019_4t_08012020_step1hadds"
-step1Sample2018    = "FWLJMET102X_1lep2018_Oct2019_4t_080420_step1hadds"
 step2Sample2017    = "FWLJMET102X_1lep2017_Oct2019_4t_08122020_step2"                    # current 2017 sample
 step2Sample2018    = "FWLJMET102X_1lep2018_Oct2019_4t_08122020_step2"                    # current 2018 sample
-step1DirBRUX2017   = "/mnt/hadoop/store/group/bruxljm/" + step1Sample2017 
-step1DirBRUX2018   = "/mnt/hadoop/store/group/bruxljm/" + step1Sample2018
-inputDirBRUX2017   = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2017 + "/nominal/"  # Brown Linux path
-inputDirBRUX2018   = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2018 + "/nominal/"  
-inputDirLPC2017    = "~/nobackup/" + step2Sample2017 + "/"                               # LHC Physics Center path
-inputDirEOS2017    = step2Sample2017		                                                 # EOS storage path
-inputDirLPC2018    = "~/nobackup/" + step2Sample2018 + "/"                               
-inputDirEOS2018    = step2Sample2018		                                                  
-inputDirCondor2017 = "root://cmseos.fnal.gov///store/user/" + lpcUserName + "/" + step2Sample2017 + "/" # Condor remote node path to EOS
-inputDirCondor2018 = "root://cmseos.fnal.gov///store/user/" + lpcUserName + "/" + step2Sample2018 + "/"
+step2DirBRUX2017   = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2017 + "/nominal/"  # Brown Linux path
+step2DirBRUX2018   = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2018 + "/nominal/"  
+step2DirLPC2017    = "~/nobackup/" + step2Sample2017 + "/"                               # LHC Physics Center path
+step2DirLPC2018    = "~/nobackup/" + step2Sample2018 + "/"       
+step2DirEOS2018    = step2Sample2018		  
+step2DirEOS2017    = step2Sample2017		                                                 # EOS storage path                                                                        
+step2DirCondor2017 = "root://cmseos.fnal.gov///store/user/" + lpcUserName + "/" + step2Sample2017 + "/" # Condor remote node path to EOS
+step2DirCondor2018 = "root://cmseos.fnal.gov///store/user/" + lpcUserName + "/" + step2Sample2018 + "/"
 
 # full signal sample
 sig2017 = [
