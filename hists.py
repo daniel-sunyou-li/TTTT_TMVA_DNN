@@ -46,7 +46,8 @@ if arg.categorized:
 allSamples = varsList.all2017 if args.year == "2017" else varsList.all2018
 inputDir = varsList.step2DirLPC2017 if args.year=="2017" else varsList.step2DirLPC2018
 
-varIndx = np.argwhere(np.asarray(varsList.varList["DNN"])[:,0] == args.variable)
+varList = varsList.varList["Step3"]
+varIndx = np.argwhere(np.asarray(varList)[:,0] == args.variable)
 
 sig = []
 bkg = []
@@ -80,7 +81,7 @@ def read_tree(file):
     rootTree = rootFile.Get("ljmet")
     return rootFile, rootTree
 
-def run_data(categories,data,minBin,maxBin,nBin):
+def run_data(categories,label,data,minBin,maxBin,nBin):
     treeData = {}
     fileData = {}
     for i, cat in enumerate(categories):
@@ -89,7 +90,7 @@ def run_data(categories,data,minBin,maxBin,nBin):
             fileData[sample], treeData[sample] = readTree( inputDir + "/" + data[sample][0] )
             dataHists.update(analyze(
                 treeData,sample,"",False,args.pdf,args.variable,
-                [args.variable,np.linspace(minBin,maxBin,nBin).tolist(),varsList.varList["DNN"][varIndx,1]],
+                [args.variable,np.linspace(minBin,maxBin,nBin).tolist(),label],
                 cat,args.year
             ))
             if i == len(categories) - 1:
@@ -97,14 +98,14 @@ def run_data(categories,data,minBin,maxBin,nBin):
                 del fileData[cat]
         pickle.dump(dataHists,open("{}/data_hists/data_hist_{}.p".format(args.dataset,args.variable),"wb"))
 
-def run_signal(categories,sig,minBin,maxBin,nBin):
+def run_signal(categories,label,sig,minBin,maxBin,nBin):
     treeSig = {}
     fileSig = {}
     for i, cat in enumerate(categories):
         sigHists = {}
         for sample in sig:
             fileData[sample], treeData[sample] = readTree( inputDir + "/" + sig[sample][0] )
-            varIndx = np.argwhere(np.asarray(varsList.varList["DNN"])[:,0] == args.variable)
+            varIndx = np.argwhere(np.asarray(varList)[:,0] == args.variable)
             if args.sys:
                 for sys in ["jec","jer"]:
                     for dir in ["Up","Down"]:
@@ -113,7 +114,7 @@ def run_signal(categories,sig,minBin,maxBin,nBin):
                         )
             sigHists.update(analyze(
                 treeSig, sample, "", args.sys, args.pdf, args.variable, 
-                [args.variable, np.linspace(minBin,MaxBin,nBin).tolist(),varsList.varList["DNN"][varIndx,1]],
+                [args.variable, np.linspace(minBin,MaxBin,nBin).tolist(),label],
                 cat, args.year
             ))
             if i == len(categories) - 1:
@@ -126,7 +127,7 @@ def run_signal(categories,sig,minBin,maxBin,nBin):
                             del fileSig[sample+sys+dir]
         pickle.dump(sigHists,open("{}/sig_hists/sig_hist_{}.p".format(args.dataset,args.variable),"wb"))
 
-def run_background(categories,bkg,hdamp,ue,minBin,maxBin,nBin):
+def run_background(categories,label,bkg,hdamp,ue,minBin,maxBin,nBin):
     treeBkg = {}
     fileBkg = {}
     for i, cat in enumerate(categories):
@@ -141,7 +142,7 @@ def run_background(categories,bkg,hdamp,ue,minBin,maxBin,nBin):
                         )
             bkgHists.update(analyze(
                 treeBkg,sample,"",args.sys, args.pdf, args.variable,
-                [args.variable, np.linspace(minBin,maxBin,nBin).tolist(), varsList.varList["DNN"][varIndx,1]],
+                [args.variable, np.linspace(minBin,maxBin,nBin).tolist(), label],
                 cat, args.year
             ))
             if i == len(categories) - 1:
@@ -154,7 +155,7 @@ def run_background(categories,bkg,hdamp,ue,minBin,maxBin,nBin):
                 fileBkg[sample], treeBkg[sample] = readTree( step1Dir + "/" + step1[sample] )
                 bkgHists.update(analyze(
                     treeBkg,sample,"",False,args.pdf,args.variable,
-                    [args.variable, np.linspace(minBin,maxBin,nBin).tolist(), varsList.varList["DNN"][varIndx,1]],
+                    [args.variable, np.linspace(minBin,maxBin,nBin).tolist(), varList[varIndx,1]],
                     cat, args.year
                 ))
                 if i == len(categories) - 1:
@@ -164,7 +165,7 @@ def run_background(categories,bkg,hdamp,ue,minBin,maxBin,nBin):
                 fileBkg[sample], treeBkg[sample] = readTree( step1Dir + "/" + step1[sample] )
                 bkgHists.update(analyze(
                     treeBkg,sample,"",False,args.pdf,args.variable,
-                    [args.variable, np.linspace(minBin,maxBin,nBin).tolist(), varsList.varList["DNN"][varIndx,1]],
+                    [args.variable, np.linspace(minBin,maxBin,nBin).tolist(), label],
                     cat, args.year
                 ))
                 if i == len(categories) - 1:
@@ -178,31 +179,24 @@ def plot_step3(label,minBin,maxBin,nBin,categories,samples):
     startTime = time.time()
     if samples.lower() == "sig":
         print("Plotting signal samples...")
-        run_signal(categories,sig,minBin,maxBin,nBin)
+        run_signal(categories,label,sig,minBin,maxBin,nBin)
         print("Finished plotting signal samples stored in {}/sig_hists/ in {:.2f} minutes.".format(
             args.dataset, ( time.time()-startTime ) / 60.
         ))
     elif samples.lower() == "bkg":
         print("Plotting background samples...")
-        run_background(categories,bkg,hdamp,ue,minBin,maxBin,nBin)
+        run_background(categories,label,bkg,hdamp,ue,minBin,maxBin,nBin)
         print("Finished plotting background samples stored in {}/bkg_hists/ in {:.2f} minutes.".format(
             args.dataset, ( time.time()-startTime ) / 60.
         ))
     elif samples.lower() == "data":
         print("Plotting data samples...")
-        run_data(categories,bkg,minBin,maxBin,nBin)
+        run_data(categories,label,bkg,minBin,maxBin,nBin)
         print("Finished plotting data samples stored in {}/data_hists/ in {:.2f} minutes.".format(
             args.dataset, ( time.time()-startTime ) / 60.
         ))
 
-varTuple = varsList.varList["DNN"][varIndx]
+varTuple = varList[varIndx]
 plot_step3(varTuple[1],varTuple[2],varTuple[3],varTuple[4],categories,"bkg")
 plot_step3(varTuple[1],varTuple[2],varTuple[3],varTuple[4],categories,"sig")
 plot_step3(varTuple[1],varTuple[2],varTuple[3],varTuple[4],categories,"data")
-
-
-
-
-
-
-
