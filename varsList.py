@@ -562,6 +562,9 @@ varList["DNN"] = [
   ("HOTGoodTrijet2_dRtrijetJetnotdijet", "HOTGoodTrijet2_dRtrijetJetnotdijet", 0, 4, 51)
 ]
 
+varList["Step3"] = varList["DNN"] 
+varList["Step3"].extend( ( "DNN_disc", "tttt discriminator", 0, 1, 101 ) )
+
 # weight event count
 
 weightStr = "triggerXSF * pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPrefiringProb_CommonCalc * " + \
