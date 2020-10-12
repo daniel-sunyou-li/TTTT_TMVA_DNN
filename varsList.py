@@ -10,10 +10,14 @@ eosUserName = "dali"
 
 step2Sample2017    = "FWLJMET102X_1lep2017_Oct2019_4t_08122020_step2"                    # current 2017 sample
 step2Sample2018    = "FWLJMET102X_1lep2018_Oct2019_4t_08122020_step2"                    # current 2018 sample
+step3Sample2017    = "FWLJMET102X_1lep2017_Oct2019_4t_08122020_step3"                    # step 3 directory name
+step3Sample2018    = "FWLJMET102X_1lep2018_Oct2019_4t_08122020_step3"
 step2DirBRUX2017   = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2017 + "/nominal/"  # Brown Linux path
 step2DirBRUX2018   = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2018 + "/nominal/"  
-step2DirLPC2017    = "~/nobackup/" + step2Sample2017 + "/"                               # LHC Physics Center path
-step2DirLPC2018    = "~/nobackup/" + step2Sample2018 + "/"       
+step2DirLPC2017    = "~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + step2Sample2017 + "/"                               # LHC Physics Center path
+step2DirLPC2018    = "~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + step2Sample2018 + "/"       
+step3DirLPC2017    = "~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + step3Sample2017 + "/"
+step3DirLPC2018    = "~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + step3Sample2018 + "/"
 step2DirEOS2018    = step2Sample2018		  
 step2DirEOS2017    = step2Sample2017		                                                 # EOS storage path                                                                        
 step2DirCondor2017 = "root://cmseos.fnal.gov///store/user/" + lpcUserName + "/" + step2Sample2017 + "/" # Condor remote node path to EOS
