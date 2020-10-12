@@ -44,7 +44,7 @@ if arg.categorized:
     njetslist = ["4","5","6","7","8","9","10p"]
 
 allSamples = varsList.all2017 if args.year == "2017" else varsList.all2018
-inputDir = varsList.step2DirLPC2017 if args.year=="2017" else varsList.step2DirLPC2018
+inputDir = varsList.step3DirLPC2017 if args.year=="2017" else varsList.step3DirLPC2018
 
 varList = varsList.varList["Step3"]
 varIndx = np.argwhere(np.asarray(varList)[:,0] == args.variable)
