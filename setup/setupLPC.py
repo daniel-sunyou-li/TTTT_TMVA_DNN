@@ -70,7 +70,7 @@ def download_samples(years = ["2017", "2018"]):
     # setup parameters that will differ between 2017 and 2018 samples
     step2Sample  = None
     inputDirBRUX = None
-    inpu9tDirLPC = None
+    inputDirLPC  = None
     inputDirEOS  = None
     samples      = None
     samples_0    = None
