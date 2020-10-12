@@ -138,7 +138,7 @@ def run_background(categories,label,bkg,hdamp,ue,minBin,maxBin,nBin):
                 for sys in ["jec","jer"]:
                     for dir in ["Up,"Down"]:
                         fileBkg[sample+sys+dir] = readTree(
-                            step1Dir + "/" + sys.Upper() + dir.lower() + "/" + step1[sample]
+                            inputDir + "/" + sys.Upper() + dir.lower() + "/" + step1[sample]
                         )
             bkgHists.update(analyze(
                 treeBkg,sample,"",args.sys, args.pdf, args.variable,
@@ -152,7 +152,7 @@ def run_background(categories,label,bkg,hdamp,ue,minBin,maxBin,nBin):
                         del fileBkg[sample+sys+dir]
         if sys.args:
             for sample in hdamp:
-                fileBkg[sample], treeBkg[sample] = readTree( step1Dir + "/" + step1[sample] )
+                fileBkg[sample], treeBkg[sample] = readTree( inputDir + "/" + step1[sample] )
                 bkgHists.update(analyze(
                     treeBkg,sample,"",False,args.pdf,args.variable,
                     [args.variable, np.linspace(minBin,maxBin,nBin).tolist(), varList[varIndx,1]],
@@ -162,7 +162,7 @@ def run_background(categories,label,bkg,hdamp,ue,minBin,maxBin,nBin):
                     del fileBkg[sample]
                     del treeBkg[sample]
             for sample in ue:
-                fileBkg[sample], treeBkg[sample] = readTree( step1Dir + "/" + step1[sample] )
+                fileBkg[sample], treeBkg[sample] = readTree( inputDir + "/" + step1[sample] )
                 bkgHists.update(analyze(
                     treeBkg,sample,"",False,args.pdf,args.variable,
                     [args.variable, np.linspace(minBin,maxBin,nBin).tolist(), label],
