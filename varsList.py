@@ -16,8 +16,8 @@ step2DirBRUX2017   = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2017 + "/no
 step2DirBRUX2018   = "/mnt/hadoop/store/group/bruxljm/" + step2Sample2018 + "/nominal/"  
 step2DirLPC2017    = "~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + step2Sample2017 + "/"                               # LHC Physics Center path
 step2DirLPC2018    = "~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + step2Sample2018 + "/"       
-step3DirLPC2017    = "~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + step3Sample2017 + "/"
-step3DirLPC2018    = "~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + step3Sample2018 + "/"
+step3DirLPC2017    = step3Sample2017 + "/"
+step3DirLPC2018    = step3Sample2018 + "/"
 step2DirEOS2018    = step2Sample2018		  
 step2DirEOS2017    = step2Sample2017		                                                 # EOS storage path                                                                        
 step2DirCondor2017 = "root://cmseos.fnal.gov///store/user/" + lpcUserName + "/" + step2Sample2017 + "/" # Condor remote node path to EOS
@@ -167,28 +167,29 @@ xsec = {
 # number of processed MC events  
 # generalized values
 nrun = {
-  "TTJetsHad": { "2017": 129092906.0, "2018": },
-  "TTJetsHadUEdn": { "2017": 25943263.0, "2018": },
-  "TTJetsHadUEup": { "2017": 26986311.0, "2018": },
-  "TTJetsHadHDAMPdn": { "2017": 26007959.0, "2018": },
-  "TTJetsHadHDAMPup": { "2017": 25586551.0, "2018": },
-  "TTJets2L2nu": { "2017": 68448328.0, "2018": },
-  "TTJets2L2nuUEdn": { "2017": 5431150.0, "2018": },
-  "TTJets2L2nuUEup": { "2017": 5455598.0, "2018": },
-  "TTJets2L2nuHDAMPdn": { "2017": 5248352.0, "2018": },
-  "TTJets2L2nuHDAMPup": { "2017": 5389169.0, "2018": },
-  "TTJetsSemiLep": { "2017": 109124472.0, "2018": },
-  "TTJetsSemiLepUEdn": { "2017": 26885578.0, "2018": },
-  "TTJetsSemiLepUEup": { "2017": 25953874.0, "2018": },
-  "TTJetsSemiLepHDAMPdn": { "2017": 26359926.0, "2018": }
-  "TTJetsSemiLepHDAMPup": { "2017": 27068397.0, "2018": }
-  "TTJetsSemiLepNjet9": { "2017": 8648145.0, "2018": }
+  "TTJetsHad": { "2017": 129092906.0, "2018": 132368556.0 },
+  "TTJetsHadUEdn": { "2017": 25943263.0, "2018": 26459542.0 },
+  "TTJetsHadUEup": { "2017": 26986311.0, "2018": 23298972.0 },
+  "TTJetsHadHDAMPdn": { "2017": 26007959.0, "2018": 25988142.0 },
+  "TTJetsHadHDAMPup": { "2017": 25586551.0, "2018": 24851988.0 },
+  "TTJets2L2nu": { "2017": 68448328.0, "2018": 63791484.0 },
+  "TTJets2L2nuUEdn": { "2017": 5431150.0, "2018": 4914480.0 },
+  "TTJets2L2nuUEup": { "2017": 5455598.0, "2018": 5401744.0 },
+  "TTJets2L2nuHDAMPdn": { "2017": 5248352.0, "2018": 5368300.0 },
+  "TTJets2L2nuHDAMPup": { "2017": 5389169.0, "2018": 5368300.0 },
+  "TTJetsSemiLep": { "2017": 109124472.0, "2018": 100579948.0 },
+  "TTJetsSemiLepUEdn": { "2017": 26885578.0, "2018": 20274614.0 },
+  "TTJetsSemiLepUEup": { "2017": 25953874.0, "2018": 26729924.0 },
+  "TTJetsSemiLepHDAMPdn": { "2017": 26359926.0, "2018": 25270096.0 },
+  "TTJetsSemiLepHDAMPup": { "2017": 27068397.0, "2018": 26841790.0 },
+  "TTJetsSemiLepNjet9": { "2017": 8648145.0, "2018": 8398387.0 }
 }
 
 # all samples for step3, ( Name, # Processed MC events, xsec [pb] )
 all2017 = {
   "TTTT": ("TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_split0_step3.root", 849964.0, 0.012 ),
-  
+}
+'''  
   "TTHH": ( "TTHH_TuneCP5_13TeV-madgraph-pythia8_split0_step3.root", 199371.0, 0.0007408 ),
   "TTTJ": ( "TTTJ_TuneCP5_13TeV-madgraph-pythia8_split0_step3.root", 198546.0, 0.0004741 ),
   "TTTW": ( "TTTW_TuneCP5_13TeV-madgraph-pythia8_split0_step3.root", 199699.0, 0.0007330 ),
@@ -339,6 +340,7 @@ all2017 = {
   "WZ": ( "WZ_TuneCP5_13TeV-pythia8_hadd.root", 3928567.0, 47.13 ),
   "ZZ": ( "ZZ_TuneCP5_13TeV-pythia8_hadd.root", 1925931.0, 16.523 )
 }
+'''
 
 all2018 = {
   "TTHH": ( "TTHH_TuneCP5_13TeV-madgraph-pythia8_hadd.root" ),
@@ -567,7 +569,34 @@ varList["DNN"] = [
 ]
 
 varList["Step3"] = varList["DNN"] 
-varList["Step3"].extend( ( "DNN_disc", "tttt discriminator", 0, 1, 101 ) )
+varList["Step3"].append( tuple( ( "DNN_disc", "tttt discriminator", 0, 1, 101) ) )
+
+# systematics list
+systList = [
+#  "pileup",
+#  "prefire",
+#  "muRFcorrd",
+#  "muR",
+#  "muF",
+#  "isr",
+#  "fsr",
+#  "tau32",
+#  "jmst",
+#  "jmrt",
+#  "tau21",
+#  "jmsw",
+#  "jmrW",
+#  "tau21pt",
+#  "btag",
+#  "mistag",
+  "jec",
+  "jer",
+#  "hotstat",
+#  "hotcspure",
+#  "hotclosure",
+#  "njet",
+#  "njetsf"
+]
 
 # weight event count
 
