@@ -605,6 +605,10 @@ weightStr = "triggerXSF * pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPr
 
 # step3 weight event
 targetLumi = 41530. # 1/pb
+lumiSys = {
+  "2017": 0.023,
+  "2018": 0.025
+}
 
 weight2017 = {
   sample: targetLumi * all2017[sample][1] / all2017[sample][2] for sample in all2017 
