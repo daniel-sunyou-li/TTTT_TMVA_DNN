@@ -3,7 +3,7 @@
 import sys, math
 from ROOT import *
 
-def isEqual(a,b):
+def is_equal(a,b):
   try:
     return a.upper() == b.upper()
   except AttributeError:
@@ -32,7 +32,7 @@ def skip(cat):
 
 # histogram methods
 
-def poissonNormByBinWidth(tgae,hist):
+def poisson_norm_by_bin_width(tgae,hist):
 # redefine the binning
   confLevel = 0.6827 # 1 sigma
   alpha = 1. - confLevel
@@ -47,7 +47,7 @@ def poissonNormByBinWidth(tgae,hist):
     tgae.SetPointEYlow(i, (N-L)/width)
     tgae.SetPointEYhigh(i, (U-N)/width)
 
-def poissonErrors(tgae):
+def poisson_errors(tgae):
   confLevel = 0.6827
   alpha = 1. - confLevel
   for i in range(0, tgae.GetN()):
@@ -58,7 +58,7 @@ def poissonErrors(tgae):
     tgae.SetPointEYlow(i, N-L)
     tgae.SetPointEYhigh(i, U-N)
         
-def normByBinWidth(h):
+def norm_by_bin_width(h):
   h.SetBinContent(0,0)
   h.SetBinContent(h.GetNbinsX()+1, 0)
   h.SetBinError(0,0)
@@ -72,7 +72,7 @@ def normByBinWidth(h):
     h.SetBinContent(bin, content/width)
     h.SetBinError(bin, error/width)
         
-def negBinCorrection(h):
+def neg_bin_correction(h):
   norm0 = h.Integral()
   if h.GetNbinsY() > 1:
     for xBin in range(h.GetNbinsX() + 2):
@@ -161,7 +161,7 @@ def getMaxWidth(table, index):
     except: pass
   return max
     
-def printTable(table,out=sys.stdout):
+def print_table(table,out=sys.stdout):
   """Prints out a table of data, padded for alignment
   @param out: Output stream (file-like object)
   @param table: The table to print. A list of lists.
@@ -184,25 +184,3 @@ def printTable(table,out=sys.stdout):
       col = format(row[i]).ljust(col_paddings[i] + 2)
       print >> out, col,
     print >> out
-        
- 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
