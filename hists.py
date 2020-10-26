@@ -46,6 +46,7 @@ if args.categorized:
 allSamples = varsList.all2017 if args.year == "2017" else varsList.all2018
 inputDir = varsList.step3DirLPC2017 if args.year=="2017" else varsList.step3DirLPC2018
 dataset = args.dataset.split("/")[0]
+dateTag = datetime.datetime.now().strftime( "%d.%b.%Y" )
 
 varList = varsList.varList["Step3"]
 varIndx = np.argwhere(np.asarray(varList)[:,0] == args.variable)
@@ -76,10 +77,18 @@ if args.verbose:
     print("{} background samples found".format(len(bkg)))
 
 categories = [
-    "is{}_nHDT{}_nT{}_nW{}_nB{}_nJ{}".format(cat[0],cat[1],cat[2],cat[3],cat[4],cat[5]) for cat in list(itertools.product(
+    "is{}_nHOT{}_nT{}_nW{}_nB{}_nJ{}".format(cat[0],cat[1],cat[2],cat[3],cat[4],cat[5]) for cat in list(itertools.product(
         args.lepton,nhottlist,nttaglist,nWtaglist,nbtaglist,njetslist
     ))
 ]
+
+# make necessary directories
+if not os.path.exists( dataset + "/limits_{}/".format( dateTag ) ):
+    os.system( "mkdir {}/limits_{}/".format( dataset, dateTag ) )
+
+for category in categories:
+    if args.verbose: print( "Making directory for category: {}".format( category ) )
+    os.system( "mkdir {}/limits_{}/{}/".format( dataset, dateTag, category )
 
 def read_tree(file):
     if not os.path.exists(file):
@@ -104,11 +113,7 @@ def run_data(categories,label,data,minBin,maxBin,nBin):
             if i == len(categories) - 1:
                 del treeData[cat]
                 del fileData[cat]
-        if not os.path.isdir("{}/data_hists/".format(dataset)):
-            os.system("mkdir {}/data_hists/".format(dataset))
-        if not os.path.isdir("{}/data_hists/{}/".format(dataset,args.variable)):
-            os.system("mkdir {}/data_hists/{}/".format(dataset,args.variable))
-        pickle.dump(dataHists,open("{}/data_hists/{}/{}_{}.p".format(dataset,args.variable,args.variable,cat),"wb"))
+        pickle.dump(dataHists,open("{}/limits_{}/{}/data_{}.p".format(dataset,dateTag,cat,args.variable),"wb"))
 
 def run_signal(categories,label,sig,minBin,maxBin,nBin):
     treeSig = {}
@@ -140,11 +145,7 @@ def run_signal(categories,label,sig,minBin,maxBin,nBin):
                         for dir in ["Up","Down"]:
                             del treeSig[sample+sys+dir]
                             del fileSig[sample+sys+dir]
-        if not os.path.isdir("{}/sig_hists/".format(dataset)):
-            os.system("mkdir {}/sig_hists/".format(dataset))
-        if not os.path.isdir("{}/sig_hists/{}/".format(dataset,args.variable)):
-            os.system("mkdir {}/sig_hists/{}/".format(dataset,args.variable))
-        pickle.dump(sigHists,open("{}/sig_hists/{}/{}_{}.p".format(dataset,args.variable,args.variable,cat),"wb"))
+        pickle.dump(sigHists,open("{}/limits_{}/{}/sig_{}.p".format(dataset,dateTag,cat,args.variable),"wb"))
 
 def run_background(categories,label,bkg,hdamp,ue,minBin,maxBin,nBin):
     treeBkg = {}
@@ -190,11 +191,7 @@ def run_background(categories,label,bkg,hdamp,ue,minBin,maxBin,nBin):
                 if i == len(categories) - 1:
                     del fileBkg[sample]
                     del treeBkg[sample]
-        if not os.path.isdir("{}/bkg_hists/".format(dataset)):    
-            os.system("mkdir {}/bkg_hists/".format(dataset))
-        if not os.path.isdir("{}/bkg_hists/{}".format(dataset,args.variable)):
-            os.system("mkdir {}/bkg_hists/{}/".format(dataset,args.variable))
-        pickle.dump(bkgHists,open("{}/bkg_hists/{}/{}_{}.p".format(dataset,args.variable,args.variable,cat),"wb"))
+        pickle.dump(bkgHists,open("{}/limits_{}/{}/bkg_{}.p".format(dataset,dateTag,cat,args.variable),"wb"))
 
 def plot_step3(label,minBin,maxBin,nBin,categories,samples):
     print("Plotting {} as {}".format(args.variable,label))
@@ -203,20 +200,20 @@ def plot_step3(label,minBin,maxBin,nBin,categories,samples):
     if samples.lower() == "sig":
         print("Plotting signal samples...")
         run_signal(categories,label,sig,minBin,maxBin,nBin)
-        print("Finished plotting signal samples stored in {}/sig_hists/ in {:.2f} minutes.".format(
-            dataset, ( time.time()-startTime ) / 60.
+        print("Finished plotting signal samples in {:.2f} minutes.".format(
+            ( time.time()-startTime ) / 60.
         ))
     elif samples.lower() == "bkg":
         print("Plotting background samples...")
         run_background(categories,label,bkg,hdamp,ue,minBin,maxBin,nBin)
-        print("Finished plotting background samples stored in {}/bkg_hists/ in {:.2f} minutes.".format(
-            dataset, ( time.time()-startTime ) / 60.
+        print("Finished plotting background samples in {:.2f} minutes.".format(
+            ( time.time()-startTime ) / 60.
         ))
     elif samples.lower() == "data":
         print("Plotting data samples...")
         run_data(categories,label,data,minBin,maxBin,nBin)
-        print("Finished plotting data samples stored in {}/data_hists/ in {:.2f} minutes.".format(
-            dataset, ( time.time()-startTime ) / 60.
+        print("Finished plotting data samples stored in {:.2f} minutes.".format(
+            ( time.time()-startTime ) / 60.
         ))
 
 varTuple = varList[varIndx[0][0]]
