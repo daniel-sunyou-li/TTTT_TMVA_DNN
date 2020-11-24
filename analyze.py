@@ -88,23 +88,23 @@ def analyze( rootTree, process, flv, doAllSys, doPDF, iPlot, plotDetails, catStr
 	
   nhottCut = ""
   if "p" in nhott: nhottCut = " && NresolvedTops1pFake >= {}".format(nhott[:-1])
-  else: nhottCut = " && NresolvedTops1pFake == {}".format(nhott[:-1])
+  else: nhottCut = " && NresolvedTops1pFake == {}".format(nhott)
     
   nttagCut = ""
   if "p" in nttag: nttagCut = " && NJetsTtagged >= {}".format(nttag[:-1])
-  else: nttagCut = " && NJetsTtagged == {}".format(nttag[:-1])
+  else: nttagCut = " && NJetsTtagged == {}".format(nttag)
 	
   nWtagCut = ""
-  if "p" in nWtagCut: nWtagCut = " && NJetsWtagged >= {}".format(nWtag[:-1])
-  else: nWtagCut = " && NJetsWtagged == {}".format(nWtag[:-1])
+  if "p" in nWtag: nWtagCut = " && NJetsWtagged >= {}".format(nWtag[:-1])
+  else: nWtagCut = " && NJetsWtagged == {}".format(nWtag)
 	
   nbtagCut = ""
   if "p" in nbtag: nbtagCut = " && NJetsCSVwithSF_MultiLepCalc >= {}".format(nbtag[:-1])
-  else: nbtagCut = " && NJetsCSVwithSF_MultiLepCalc == {}".format(nbtag[:-1])
+  else: nbtagCut = " && NJetsCSVwithSF_MultiLepCalc == {}".format(nbtag)
 	
   njetsCut = ""
   if "p" in njets: njetsCut = " && NJets_JetSubCalc >= {}".format(njets[:-1])
-  else: njetsCut = " && NJets_JetSubCalc == {}".format(njets[:-1])
+  else: njetsCut = " && NJets_JetSubCalc == {}".format(njets)
 	
   if nbtag == "0" and "minmlb" in iPlot.lower():
     originalLJMETName = plotTreeName
