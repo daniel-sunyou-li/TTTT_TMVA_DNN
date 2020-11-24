@@ -25,19 +25,14 @@ if args.verbose:
     print(">> Running step 3 application for the .h5 DNN, producing new step3 ROOT files...")
 
 # set some paths
-condorDir   = varsList.step2DirCondor2017 if args.year == "2017" else varsList.step2DirCondor2018 # location where samples stored on EOS
-step2Sample = varsList.step2Sample2017 if args.year == "2017" else varsList.step2Sample2018
-step3Sample = varsList.step3Sample2017 if args.year == "2017" else varsList.step3Sample2018
+condorDir   = varsList.step2DirEOS[ args.year ] # location where samples stored on EOS
+step2Sample = varsList.step2Sample[ args.year ] 
+step3Sample = varsList.step3Sample[ args.year ] 
 files_step2 = {}
 files_step3 = {}
 
 if args.test:
-#    files_step2["nominal"] = [ varsList.all2017["TTTT"][0] if args.year == "2017" else varsList.all2018["TTTT"][0] ]
-#    files_step2[ "JERup" ] = [ "TTToSemiLepton_HT500Njet9_TuneCP5_13TeV-powheg-pythia8_ttjj_hadd.root" ]
-    files_step2[ "JECdown" ] = [ "TTToSemiLepton_HT500Njet9_TuneCP5_13TeV-powheg-pythia8_ttjj_hadd.root" ]
-    files_step2[ "JECup" ] = [ "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_hadd.root" ]
-    files_step2[ "JERup" ] = [ "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT0Njet0_ttjj_1_hadd.root" ]
-    files_step2[ "nominal" ] = [ "TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_HT0Njet0_ttjj_hadd.root" ] 
+    files_step2[ "nominal" ] = [ varsList.all_samples[ args.year ]["TTTT"][0] ]
 else:
     files_step2[ "nominal" ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/nominal/".format( varsList.eosUserName, step2Sample ),shell=True).split("\n")[:-1]
     if args.resubmit: files_step3[ "nominal" ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/nominal/".format( varsList.eosUserName, step3Sample ),shell=True).split("\n")[:-1]
@@ -67,9 +62,9 @@ else:
             print("   {:<4} {}".format( str(i+1) + ".", file )) 
             submit_files[key].append(file)
 
-resultDir    = args.folders # location where model/weights stored and where new files are output
-logDir       = args.log     # location where condor job outputs are stored
-sampleDir    = varsList.step2Sample2018 if args.year == "2018" else varsList.step2Sample2017 # sample directory name
+resultDir    = args.folders                      # location where model/weights stored and where new files are output
+logDir       = args.log                          # location where condor job outputs are stored
+sampleDir    = varsList.step2Sample[ args.year ] # sample directory name
     
 # check for parameters from json file
 jsonFiles = []
