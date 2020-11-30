@@ -18,53 +18,86 @@ parser = ArgumentParser()
 parser.add_argument("-i","--inputDir",required=True)
 parser.add_argument("-f","--fileName",required=True)
 parser.add_argument("-o","--outDir",required=True)
+parser.add_argument("-t","--tag",required=True)
 args = parser.parse_args()
 
-# load the .json parameters
-jsonFile = None
-jsonCheck = glob.glob("*.json")
-if len(jsonCheck) > 0:
-    print("Using parameters file: {}".format(jsonCheck[0]))
-    jsonFile = open(jsonCheck[0])
-    jsonFile = load_json(jsonFile.read())
-# load in the model
-model = None
-modelCheck = glob.glob("*.h5")
-if len(modelCheck) > 0:
-    print("Using model: {}".format(modelCheck[0]))
-    model = keras.models.load_model(modelCheck[0])
+step3_file = args.fileName + ".root" 
+
+modelNames = glob.glob("*.h5")
+jsonNames  = glob.glob("*.json")
+
+def setup( modelNames, jsonNames ):
+    models = []
+    varlist = []
+    jetlist = []
+    # load in the json parameter files and get the variables used and the jet cut
+    for jsonName in sorted(jsonNames):
+        jsonFile = ( load_json( open( jsonName ).read() ) ) 
+        varlist.append( list( jsonFile[ "variables" ] ) )
+        jetlist.append( jsonFile[ "njets"] )
+        print( ">> Using parameters file: {} with {} variables and {} jets".format( jsonName, len( jsonFile[ "variables" ] ), jsonFile[ "njets" ] ) )
+    # load in the keras DNN models
+    for modelName in sorted( modelNames ):
+        print( ">> Testing model: {}".format( modelName ) )
+        models.append( keras.models.load_model( modelName ) )
+
+    return models, varlist, jetlist
+
+def check_root( rootTree ):
+    if rootTree.GetEntries() == 0:
+        print( ">> Tree \"ljmet\" is empty, writing out empty tree" )
+        return True
+    else: return False   
+        
+def get_predictions( rootTree, models, varlist, empty ):
+    events = []
+    disclist = []
     
-variables = list(jsonFile["variables"])
-
-print("Using {} variables".format(len(variables)))
-for i, variable in enumerate(variables): print(" {:<4} {}".format(str(i)+".",variable))
-
-inputDir   = args.inputDir
-fileName   = args.fileName
-outDir     = args.outDir
-step3_file = fileName + "_step3.root" 
-
-# load in the sample
-
-rootFile = TFile.Open(inputDir + "/" + fileName + ".root")
-rootTree = rootFile.Get("ljmet")
-events = np.asarray( rootTree.AsMatrix( [ variable.encode("ascii","ignore") for variable in variables ] ) )
-
-discriminators = model.predict(events)
-
-out = TFile( step3_file, "RECREATE" );
-out.cd()
-new_tree = rootTree.CloneTree(0);
-
-DNN_disc = array("f", [0])
-
-new_tree.Branch( "DNN_disc", DNN_disc, "DNN_disc/F" );
-
-print("Processing {} events...".format(len(discriminators)))
-
-for i in range(rootTree.GetEntries()):
-    DNN_disc[0] = discriminators[i]
-    new_tree.Fill()
+    for variables in varlist:
+        if empty: events.append( np.asarray([]) )
+        else: events.append( np.asarray( rootTree.AsMatrix( [ variable.encode( "ascii", "ignore" ) for variable in variables ] ) ) )
     
-out.Write()
-out.Close()
+    for i, model in enumerate(models):
+        if empty: disclist.append( np.asarray([]) )
+        else: disclist.append( model.predict( events[i] ) )
+
+    return disclist 
+        
+
+def fill_tree( modelNames, jetlist, varlist, disclist, rootTree ): 
+    out = TFile( step3_file, "RECREATE" );
+    out.cd()
+    newTree = rootTree.CloneTree(0);
+    DNN_disc = {}
+    disc_name = {}
+    branches = {}
+    for i, modelName in enumerate( sorted( modelNames ) ):
+        DNN_disc[ modelName ] = array( "f", [0.] )
+        disc_name[ modelName ] = "DNN_disc_" + str( jetlist[i] ) + "j_" + str( len(varlist[i]) ) + "vars"
+        print( ">> Creating new step3 branch: {}".format( disc_name[ modelName ] ) )
+        branches[ modelName ] = newTree.Branch( disc_name[ modelName ], DNN_disc[ modelName ], disc_name[ modelName ] + "/F" );
+    for i in range( len(disclist[0]) ):
+        rootTree.GetEntry(i)
+        for j, modelName in enumerate( sorted( modelNames ) ):
+            DNN_disc[ modelName ][0] = disclist[j][i]
+        newTree.Fill()
+    print( "[OK ] Successfully added {} new discriminators".format( len( modelNames ) ) )
+    newTree.Write()
+    out.Write()
+    out.Close()
+
+def main():
+    models, varlist, jetlist = setup( modelNames, jsonNames )
+    rootFile = TFile.Open( "{}/{}/{}.root".format( args.inputDir, args.tag, args.fileName ) );
+    print( ">> Creating step3 for sample: {}/{}.root".format( args.tag, args.fileName ) )
+    rootTree = rootFile.Get( "ljmet" );
+    empty = check_root( rootTree )
+    disclist = get_predictions( rootTree, models, varlist, empty )
+    fill_tree( modelNames, jetlist, varlist, disclist, rootTree )
+
+main()
+
+
+
+
+

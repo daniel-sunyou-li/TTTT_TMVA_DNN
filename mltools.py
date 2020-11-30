@@ -323,21 +323,22 @@ class CrossValidationModel( HyperParameterModel ):
         self.cut_events["background"][path][fold_mask["background"][path][k]["test"]] for path in self.cut_events["background"]
       ])
             
-    fold_data.append( {
-      "train_x": np.array( self.select_ml_variables(
-        sig_train_k, bkg_train_k, self.parameters[ "variables" ] ) ),
-      "test_x": np.array( self.select_ml_variables(
-        sig_test_k, bkg_test_k, self.parameters[ "variables" ] ) ),
+      fold_data.append( {
+        "train_x": np.array( self.select_ml_variables(
+          sig_train_k, bkg_train_k, self.parameters[ "variables" ] ) ),
+        "test_x": np.array( self.select_ml_variables(
+          sig_test_k, bkg_test_k, self.parameters[ "variables" ] ) ),
 
-      "train_y": np.concatenate( (
-        np.full( np.shape( sig_train_k )[0], 1 ).astype( "bool" ),
-        np.full( np.shape( bkg_train_k )[0], 0 ).astype( "bool" ) ) ),
-      "test_y": np.concatenate( (
-        np.full( np.shape( sig_test_k )[0], 1 ).astype( "bool" ),
-        np.full( np.shape( bkg_test_k )[0], 0 ).astype( "bool" ) ) ) } )
+        "train_y": np.concatenate( (
+          np.full( np.shape( sig_train_k )[0], 1 ).astype( "bool" ),
+          np.full( np.shape( bkg_train_k )[0], 0 ).astype( "bool" ) ) ),
+        "test_y": np.concatenate( (
+          np.full( np.shape( sig_test_k )[0], 1 ).astype( "bool" ),
+          np.full( np.shape( bkg_test_k )[0], 0 ).astype( "bool" ) ) ) 
+      } )
 
     # Train each fold
-    print "Beginning Training and Evaluation."
+    print( ">> Beginning Training and Evaluation." )
     self.model_paths = []
     self.loss = []
     self.accuracy = []
@@ -406,5 +407,5 @@ class CrossValidationModel( HyperParameterModel ):
       self.auc_train.append( auc_train )
       self.auc_test.append( auc_test )
 
-    print "Finished."
+    print( "[OK ] Finished." )
         

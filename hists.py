@@ -87,8 +87,8 @@ if not os.path.exists( dataset + "/limits_{}/".format( dateTag ) ):
     os.system( "mkdir {}/limits_{}/".format( dataset, dateTag ) )
 
 for category in categories:
-    if args.verbose: print( "Making directory for category: {}".format( category ) )
-    os.system( "mkdir {}/limits_{}/{}/".format( dataset, dateTag, category )
+    if args.verbose: print( "Making directory for category: {}/limits_{}/{}".format( dataset, dateTag, category ) )
+    os.system( "mkdir {}/limits_{}/{}/".format( dataset, dateTag, category ) )
 
 def read_tree(file):
     if not os.path.exists(file):
@@ -128,10 +128,6 @@ def run_signal(categories,label,sig,minBin,maxBin,nBin):
                         fileSig[sample+sys+dir], treeSig[sample+sys+dir] = read_tree(
                             inputDir + sys.Upper() + dir.lower() + "/" + allSamples[sample][0]
                         )
-            #print("sample: "+sample)
-            #print("minBin={},maxBin={},nBin={}".format(minBin,maxBin,nBin))
-            #print("label: "+label)
-            #print("category: "+cat) 
             sigHists.update(analyze(
                 treeSig, sample, "", args.sys, args.pdf, args.variable, 
                 (args.variable, np.linspace(minBin,maxBin,nBin).tolist(),label),
@@ -193,30 +189,33 @@ def run_background(categories,label,bkg,hdamp,ue,minBin,maxBin,nBin):
                     del treeBkg[sample]
         pickle.dump(bkgHists,open("{}/limits_{}/{}/bkg_{}.p".format(dataset,dateTag,cat,args.variable),"wb"))
 
-def plot_step3(label,minBin,maxBin,nBin,categories,samples):
-    print("Plotting {} as {}".format(args.variable,label))
+def pickle_step3(label,minBin,maxBin,nBin,categories,samples):
+    print("Storing {} as {}".format(args.variable,label))
     print("Using binning: ({},{},{})".format(minBin,maxBin,nBin))
     startTime = time.time()
     if samples.lower() == "sig":
-        print("Plotting signal samples...")
+        if args.verbose: print("Pickling signal samples...")
         run_signal(categories,label,sig,minBin,maxBin,nBin)
-        print("Finished plotting signal samples in {:.2f} minutes.".format(
+        if args.verbose: print("Finished pickling signal samples in {:.2f} minutes.".format(
             ( time.time()-startTime ) / 60.
         ))
     elif samples.lower() == "bkg":
-        print("Plotting background samples...")
+        if args.verbose: print("Plotting background samples...")
         run_background(categories,label,bkg,hdamp,ue,minBin,maxBin,nBin)
-        print("Finished plotting background samples in {:.2f} minutes.".format(
+        if args.verbose: print("Finished pickling background samples in {:.2f} minutes.".format(
             ( time.time()-startTime ) / 60.
         ))
     elif samples.lower() == "data":
-        print("Plotting data samples...")
+        if args.verbose: print("Plotting data samples...")
         run_data(categories,label,data,minBin,maxBin,nBin)
-        print("Finished plotting data samples stored in {:.2f} minutes.".format(
+        if args.verbose: print("Finished pickling data samples stored in {:.2f} minutes.".format(
             ( time.time()-startTime ) / 60.
         ))
 
 varTuple = varList[varIndx[0][0]]
-plot_step3(varTuple[1],varTuple[2],varTuple[3],varTuple[4],categories,"bkg")
-plot_step3(varTuple[1],varTuple[2],varTuple[3],varTuple[4],categories,"sig")
-plot_step3(varTuple[1],varTuple[2],varTuple[3],varTuple[4],categories,"data")
+if ( len(bkg) > 0 or len(hdamp) > 0 or len(ue) > 0 ): 
+    pickle_step3(varTuple[1],varTuple[2],varTuple[3],varTuple[4],categories,"bkg")
+if len(sig) > 0: 
+    pickle_step3(varTuple[1],varTuple[2],varTuple[3],varTuple[4],categories,"sig")
+if len(data) > 0: 
+    pickle_step3(varTuple[1],varTuple[2],varTuple[3],varTuple[4],categories,"data")
