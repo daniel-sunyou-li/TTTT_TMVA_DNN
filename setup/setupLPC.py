@@ -78,16 +78,16 @@ def download_samples(years = ["2017", "2018"]):
     for year in years:
         if year == "2017":
             step2Sample  = varsList.step2Sample2017
-            inputDirBRUX = varsList.inputDirBRUX2017
-            inputDirLPC  = varsList.inputDirLPC2017
-            inputDirEOS  = varsList.inputDirEOS2017
+            inputDirBRUX = varsList.step2DirBRUX2017 + "nominal/"
+            inputDirLPC  = varsList.step2DirLPC2017
+            inputDirEOS  = varsList.step2DirEOS2017
             samples      = varsList.sig2017 + varsList.bkg2017
             samples_0    = varsList.sig2017_0 + varsList.bkg2017_0
         elif year == "2018":
             step2Sample  = varsList.step2Sample2018
-            inputDirBRUX = varsList.inputDirBRUX2018
-            inputDirLPC  = varsList.inputDirLPC2018
-            inputDirEOS  = varsList.inputDirEOS2018
+            inputDirBRUX = varsList.step2DirBRUX2018 + "nominal/"
+            inputDirLPC  = varsList.step2DirLPC2018
+            inputDirEOS  = varsList.step2DirEOS2018
             samples      = varsList.sig2018 + varsList.bkg2018
             samples_0    = varsList.sig2018_0 + varsList.bkg2018_0
         
@@ -100,7 +100,7 @@ def download_samples(years = ["2017", "2018"]):
         ))
 
         for sample in samples:
-            if sample not in os.listdir("{}{}".format(lpcHomeDir,step2Sample)):
+            if sample.replace("hadd","split0") not in os.listdir("{}{}".format(lpcHomeDir,step2Sample)):
                 print("[   ] Transferring {}...".format(sample))
                 child = pexpect.spawn("scp -r {}@brux.hep.brown.edu:{}{} {}{}".format(
                         varsList.bruxUserName,
@@ -177,13 +177,16 @@ def create_tar():
         print("[   ] Deleting existing CMSSW946.tgz...")
         sys_call("rm {}{}".format(lpcHomeDir, "CMSSW946.tgz"), shell=True)
     print "[   ] Creating TAR file"
-    if sys_call("tar -C ~/nobackup/ -zcvf CMSSW946.tgz --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' {}".format(
-            "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + varsList.step2Sample2017,
-            "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" + varsList.step2Sample2018,
+    if sys_call("tar -C ~/nobackup/ -zcvf CMSSW946.tgz --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' --exclude=\'{}\' {}".format(
+            "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/FWLJMET*",
+            "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/etc/*",
             "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/condor_log*",
             "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/dataset_*",
             "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/CMSSW946.tgz",
             "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/.git/*",
+            "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/application_log*",
+            "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/cut_events*",
+            "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/notebooks/*",
             "CMSSW_9_4_6_patch1/"
         ), shell=True) == 1:
         print "[ERR] Creating TAR file failed!"

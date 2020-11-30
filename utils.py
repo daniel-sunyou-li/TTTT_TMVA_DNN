@@ -72,72 +72,72 @@ def norm_by_bin_width(h):
     h.SetBinContent(bin, content/width)
     h.SetBinError(bin, error/width)
         
-def neg_bin_correction(h):
-  norm0 = h.Integral()
-  if h.GetNbinsY() > 1:
-    for xBin in range(h.GetNbinsX() + 2):
-      for yBin in range(h.GetNbinsY() + 2):
-        if h.GetBinContent(xBin,yBin,0):
-          h.SetBinContent(xBin,yBin,0)
-          h.SetBinError(xBin,yBin,0)
+def negative_bin_correction(hist):
+  norm0 = hist.Integral()
+  if hist.GetNbinsY() > 1:
+    for xBin in range(hist.GetNbinsX() + 2):
+      for yBin in range(hist.GetNbinsY() + 2):
+        if hist.GetBinContent(xBin,yBin,0):
+          hist.SetBinContent(xBin,yBin,0)
+          hist.SetBinError(xBin,yBin,0)
   else:
-    for i in range(h.GetNbinsX() + 2):
-      if h.GetBinContent(i) < 0:
-        h.SetBinContent(i,0)
-        h.SetBinError(i,0)
-  if h.Integral() != 0 and norm0 > 0: h.Scale( norm0/h.Integral() )
+    for i in range(hist.GetNbinsX() + 2):
+      if hist.GetBinContent(i) < 0:
+        hist.SetBinContent(i,0)
+        hist.SetBinError(i,0)
+  if hist.Integral() != 0 and norm0 > 0: hist.Scale( norm0/hist.Integral() )
     
-def overflow(h):
-  nBinsX = h.GetXaxis().GetNbins()
-  nBinsY = h.GetYaxis().GetNbins()
+def overflow_bin_correction(hist):
+  nBinsX = hist.GetXaxis().GetNbins()
+  nBinsY = hist.GetYaxis().GetNbins()
   if nBinsY > 1: # 2D histogram
     for xBin in range(0, nBinsX + 2):
-      content = h.GetBinContent(xBin,nBinsY) + h.GetBinContent(xBin,nBinsY + 1)
-      error = math.sqrt( h.GetBinError(xBin, nBinsY)**2 + h.GetBinError(xBin, nBinsY + 1)**2 ) 
-      h.SetBinContent(xBin, nBinsY, error)
-      h.SetBinError(xBin, nBinsY, error)
-      h.SetBinContent(xBin, nBinsY+1, 0)
-      h.SetBinError(xBin, nBinsY+1, 0)
+      content = hist.GetBinContent(xBin,nBinsY) + hist.GetBinContent(xBin,nBinsY + 1)
+      error = math.sqrt( hist.GetBinError(xBin, nBinsY)**2 + hist.GetBinError(xBin, nBinsY + 1)**2 ) 
+      hist.SetBinContent(xBin, nBinsY, error)
+      hist.SetBinError(xBin, nBinsY, error)
+      hist.SetBinContent(xBin, nBinsY+1, 0)
+      hist.SetBinError(xBin, nBinsY+1, 0)
     for yBin in range(0, nBinsY + 2 ):
-      content = h.GetBinContent(nBinsX,yBin) + h.GetBinContent(nBinsX+1,yBin)
-      error = math.sqrt(h.GetBinError(nBinsX,yBin)**2+h.GetBinError(nBinsX+1,yBin)**2)
-      h.SetBinContent(nBinsX,yBin,content)
-      h.SetBinError(nBinsX,yBin,error)
-      h.SetBinContent(nBinsX+1,yBin,0)
-      h.SetBinError(nBinsX+1,yBin,0)
+      content = hist.GetBinContent(nBinsX,yBin) + hist.GetBinContent(nBinsX+1,yBin)
+      error = math.sqrt(hist.GetBinError(nBinsX,yBin)**2+hist.GetBinError(nBinsX+1,yBin)**2)
+      hist.SetBinContent(nBinsX,yBin,content)
+      hist.SetBinError(nBinsX,yBin,error)
+      hist.SetBinContent(nBinsX+1,yBin,0)
+      hist.SetBinError(nBinsX+1,yBin,0)
   else: # 1D histogram
-    content=h.GetBinContent(nBinsX)+h.GetBinContent(nBinsX+1)
-    error=math.sqrt(h.GetBinError(nBinsX)**2+h.GetBinError(nBinsX+1)**2)
-    h.SetBinContent(nBinsX,content)
-    h.SetBinError(nBinsX,error)
-    h.SetBinContent(nBinsX+1,0)
-    h.SetBinError(nBinsX+1,0)
+    content=hist.GetBinContent(nBinsX)+hist.GetBinContent(nBinsX+1)
+    error=math.sqrt(hist.GetBinError(nBinsX)**2+hist.GetBinError(nBinsX+1)**2)
+    hist.SetBinContent(nBinsX,content)
+    hist.SetBinError(nBinsX,error)
+    hist.SetBinContent(nBinsX+1,0)
+    hist.SetBinError(nBinsX+1,0)
         
-def underflow(h):
-  nBinsX=h.GetXaxis().GetNbins()
-  nBinsY=h.GetYaxis().GetNbins()
+def underflow_bin_correction(hist):
+  nBinsX=hist.GetXaxis().GetNbins()
+  nBinsY=hist.GetYaxis().GetNbins()
   if nBinsY>1: #2D histogram
     for xBin in range(0,nBinsX+2):
-      content=h.GetBinContent(xBin,1)+h.GetBinContent(xBin,0)
-      error = math.sqrt(h.GetBinError(xBin,1)**2+h.GetBinError(xBin,0)**2)
-      h.SetBinContent(xBin,1,content)
-      h.SetBinError(xBin,1,error)
-      h.SetBinContent(xBin,0,0)
-      h.SetBinError(xBin,0,0)
+      content=hist.GetBinContent(xBin,1)+hist.GetBinContent(xBin,0)
+      error = math.sqrt(hist.GetBinError(xBin,1)**2+hist.GetBinError(xBin,0)**2)
+      hist.SetBinContent(xBin,1,content)
+      hist.SetBinError(xBin,1,error)
+      hist.SetBinContent(xBin,0,0)
+      hist.SetBinError(xBin,0,0)
     for yBin in range(0,nBinsY+2):
-      content=h.GetBinContent(1,yBin)+h.GetBinContent(0,yBin)
-      error=math.sqrt(h.GetBinError(1,yBin)**2+h.GetBinError(0,yBin)**2)
+      content=hist.GetBinContent(1,yBin)+hist.GetBinContent(0,yBin)
+      error=math.sqrt(hist.GetBinError(1,yBin)**2+hist.GetBinError(0,yBin)**2)
       h.SetBinContent(1,yBin,content)
-      h.SetBinError(1,yBin,error)
-      h.SetBinContent(0,yBin,0)
-      h.SetBinError(0,yBin,0)
+      hist.SetBinError(1,yBin,error)
+      hist.SetBinContent(0,yBin,0)
+      hist.SetBinError(0,yBin,0)
   else: #1D histogram
-    content=h.GetBinContent(1)+h.GetBinContent(0)
-    error=math.sqrt(h.GetBinError(1)**2+h.GetBinError(0)**2)
-    h.SetBinContent(1,content)
-    h.SetBinError(1,error)
-    h.SetBinContent(0,0)
-    h.SetBinError(0,0)
+    content=hist.GetBinContent(1)+hist.GetBinContent(0)
+    error=math.sqrt(hist.GetBinError(1)**2+hist.GetBinError(0)**2)
+    hist.SetBinContent(1,content)
+    hist.SetBinError(1,error)
+    hist.SetBinContent(0,0)
+    hist.SetBinError(0,0)
     
 # print table methods
 

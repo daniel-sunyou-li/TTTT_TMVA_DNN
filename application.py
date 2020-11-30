@@ -16,7 +16,7 @@ parser.add_argument("-v","--verbose", action="store_true", help="Verbosity optio
 parser.add_argument("-t","--test", action="store_true", help="If true, produce step3 file for only one sample")
 parser.add_argument("-sys","--systematics", action="store_true", help="Include systematic samples")
 parser.add_argument("-s","--split",action="store_true",help="Split step2 files into # parts")
-parser.add_argument("-r","--resubmit",action="store_true",help="Resubmit failed jobs with more memory")
+parser.add_argument("-r","--resubmit",default=None,help="Identify failed jobs from Condor logs within the input directory")
 
 args = parser.parse_args()
 
@@ -32,19 +32,20 @@ files_step2 = {}
 files_step3 = {}
 
 if args.test:
-    files_step2[ "nominal" ] = [ varsList.all_samples[ args.year ]["TTTT"][0] ]
+#    files_step2[ "nominal" ] = [ varsList.all_samples[ args.year ]["TTTT"][0] ]
+    files_step2[ "nominal" ] = [ varsList.all_samples[ args.year ][ "TTJetsSemiLepNjet0TTjj1" ][0] ]
 else:
     files_step2[ "nominal" ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/nominal/".format( varsList.eosUserName, step2Sample ),shell=True).split("\n")[:-1]
-    if args.resubmit: files_step3[ "nominal" ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/nominal/".format( varsList.eosUserName, step3Sample ),shell=True).split("\n")[:-1]
+    if args.resubmit != None: files_step3[ "nominal" ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/nominal/".format( varsList.eosUserName, step3Sample ),shell=True).split("\n")[:-1]
     if args.systematics:
         for syst in [ "JEC", "JER" ]:
             for dir in [ "up", "down" ]:
                 files_step2[syst+dir] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/{}{}/".format( varsList.eosUserName, step2Sample, syst, dir ), shell=True).split("\n")[:-1]
-                if args.resubmit: files_step3[syst+dir] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/{}{}/".format( varsList.eosUserName, step3Sample, syst, dir ), shell=True).split("\n")[:-1]
+                if args.resubmit != None: files_step3[syst+dir] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/{}{}/".format( varsList.eosUserName, step3Sample, syst, dir ), shell=True).split("\n")[:-1]
 
 submit_files = {}
 if args.verbose: print(">> Converting the following samples to step3:")
-if args.resubmit:
+if args.resubmit != None:
     print("[OPT] Running resubmission")
     for key in files_step2:
         submit_files[key] = []
@@ -88,10 +89,13 @@ for jsonName in jsonNames:
 models = []
 for folder in resultDir:
     modelCheck = glob.glob("{}/*.h5".format(folder))
+    opt_model = None
+    for modelName in modelCheck:
+        if "optimized" in modelName.lower(): opt_model = modelName
     if len(modelCheck) > 0:
         if args.verbose:
-            print(">> Using model: {}".format(modelCheck[0]))
-        models.append(modelCheck[0])
+            print(">> Using model: {}".format(opt_model))
+        models.append(opt_model)
     else:
         print("[ERR] No model found in {}, exiting program...".format(folder))
         sys.exit() 
@@ -106,8 +110,8 @@ variables    = [ list(jsonFile["variables"]) for jsonFile in jsonFiles ]
     
 def condor_job(fileName,condorDir,outputDir,logDir,tag):
     request_memory = "3072" 
-    if "tttosemilepton" in fileName.lower() and "ttjj" in fileName.lower(): request_memory = "6144" 
-    if args.resubmit: request_memory = "7168"
+    if "tttosemilepton" in fileName.lower() and "ttjj_hadd" in fileName.lower(): request_memory = "6144" 
+    if args.resubmit != None: request_memory = "7168"
     dict = {
         "MODEL"     : models_arg,          # stays the same across all samples
         "PARAMFILE" : jsonNames_arg,       # stays the same across all samples

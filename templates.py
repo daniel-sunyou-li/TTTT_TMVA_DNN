@@ -16,8 +16,9 @@ parser.add_argument("-y","--year",default="2017",help="Production year")
 # the dataset argument should have a name akin to "/templates_[date]/"
 parser.add_argument("-d","--dataset",help="Directory where pickled files are stored and where results will be stored")
 parser.add_argument("-L","--lepton",default="E",help="Electron (E) or Muon (E)")
-parser.add_argument("-h","--summary",action="store_true",help="Write summary histogram")
-parser.add_argument("-s","--sys",action="store_true",help="Do all systematics (HDAMP,UE,PDF)")
+parser.add_argument("-S","--summary",action="store_true",help="Write summary histogram")
+parser.add_argument("-s","--sys",action="store_true",help="Do all systematics (HDAMP,UE,ETC)")
+parser.add_argument("-p","--pdf",action="store_true",help="Run PDF systematics")
 parser.add_argument("-t","--threshold",default="0.015",help="Threshold ratio to remove a process")
 parser.add_argument("-r","--rebin",default="-1",help="-1 for no rebinning, >0 for rebinning")
 parser.add_argument("-l","--lumiscale",default="1.",help="Lumiscale scale factor used in hists.py")
@@ -30,13 +31,14 @@ parser.add_argument("-n","--normalize",action="store_true",help="Normalize the r
 args = parser.parse_args()
 
 dateTag = datetime.datetime.now().strftime("%d.%b.%Y")
+dataset = args.dataset[:-1] if args.dataset.endswith( "/" ) else args.dataset
 
 allSamples = varsList.all2017 if args.year == "2017" else varsList.all2018
 weights = varsList.weight2017 if args.year == "2017" else varsList.weight2018
 systList = varsList.systList
 
 # categories based on the directory save structure from hists.py path/to/hists/category/[data/sig/bkg]
-categories = [ category for category in os.walk( args.dataset ).next()[1] ]
+categories = [ category for category in os.walk( dataset ).next()[1] ]
 tags = [ category[4:] for category in categories if "isE" in category ]
 nHOTs = list( set( [ tag.split("_")[0] for tag in tags ] ) )
 nTs   = list( set( [ tag.split("_")[1] for tag in tags ] ) )
@@ -47,8 +49,6 @@ nJets = list( set( [ tag.split("_")[4] for tag in tags ] ) )
 lumiStr = str(varsList.targetLumi/1000.).replace(".","p") + "fb" 
 
 zero = 1E-12 # define a non-zero "zero" value to avoid division by 0
-ttHFsf = 4.7/3.9 # from TOP-18-002 (v34) Table 4, set it to 1 if no ttHFsf is desired
-ttLFsf = 1. + ( 1. - ttHFsf ) * ( N_ttbb / N_ttnobb )
 
 # uncertainties
 
@@ -57,7 +57,7 @@ particleSys = {
     "mTrig": 0.0,   # muon trigger uncertainty
     "eID": 0.03,    # electron ID uncertainty
     "mID": 0.03,    # muon ID uncertainty
-    "eISO": 0.0     # electron isolation uncertainty
+    "eISO": 0.0,     # electron isolation uncertainty
     "mISO": 0.0     # muon isolation uncertainty
 }
 
@@ -68,6 +68,17 @@ bkgGrupList = [
   "ttnobb", "ttbb",
   "top", "ewk", "qcd"
 ]
+
+def test_hist_labels():
+  sig = [ "TTTT" ]
+  bkg = {}
+  hdamp = {}
+  ue = {}
+  data = []
+  ht = [ "ewk", "WJets", "qcd" ]
+  topPt = [ "ttjj", "ttcc", "ttbb", "tt1b", "tt2b", "ttbj", "ttnobb" ]
+
+  return sig, bkg, data, hdamp, ue, ht, topPt
 
 def get_hist_labels():
   sig = [ "TTTT" ]
@@ -109,28 +120,32 @@ def get_hist_labels():
   bkg[ "ewk" ]     = bkg[ "WJets" ] + bkg[ "ZJets" ] + bkg[ "VV" ]
   bkg[ "top" ]     = bkg[ "T" ]     + bkg[ "TTV" ]   + bkg[ "TTXY" ]
   
-  data = {
+  data = [
     "DataE", "DataM"
-  }
+  ]
   
   hdamp = {} # might be able to simplify this notation once i understand it better 
+  ue = {}
   for jj in [ "jj", "cc", "bb", "1b", "2b" ]:
     hdamp[ "tt" + jj + "_hdup" ] = [ "TTJetsHadHDAMPupTT" + jj, "TTJets2L2nuHDAMPupTT" + jj, "TTJetsSemiLepHDAMPupTT" + jj ]
     hdamp[ "tt" + jj + "_hddn" ] = [ "TTJetsHadHDAMPdnTT" + jj, "TTJets2L2nuHDAMPdnTT" + jj, "TTJetsSemiLepHDAMPdnTT" + jj ]
-    hdamp[ "tt" + jj + "_ueup" ] = [ "TTJetsHadUEupTT" + jj,    "TTJets2L2nuUEupTT" + jj,    "TTJetsSemiLepUEupTT" + jj    ]
-    hdamp[ "tt" + jj + "_uedn" ] = [ "TTJetsHadUEdnTT" + jj,    "TTJets2L2nuUEdnTT" + jj,    "TTJetsSemiLepUEdnTT" + jj    ]
+    ue[ "tt" + jj + "_ueup" ] = [ "TTJetsHadUEupTT" + jj,    "TTJets2L2nuUEupTT" + jj,    "TTJetsSemiLepUEupTT" + jj    ]
+    ue[ "tt" + jj + "_uedn" ] = [ "TTJetsHadUEdnTT" + jj,    "TTJets2L2nuUEdnTT" + jj,    "TTJetsSemiLepUEdnTT" + jj    ]
   
-  ue = {}
-  for sys in [ "hdup", "hddn", "ueup", "uedn" ]:
-    ue[ "ttbj_" + sys ]   = bkg[ "tt1b_" + sys ] + bkg[ "tt2b_" + sys ]
-    ue[ "ttnobb_" + sys ] = bkg[ "ttjj_" + sys ] + bkg[ "ttcc_" + sys ] + bkg[ "tt1b_" + sys ] + bkg[ "tt2b_" + sys ] 
+  for sys in [ "hdup", "hddn" ]:
+    hdamp[ "ttbj_" + sys ]   = hdamp[ "tt1b_" + sys ] + hdamp[ "tt2b_" + sys ]
+    hdamp[ "ttnobb_" + sys ] = hdamp[ "ttjj_" + sys ] + hdamp[ "ttcc_" + sys ] + hdamp[ "tt1b_" + sys ] + hdamp[ "tt2b_" + sys ] 
   
+  for sys in [ "ueup", "uedn" ]:
+    ue[ "ttbj_" + sys ]   = ue[ "tt1b_" + sys ] + ue[ "tt2b_" + sys ]
+    ue[ "ttnobb_" + sys ] = ue[ "ttjj_" + sys ] + ue[ "ttcc_" + sys ] + ue[ "tt1b_" + sys ] + ue[ "tt2b_" + sys ]  
+
   ht = [ "ewk", "WJets", "qcd" ]
   topPt = [ "ttjj", "ttcc", "ttbb", "tt1b", "tt2b", "ttbj", "ttnobb" ]
   
   return sig, bkg, data, hdamp, ue, ht, topPt
   
-def init_hist( variable, hists, dataHists, sigHists, bkgHists, data, sig, bkg, ue, hdamp, category, tagBR ):
+def init_hists( variable, hists, dataHists, sigHists, bkgHists, data, sig, bkg, ue, hdamp, category, tagBR ):
 # this is used in make_category_templtes to initialize the histograms 
 # hists from hists.py are stored with the keys "[variable]_[lumiStr]_[category]_[sample][flv]"
 # for the systematics: "[variable][sys][dir]_[lumiStr]_[catStr]_[sample][flv]"
@@ -139,17 +154,18 @@ def init_hist( variable, hists, dataHists, sigHists, bkgHists, data, sig, bkg, u
   if args.verbose: print("Processing category: {}".format(category))
   histKey = "{}_{}_{}".format( variable, lumiStr, category )
   tagBRpCat = tagBR + category
-  
-  hists[ "data" + tagBRpCat ] = dataHists[ histKey + "_" + data[0] ].Clone( histKey + "__DATA" )
-  for sample in data:
-    if sample != data[0]: hists[ "data" + tagBRpCat ].Add( data[ histKey + "_" + sample ] )
+ 
+  if len(data) > 0: 
+    hists[ "data" + tagBRpCat ] = dataHists[ histKey + "_" + data[0] ].Clone( histKey + "__DATA" )
+    for sample in data:
+      if sample != data[0]: hists[ "data" + tagBRpCat ].Add( data[ histKey + "_" + sample ] )
           
 # process refers to a collection of samples
   for process in bkg:
     hists[ process + tagBRpCat ] = bkgHists[ histKey + "_" + bkg[ process ][0] ].Clone( histKey + "__" + process )
     for sample in bkg[ process ]:
       if sample != bkg[ process ][0]: hists[ process + tagBRpCat ].Add( bkg[ histKey + "_" + sample ] )
-              
+             
   for sample in sig:
     hists[ sample + tagBRpCat ] = sigHists[ histKey + "_" + sample ].Clone( histKey + "__sig" )
           
@@ -159,14 +175,14 @@ def init_hist( variable, hists, dataHists, sigHists, bkgHists, data, sig, bkg, u
         for process in bkg:
           if sys == "toppt" and process not in topptProcs: continue
           if sys == "ht" and process not in htProcs: continue
-            hists[ process + tagBRpCat + sys + dir ] = bkgHists[ histKey.replace( variable, variable + sys + dir ) + "_" + bkg[ process ][0] ].Clone(
-              histKey + "__" + process + "__" + sys + "__" + dir.replace("Up","plus").replace("Down","minus")
+          hists[ process + tagBRpCat + sys + dir ] = bkgHists[ histKey.replace( variable, variable + sys + dir ) + "_" + bkg[ process ][0] ].Clone(
+            histKey + "__" + process + "__" + sys + "__" + dir.replace("Up","plus").replace("Down","minus")
+          )
+          for sample in bkg[ process ]:
+            if sample != bkg[ process ][0]: hists[ process + tagBRpCat + sys + dir ].Add(
+              bkgHists[ histKey.replace( variable, variable + sys + dir ) + "_" + sample ]
             )
-            for sample in bkg[ process ]:
-              if sample != bkg[ process ][0]: hists[ process + tagBRpCat + sys + dir ].Add(
-                bkgHists[ histKey.replace( variable, variable + sys + dir ) + "_" + sample ]
-              )
-          if sys == "toppt" or sys == "ht": continue
+        if sys == "toppt" or sys == "ht": continue
         for sample in sig:
           hists[ sample + tagBRpCat + sys + dir ] = sigHists[ histKey.replace( variable, variable + sys + dir ) + "_" + sample ].Clone(
             histKey + "__sig__" + sys + "__" + dir.replace("Up","plus").replace("Down","minus")
@@ -174,7 +190,7 @@ def init_hist( variable, hists, dataHists, sigHists, bkgHists, data, sig, bkg, u
     for process in hdamp:
     # HDAMP systematics
       hists[ process + tagBRpCat ] = bkgHists[ histKey + "_" + hdamp[ process ][0] ].Clone(
-        histKey + "__" + process.replace( "hd", "_hdamp" ).replace( "up", "__plus" ).replace( "dn", "__minus" ) ) )
+        histKey + "__" + process.replace( "hd", "_hdamp" ).replace( "up", "__plus" ).replace( "dn", "__minus" ) )
       for sample in hdamp[ process ]:
         if sample != hdamp[ process ][0]: hists[ process + tagBRpCat ].Add( bkg[ histKey + "_" + sample ] )
     
@@ -182,19 +198,19 @@ def init_hist( variable, hists, dataHists, sigHists, bkgHists, data, sig, bkg, u
     # UE systematics
       hists[ process + tagBRpCat ] = bkgHists[ histKey + "_" + ue[ process ][0] ].Clone(
         histKey + "__" + process.replace( "ue", "_ue" ).replace( "up", "__plus" ).replace( "dn", "__minus" ) )
-          for sample in ue[ process ]:
-              if sample != ue[ process ][0]: hists[ process + tagBRpCat ].Add(
-                bkgHists[ histKey + "_" + sample ] )
+      for sample in ue[ process ]:
+        if sample != ue[ process ][0]: hists[ process + tagBRpCat ].Add(
+          bkgHists[ histKey + "_" + sample ] )
                      
   if args.pdf:
     for j in range(100):
       for process in bkg:
         hists[ process + tagBRpCat + "pdf" + str(j) ] = bkgHists[ histKey.replace( variable, variable + "pdf" + str(j) ) + "_" + bkg[ process ][0] ].Clone(
           histKey + "__" + process + "__pdf" + str(j) )
-          for sample in bkg[ process ]:
-            if sample != bkg[ process ][0]: hists[ process + tagBRpCat + "pdf" + str(j) ].Add(
-              bkgHists[ histKey.replace( variable, variable + "pdf" + str(j) ) + "_" + sample ]
-              )
+        for sample in bkg[ process ]:
+          if sample != bkg[ process ][0]: hists[ process + tagBRpCat + "pdf" + str(j) ].Add(
+            bkgHists[ histKey.replace( variable, variable + "pdf" + str(j) ) + "_" + sample ]
+            )
       for sample in sig:
         hists[ sample + tagBRpCat + "pdf" + str(j) ] = sig[ histKey.replace( variable, variable + "pdf" + str(j) ) + "_" + sample ].Clone(
           histKey + "__" + sample + "__pdf" + str(j)
@@ -203,7 +219,6 @@ def init_hist( variable, hists, dataHists, sigHists, bkgHists, data, sig, bkg, u
   return hists
 
 def scale_ttbb( hists, sig, bkg, hdamp, ue, variable, category, tagBR ):
-  if args.verbose: print( "Scaling ttbb by: {}".format( ttHFsf ) )
   histKey = "{}_{}_{}".format( variable, lumiStr, category )
   tagBRpCat = tagBR + category
   
@@ -216,41 +231,50 @@ def scale_ttbb( hists, sig, bkg, hdamp, ue, variable, category, tagBR ):
   N_ttnobb = 0.
   for sample in samples:
     if sample.lower() != "ttbb": N_ttnobb += hists[ sample + tagBRpCat ].Integral()
+
+  ttHFsf = 4.7/3.9 # from TOP-18-002 (v34) Table 4, set it to 1 if no ttHFsf is desired
+  # no need to scale if the scale factor is equal to 1
+  if ttHFsf == 1.:
+    return hists
+
+  else:
+    if args.verbose: print( "Scaling ttbb by: {}".format( ttHFsf ) )
+    ttLFsf = 1. + ( 1. - ttHFsf ) * ( N_ttbb / N_ttnobb )
+
+    hists[ "ttbb" + tagBRpCat ].Scale( ttHFsf )
+    for sample in samples:
+      if sample.lower() != "ttbb": hists[ sample + tagBRpCat ].Scale( ttLFsf )
   
-  hists[ "ttbb" + tagBRpCat ].Scale( ttHFsf )
-  for sample in samples:
-    if sample.lower() != "ttbb": hists[ sample + tagBRpCat ].Scale( ttLFsf )
-  
-  if args.sys:
-    for sys in systList:
-      for dir in [ "Up", "Down" ]:
-        hists[ "ttbb" + tagBRpCat + sys + dir ].Scale( ttHFsf )
-        for sample in samples:
-          if sample.lower() != "ttbb":
-            hists[ sample + tagBRpCat + sys + dir ].Scale( ttLFsf )
+    if args.sys:
+      for sys in systList:
+        for dir in [ "Up", "Down" ]:
+          hists[ "ttbb" + tagBRpCat + sys + dir ].Scale( ttHFsf )
+          for sample in samples:
+            if sample.lower() != "ttbb":
+              hists[ sample + tagBRpCat + sys + dir ].Scale( ttLFsf )
             
-    # HDAMP systematics
-    for process in hdamp:
-      if "ttbb" in process.lower(): # scale up ttbb
-        hists[ process + tagBRpCat ].Scale( ttHFsf )
-      else: # scale down tt non-bb
-        hists[ process + tagBRpCat ].Scale( ttLFsf )
+  # HDAMP systematics
+      for process in hdamp:
+        if "ttbb" in process.lower(): # scale up ttbb
+          hists[ process + tagBRpCat ].Scale( ttHFsf )
+        else: # scale down tt non-bb
+          hists[ process + tagBRpCat ].Scale( ttLFsf )
         
     # UE systematics
-    for process in ue:
-      if "ttbb" in process.lower():
-        hists[ process + tagBRpCat ].Scale( ttHFsf )
-      else:
-        hists[ process + tagBRpCat ].Scale( ttLFsf )
+      for process in ue:
+        if "ttbb" in process.lower():
+          hists[ process + tagBRpCat ].Scale( ttHFsf )
+        else:
+          hists[ process + tagBRpCat ].Scale( ttLFsf )
         
   # PDF      
-  if args.pdf:
-    for j in range(100):
-      for process in samples:
-        if "ttbb" in process.lower():
-          hists[ process + tagBRpCat + "pdf" + str(j) ].Scale( ttHFsf )
-        else:
-          hists[ process + tagBRpCat + "pdf" + str(j) ].Scale( ttLFsf )
+    if args.pdf:
+      for j in range(100):
+        for process in samples:
+          if "ttbb" in process.lower():
+            hists[ process + tagBRpCat + "pdf" + str(j) ].Scale( ttHFsf )
+          else:
+            hists[ process + tagBRpCat + "pdf" + str(j) ].Scale( ttLFsf )
           
   return hists
 
@@ -280,11 +304,12 @@ def nominal_yield( hists, yields, errors, sig, bkg, variable, category, tagBR ):
     histKey = "{}_{}_{}".format( variable, lumiStr, category )
     tagBRpCat = tagBR + category
     
-    samples = bkg + sig + ["data"]
+    samples = list(bkg.keys()) + sig + ["data"]
     bkgGrupList = [
       "ttnobb", "ttbb",
       "top", "ewk", "qcd"
     ]
+    bkgGrupList = []
     
     for sample in samples:
       yields[ histKey ][ sample ] = hists[ sample + tagBRpCat ].Integral()
@@ -336,7 +361,7 @@ def theta_template( hists, variable, sig, topPt, ht, categories, tagBR ):
     
   for sampleSig in sig:
     thetaFileName = "{}/templates_{}/theta_{}_{}{}_{}.root".format(
-      args.dataset,
+      dataset,
       dateTag,
       variable,
       sampleSig,
@@ -350,7 +375,7 @@ def theta_template( hists, variable, sig, topPt, ht, categories, tagBR ):
             
       nTotBkg = sum( [ hists[ sampleBkg + tagBRpCat ].Integral() for sampleBkg in bkgGrupList ] )
       
-      hists[ "data" + tagBRpCat ].Write()
+      if len(data) > 0: hists[ "data" + tagBRpCat ].Write()
       
       for sample in bkgGrupList + sig:
         if sample in bkgGrupList and ( hists[ sample + tagBRpCat ].Integral() / nTotBkg ) <= int(args.threshold):
@@ -390,7 +415,7 @@ def combine_template( hists, sig, hdamp, ue, topPt, ht, variable, categories, ta
   ]
   
   combineFileName = "{}/templates_{}/combine_{}{}_{}.root".format(
-    args.dataset,
+    dataset,
     dateTag,
     variable,
     tagBR,
@@ -410,18 +435,15 @@ def combine_template( hists, sig, hdamp, ue, topPt, ht, variable, categories, ta
           if sys == "toppt" or sys == "ht": continue
           hists[ sample + tagBRpCat + sys + "Up" ].SetName(
             hists[ sample + tagBRpCat + sys + "Up" ].GetName().replace( "__sig", "__" + sample ).replace( "__plus", "Up" ) )
-          )
           hists[ sample + tagBRpCat + sys + "Down" ].SetName(
             hists[ sample + tagBRpCat + sys + "Down" ].GetName().replace( "__sig", "__" + sample ).replace( "__minus", "Down" ) )
-          )
           hists[ sample + tagBRpCat + sys + "Up" ].Write()
           hists[ sample + tagBRpCat + sys + "Down" ].Write()
           
       if args.pdf:
         for j in range(100):
           hists[ sample + tagBRpCat + "pdf" + str(j) ].SetName( 
-            hists[ sample + tagBRpCat + "pdf" + str(j) ].GetName().replace( "__sig", "__" + sample ) 
-              )
+            hists[ sample + tagBRpCat + "pdf" + str(j) ].GetName().replace( "__sig", "__" + sample ) )
           hists[ sample + tagBRpCat + "pdf" + str(j) ].Write()
     
     nTotBkg = sum( [ hists[ sample + tagBRpCat ].Integral() for sample in bkgGrupList ] )
@@ -439,31 +461,28 @@ def combine_template( hists, sig, hdamp, ue, topPt, ht, variable, categories, ta
       
       if args.sys:
         for sys in systList:
-          if sys == "toppt" and process not in topPt: continue
-          if sys == "ht" and process not in ht: continue
-          hists[ process + tagBRpCat + sys + "Up" ].SetName( hists[ process + tagBRpCat + sys + "Up" ].GetName().replace( "__plus", "Up" ) )
-          hists[ process + tagBRpCat + sys + "Down" ].SetName( hists[ process + tagBRpCat + sys + "Down" ].GetName().replace( "__minus","Down" ) )
-          hists[ process + tagBRpCat + sys + "Up" ].Write()
-          hists[ process + tagBRpCat + sys + "Down" ].Write()
+          for dir in [ "Up", "Down" ]:
+            if sys == "toppt" and process not in topPt: continue
+            if sys == "ht" and process not in ht: continue
+            hists[ process + tagBRpCat + sys + dir ].SetName( 
+              hists[ process + tagBRpCat + sys + dir ].GetName().replace( "__plus", "Up" ).replace( "__minus", "Down" ) )
+            hists[ process + tagBRpCat + sys + dir ].Write()
       if args.pdf:
-          for j in range(100):
-              hists[ process + tagBRpCat + "pdf" + str(j) ].SetName( hists[ process + tagBRpCat + "pdf" + str(j) ].GetName() )
-              hists[ process + tagBRpCat + "pdf" + str(j) ].Write()
+        for j in range(100):
+          hists[ process + tagBRpCat + "pdf" + str(j) ].SetName( hists[ process + tagBRpCat + "pdf" + str(j) ].GetName() )
+          hists[ process + tagBRpCat + "pdf" + str(j) ].Write()
     if args.sys: # HDAMP
       for sample in hdamp:
-      hists[ sample + tagBRpCat + "hdUp" ].SetName( hists[ sample + tagBRpCat + "hdUp" ].GetName().replace( "__plus", "Up" ) )
-      hists[ sample + tagBRpCat + "hdDown" ].SetName( hists[ sample + tagBRpCat + "hdDown" ].GetName().replace( "__minus", "Down" ) )
-      hists[ sample + tagBRpCat + "hdUp" ].Write()
-      hists[ sample + tagBRpCat + "hdDown" ].Write()
+        hists[ sample + tagBRpCat ].SetName( hists[ sample + tagBRpCat ].GetName().replace( "__plus", "Up" ).replace( "__minus", "Down" ) )
+        hists[ sample + tagBRpCat ].Write()
     if args.sys: # UE
       for sample in ue:
-        hists[ sample + tagBRpCat + "ueUp" ].SetName( hists[ sample + tagBRpCat + "ueUp" ].GetName().replace( "__plus", "Up" ) )
-        hists[ sample + tagBRpCat + "ueDown" ].SetName( hists[ sample + tagBRpCat + "ueDown" ].GetName().replace( "__minus", "Down" ) )
-        hists[ sample + tagBRpCat + "ueUp" ].Write()
-        hists[ sample + tagBRpCat + "ueDown" ].Write()
-        
-    hists[ "data" + tagBRpCat ].SetName( hists[ "data" + tagBRpCat ].GetName().replace( "DATA", "data_obs" ) )
-    hists[ "data" + tagBRpCat ].Write()
+        hists[ sample + tagBRpCat ].SetName( hists[ sample + tagBRpCat ].GetName().replace( "__plus", "Up" ).replace( "__minus", "Down" ) )
+        hists[ sample + tagBRpCat ].Write()
+    
+    if len(data) > 0:    
+      hists[ "data" + tagBRpCat ].SetName( hists[ "data" + tagBRpCat ].GetName().replace( "DATA", "data_obs" ) )
+      hists[ "data" + tagBRpCat ].Write()
     
   combineFile.Close()
     
@@ -517,12 +536,11 @@ def format_summary_yields( yieldHists, yields, errors, category, variable, sampl
   return yieldHists
         
 def summary_template( yields, errors, data, sig, bkg, hdamp, ue, topPt, ht, categories, variable, tagBR ):
-  if not args.summary: break
   if args.sys: print("Writing summary templates")
   
   for sampleSig in sig:
     summaryFileName = "{}/templates_{}/summary_{}{}_{}.root".format(
-      args.dataset,
+      dataset,
       dateTag,
       sampleSig,
       tagBR,
@@ -568,14 +586,14 @@ def summary_template( yields, errors, data, sig, bkg, hdamp, ue, topPt, ht, cate
               for dir in [ "Up", "Down" ]:
                 if sys == "toppt" and sample not in topPt: continue
                 if sys == "ht" and sample not in ht: continue
-                  yields[ lep + sample + sys + dir ].Write()
+                yields[ lep + sample + sys + dir ].Write()
                   
               if args.sys and sample + "_hdup" in samplesBkg.keys():
-                  yields[ lep + sample + "hdUp" ].Write()
-                  yields[ lep + sample + "hdDown" ].Write()
+                yields[ lep + sample + "hdUp" ].Write()
+                yields[ lep + sample + "hdDown" ].Write()
               if args.sys and sample + "_ueup" in samplesBkg.keys():
-                  yields[ lep + sample + "ueUp" ].Write()
-                  yields[ lep + sample + "ueDown" ].Write()
+                yields[ lep + sample + "ueUp" ].Write()
+                yields[ lep + sample + "ueDown" ].Write()
                   
       if args.sys:
         for sample in hdamp:
@@ -635,9 +653,9 @@ def table_systematics( table, yields, data, sig, bkg, topPt, ht, categories ):
           
           try: row.append( " & " + str( round( yields[ histKey + sys + dir ][ sample ] / ( yields[ histKey ][ sample ] + zero ), 2 ) ) )
           except:
-            if not ( ( sys == "toppt" and sample not in topPt ) or \ 
-                     ( sys == "ht" and sample not in ht ) or \
-                     ( sys == "hd" and ( sample + "_hdup" not in hdamp or not args.sys ) ) or \
+            if not ( ( sys == "toppt" and sample not in topPt ) or  
+                     ( sys == "ht" and sample not in ht ) or
+                     ( sys == "hd" and ( sample + "_hdup" not in hdamp or not args.sys ) ) or
                      ( sys == "ue" and ( sample + "_ueup" not in ue or not args.sys ) ) ):
               print( "Missing {} for channel {} and systematic {}".format( sample, category, sys ) )
             pass
@@ -724,7 +742,7 @@ def yield_tables( yields, erorrs, categories, variable, data, sig, bkg, tagBR ):
         row = [ sample ] 
         for category in categories:
           if not ( "is" + lep in category and HOT in category ): continue
-          tagMod = category[ category.find( "nT" ):category:.find( "nJ" ) - 3 ]
+          tagMod = category[ category.find( "nT" ):category.find( "nJ" ) - 3 ]
           histKey = "{}_{}_{}".format( variable, lumiStr, category )
           yieldTemp = 0.
           errorTemp = 0.
@@ -803,7 +821,7 @@ def yield_tables( yields, erorrs, categories, variable, data, sig, bkg, tagBR ):
             print( "Missing {} for channel {}".format( sample, category ) )
             pass
           if sample not in sig: errorTemp += ( modelingSys[ sample + "_" + tagMod ] * yieldTemp )**2
-          errorTemp += ( eSysTot*yieldTempE )**2 + ( mSysTot*yieldTempM)**2 )
+          errorTemp += ( eSysTot*yieldTempE )**2 + ( mSysTot*yieldTempM)**2 
         errorTemp = math.sqrt( errorTemp )
         if sample == "data": row.append( " & " + str( int( yields[ histKeyE ][ sample ] + yields[ histKeyM ][ sample ] ) ) )
         else: row.append( " & " + str( np.around( yieldTemp, 5 ) ) + "$\pm$" + str( np.around( errorTemp, 2 ) ) )
@@ -813,8 +831,8 @@ def yield_tables( yields, erorrs, categories, variable, data, sig, bkg, tagBR ):
   if args.sys:
     table = systematics( table, yields, sig, bkg, hdamp, ue, hotPt, ht, categories )
   
-  if args.CRsys: outFile = open( "{}/templates_{}/yields_CR_{}{}_{}.txt".format( args.dataset, dateTag, variable, tagBR, lumiStr ), "w" )
-  else: outFile = open( "{}/templates_{}/yields_{}{}_{}.txt".format( args.dataset, dateTag, variable, tagBR, lumiStr ), "W" )
+  if args.CRsys: outFile = open( "{}/templates_{}/yields_CR_{}{}_{}.txt".format( dataset, dateTag, variable, tagBR, lumiStr ), "w" )
+  else: outFile = open( "{}/templates_{}/yields_{}{}_{}.txt".format( dataset, dateTag, variable, tagBR, lumiStr ), "W" )
   print_table( table, outFile )
   outFile.close()
     
@@ -841,10 +859,10 @@ def modify_hists( dataHists, sigHists, bkgHists, lumiScale, rebin ):
   for j, key in enumerate( list( dataHists.keys() ) ):
     overflow_bin_correction( dataHists[key] )
     underflow_bin_correction( dataHists[key] )
-  for j, key in enumerate( list( bkgHists[key] ):
+  for j, key in enumerate( list( bkgHists.keys() ) ):
     overflow_bin_correction( bkgHists[key] )
     underflow_bin_correction( dataHists[key] )
-  for j, key in enumerate( list( sigHists[key] ) ):
+  for j, key in enumerate( list( sigHists.keys() ) ):
     overflow_bin_correction( sigHists[key] )
     underflow_bin_correction( sigHists[key] )
   
@@ -871,7 +889,7 @@ def make_category_templates( dataHists, sigHists, bkgHists, data, sig, bkg, hdam
   
   for i in range( len( varsList.branchRatio["BW"] ) ):
     tagBR = ""
-    if args.branch: tagBR = "_bW{}_tZ{}_tH{}".format(
+    if args.BRscan: tagBR = "_bW{}_tZ{}_tH{}".format(
       str(varsList.branchRatio["BW"][i]).replace(".","p"),
       str(varsList.branchRatio["TZ"][i]).replace(".","p"),
       str(varsList.branchRatio["TH"][i]).replace(".","p")
@@ -881,20 +899,20 @@ def make_category_templates( dataHists, sigHists, bkgHists, data, sig, bkg, hdam
       
       for hist in hists: hists[hist].SetDirectory(0)
     
-      if ttHFsf != 1 and "ttbb" in ttbarGrupList: # change ttbargruplist
-        hists = scale_ttbb( hists, allSamples, variable, category, tagBR )
+      #hists = scale_ttbb( hist, sig, bkg, hdamp, ue, variable, category, tagBR )
         
       if args.sys:
         yields = systematic_yield( hists, yields, variable, sig, bkg, hdamp, ue, hotPt, ht, category, tagBR )
       
-      yields, errors = nominal_yield( hists, yields, errors, variable, category, tagBR )
+      yields, errors = nominal_yield( hists, yields, errors, sig, bkg, variable, category, tagBR )
     
     hists = scale_xsec( hists, variable, sig, categories, tagBR )
     
     theta_template( hists, variable, allSamples, categories, tagBR )
     combine_template( hists, variable, allSamples, categories, tagBR )
     
-    yields = summary_template( yields, errors, categories, variable, tagBR )
+    if args.summary: 
+      yields = summary_template( yields, errors, categories, variable, tagBR )
     
     yield_tables( yields, errors, categories, variable, data, sig, bkg, tagBR )
       
@@ -903,7 +921,7 @@ def make_category_templates( dataHists, sigHists, bkgHists, data, sig, bkg, hdam
     for key in sig.keys(): del sig[key]
     for key in bkg.keys(): del bkg[key]
       
-def main( data, sig, bkg, hdamp, ue, ht, topPt, topPt, categories, variable ):
+def main( data, sig, bkg, hdamp, ue, ht, topPt, categories, variable ):
 # hists from hists.py are stored with the keys "[variable]_[lumiStr]_[category]_[process][flv]"
 # for the systematics: "[variable][sys][dir]_[lumiStr]_[catStr]_[process][flv]"
 # for the pdf: "[variable]pdf[i]_[lumiStr]_[catStr]_[process][flv]"
@@ -914,29 +932,42 @@ def main( data, sig, bkg, hdamp, ue, ht, topPt, topPt, categories, variable ):
   if args.variable != "":
     if args.verbose: print( "Making template for 1 variable: {}".format( args.variable ) )
     for category in categories:
-      dataHists.update( pickle.load( open( "{}/{}/data_{}.p".format( args.dataset, category, args.variable ) ) )
-      bkgHists.update( pickle.load( open( "{}/{}/bkg_{}.p".format( args.dataset, category, args.variable ) ) )
-      sigHists.update( pickle.load( open( "{}/{}/sig_{}.p".format( args.dataset, category, args.variable ) ) )
+      if os.path.exists( "{}/{}/data_{}.p".format( dataset, category, args.variable ) ):
+        dataHists.update( pickle.load( open( "{}/{}/data_{}.p".format( dataset, category, args.variable ) ) ) )
+      else:
+        if args.verbose: print( "{}/{}/data_{}.p doesn't exist, skipping...".format( dataset, category, args.variable ) )
+      if os.path.exists( "{}/{}/bkg_{}.p".format( dataset, category, args.variable ) ):
+        bkgHists.update( pickle.load( open( "{}/{}/bkg_{}.p".format( dataset, category, args.variable ) ) ) )
+      else:
+        if args.verbose: print( "{}/{}/bkg_{}.p doesn't exist, skipping...".format( dataset, category, args.variable ) )
+      if os.path.exists( "{}/{}/sig_{}.p".format( dataset, category, args.variable ) ):
+        sigHists.update( pickle.load( open( "{}/{}/sig_{}.p".format( dataset, category, args.variable ) ) ) )
+      else: 
+        if args.verbose: print( "{}/{}/sig_{}.p doesn't exist, skipping...".format( dataset, category, args.variable ) )    
+
+    dataHists, sigHists, bkgHists = modify_hists( dataHists, sigHists, bkgHists, float(args.lumiscale), int(args.rebin) )
     
-    dataHists, sigHists, bkgHists = modify_hists( sigHists, bkgHists, args.lumiscale, args.rebin )
-    
-    make_category_template( dataHists, sigHists, bkgHists, data, sig, bkg, hdamp, ue, args.variable, categories )
+    make_category_templates( dataHists, sigHists, bkgHists, data, sig, bkg, hdamp, ue, args.variable, categories )
   
   else:
-    varList = [ x.replace( "bkg_hists_", "" )[:-2] for x in os.listdir( "{}/{}/".format( args.dataset, categories[0] ) ) if "bkg_hists_" in x and ".p" in x ]
+    varList = [ x.replace( "bkg_hists_", "" )[:-2] for x in os.listdir( "{}/{}/".format( dataset, categories[0] ) ) if "bkg_hists_" in x and ".p" in x ]
     if args.verbose: print( "Making templates for {} variables".format( len(varList) ) )
     for variable in varList:
       for category in categories:
-        dataHists.update( pickle.load( open( "{}/{}/data_{}.p".format( args.dataset, category, variable ) ) )
-        bkgHists.update( pickle.load( open( "{}/{}/bkg_{}.p".format( args.dataset, category, variable ) ) )
-        sigHists.update( pickle.load( open( "{}/{}/sig_{}.p".format( args.dataset, category, variable ) ) )
+        if os.path.exists( "{}/{}/data_{}.p".format( dataset, category, args.variable ) ):
+          dataHists.update( pickle.load( open( "{}/{}/data_{}.p".format( dataset, category, variable ) ) ) )
+        if os.path.exists( "{}/{}/bkg_{}.p".format( dataset, category, args.variable ) ):
+          bkgHists.update( pickle.load( open( "{}/{}/bkg_{}.p".format( dataset, category, variable ) ) ) )
+        if os.path.exists( "{}/{}/sig_{}.p".format( dataset, category, args.variable ) ):
+          sigHists.update( pickle.load( open( "{}/{}/sig_{}.p".format( dataset, category, variable ) ) ) )
     
-      dataHists, sigHists, bkgHists = modify_hists( sigHists, bkgHists, lumiScale, rebin )
+      dataHists, sigHists, bkgHists = modify_hists( dataHists, sigHists, bkgHists, float(args.lumiscale), int(args.rebin) )
       
-      make_category_template( dataHists, sigHists, bkgHists, data, sig, bkg, hdamp, ue, args.variable, categories )
+      make_category_templates( dataHists, sigHists, bkgHists, data, sig, bkg, hdamp, ue, args.variable, categories )
   
   if args.verbose: print( "Finished creating templates in {:.2f} minutes".format( ( tStart - time.time() ) / 60. ) )
   
-sig, bkg, data, hdamp, ue, ht, topPt = get_hist_labels()
+#sig, bkg, data, hdamp, ue, ht, topPt = get_hist_labels()
+sig, bkg, data, hdamp, ue, ht, topPt = test_hist_labels()
 main( data, sig, bkg, hdamp, ue, ht, topPt, categories, args.variable )
 
