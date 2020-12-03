@@ -71,7 +71,7 @@ After all your jobs have finished, calculate the variable importance.  First, co
 
     python folders.py -c condor_log_[day].[month].[year]
     
-At this point, it's recommended to move all the `.jtf` files for a given set of {`year`, `njets`} into one directory:
+At this point, it's recommended to move all the `.jtd` files for a given set of {`year`, `njets`} into one directory:
 
     mkdir condor_log_4j_2017
     mv *.jtd condor_log_4j_2017/
