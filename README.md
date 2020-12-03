@@ -37,7 +37,7 @@ Edit the `varsList.py` file to set your usernames and the sample date:
 * `eosUserName`
 * `date` 
     
-Setup the repository.  This will take some time. There are two possible choices for the year: 2017 or 2018.  The settings used below are for general-use, refer to (`description.md`)[https://github.com/daniel-sunyou-li/TTTT_TMVA_DNN/blob/test/description.md] for a detailed explanation of all the options.
+Setup the repository.  This will take some time. There are two possible choices for the year: 2017 or 2018.  The settings used below are for general-use, refer to [`description.md`](https://github.com/daniel-sunyou-li/TTTT_TMVA_DNN/blob/test/description.md) for a detailed explanation of all the options.
 
     pip install --user scikit-optimize
     python ./setup/setup.py -y 2017 -sys -r -t -eos -v
