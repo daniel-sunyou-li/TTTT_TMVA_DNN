@@ -124,5 +124,5 @@ Once jobs are finished, you will find the step3 files stored on CMSEOS at:
 
     eosls /store/user/[EOS Username]/FWLJMET102X_1lep2017_Oct2019_4t_10072020_step2/[tag]/
     
-where `tag` can be `nominal`, `JECup`, `JECdown`, `JERup`, or `JERdown`.  After finishing producing the step3 files, refer to the `singleLepAnalyzer` subdirectory for instructions for running on BRUX.
+where `tag` can be `nominal`, `JECup`, `JECdown`, `JERup`, or `JERdown`.  After finishing producing the step3 files, refer to the [`singleLepAnalyzer`](https://github.com/daniel-sunyou-li/TTTT_TMVA_DNN/tree/test/singleLepAnalyzer) subdirectory for instructions for running on BRUX.
     
