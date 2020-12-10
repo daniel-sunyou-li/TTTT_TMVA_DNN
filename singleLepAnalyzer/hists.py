@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# this is the equivalent script to singleLepAnalyzer/makeTemplates/doHists.py
 
 import os, sys, time, math, getpass, datetime, pickle, itertools, getopt
 from argparse import ArgumentParser
