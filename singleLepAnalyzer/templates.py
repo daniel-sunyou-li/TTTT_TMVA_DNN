@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# this is the equivalent of singleLepAnalyzer/makeTemplates/doTemplates.py
 
 import os, sys, time, math, datetime, pickle, itertools, fnmatch
 from argparse import ArgumentParser
