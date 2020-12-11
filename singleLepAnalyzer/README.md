@@ -4,8 +4,8 @@
 
 The singleLepAnalyzer framework is split into 5 overall steps, beginning with step3 `.root` files produced by `application.py` and ending with the calculation of the yield limits:
 
-1. Produce signal/background/data histograms for each variable
-2. Produce the combine templates and compute all systematics, re-bin the histograms for combine, and visualize the distributions 
+__1.  Produce signal/background/data histograms for each variable__
+__2.  Produce the combine templates and compute all systematics, re-bin the histograms for combine, and visualize the distributions__
 3. 
 4.
 5.
@@ -20,7 +20,7 @@ In this step, a Condor job is submitted to consolidate the background, signal, a
 
   Number of Histograms = ( 3 [BKG/SIG/DAT] ) x ( 2 [E/M] ) ( # Variables ) x ( # HOT-jets ) x ( # t-jets ) x ( # b-jets ) x ( # W-jets ) x ( # jets )
   
-The resulting histograms are stored in the EOS path(s): `root://cmseos.fnal.gov:///store/user/[EOS username]/FWLJMET102X_1lep[year]_Oct2019_4t_[sample date]_step3/templates/[category]/[bkg/sig/data]_[variable].pkl`. For running multiple iterations of the workflow, edit the configuration parameter `config_SLA[ "STEP 1" ][ "EOSFOLDER" ]`.  The number of Condor jobs produced is equivalent to `( # variables ) x ( # years ) x ( # categories )`.  The bulk of the work done in producing the histograms and applying the various systematic scale factors is from `analyze.py`.
+The resulting histograms are stored in the EOS path(s): `root://cmseos.fnal.gov:///store/user/[EOS username]/FWLJMET102X_1lep[year]_Oct2019_4t_[sample date]_step3/templates/[category]/[bkg/sig/data]_[variable].pkl`. For running multiple iterations of the workflow, edit the configuration parameter `config_SLA[ "STEP 1" ][ "EOSFOLDER" ]`.  The number of Condor jobs produced is equivalent to `( # variables ) x ( # years ) x ( # categories )`.  For each Condor job, the script `hists.py`--which references `analyze.py` and `utils.py`--is run once and stores the resultant three histograms on EOS at the specified path.
 
 ### Step 2: Consolidate Histograms and Format for Combine, Also Visualize
 
