@@ -63,18 +63,20 @@
       "jmst", 
       "jmrt", 
       "tau21",
-      "jmsw",
-      "jmrw",
+      "jmsW",
+      "jmrW",
       "tau21pt",
       "btag",
       "mistag",
       "jec",
       "jer",
       "hotstat",
-      "hostcspure",
+      "hostcspur",
       "hotclosure",
       "njet",
-      "njetsf"
+      "njetsf",
+      "CSVshapelf",
+      "CSVshapehf"
     ]
   }
 }
