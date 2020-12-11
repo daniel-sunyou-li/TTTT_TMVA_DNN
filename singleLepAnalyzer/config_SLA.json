@@ -1,30 +1,34 @@
 {
-  "Step 1": {
+  "STEP 1": {
     "SUBMIT": "False",
     "DONE": "False",
     "EOSFOLDER": "templates/"
   },
-  "Step 2": {
+  "STEP 2": {
     "SUBMIT": "False",
     "DONE": "False"
   },
   
-  "Step 3": {
+  "STEP 3": {
     "SUBMIT": "False",
     "DONE": "False"
   },
-  "Step 4": {
+  "STEP 4": {
     "SUBMIT": "False",
     "DONE": "False"
   },
-  "Step 5": {
+  "STEP 5": {
     "SUBMIT": "False",
     "DONE": "False"
   },
   "CONFIGURATION": {
     "YEAR": [ "2017", "2018" ],
     "INPUTS": [
+      "DNN_disc_4j_40vars",
+      "DNN_disc_4j_50vars",
       "DNN_disc_4j_76vars",
+      "DNN_disc_6j_40vars",
+      "DNN_disc_6j_50vars",
       "DNN_disc_6j_76vars"
     ],
     "CATEGORIES": {
@@ -45,6 +49,32 @@
         "NJET": [ "4p" ]
       }
     },
-    "SYSTEMATICS": "True"
+    "USE_SYSTEMATICS": "True",
+    "USE_PDF": "True",
+    "SYSTEMATICS": [
+      "pileup", 
+      "prefire", 
+      "muRFcorrd", 
+      "muR", 
+      "muF", 
+      "isr", 
+      "fsr", 
+      "tau32", 
+      "jmst", 
+      "jmrt", 
+      "tau21",
+      "jmsw",
+      "jmrw",
+      "tau21pt",
+      "btag",
+      "mistag",
+      "jec",
+      "jer",
+      "hotstat",
+      "hostcspure",
+      "hotclosure",
+      "njet",
+      "njetsf"
+    ]
   }
 }
