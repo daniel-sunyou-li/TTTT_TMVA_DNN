@@ -42,8 +42,8 @@
         "NW":   [ "0p" ],
         "NBOT": [ "2p" ],
         "NJET": [ "4p" ]
-      },
-      "SYSTEMATICS": "True"
-    }
+      }
+    },
+    "SYSTEMATICS": "True"
   }
 }
