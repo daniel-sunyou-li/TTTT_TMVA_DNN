@@ -1,0 +1,50 @@
+{
+  "Step 1": {
+    "SUBMIT": "False",
+    "DONE": "False"
+  },
+  "Step 2": {
+    "SUBMIT": "False",
+    "DONE": "False"
+  },
+  
+  "Step 3": {
+    "SUBMIT": "False",
+    "DONE": "False"
+  },
+  "Step 4": {
+    "SUBMIT": "False",
+    "DONE": "False"
+  },
+  "Step 5": {
+    "SUBMIT": "False",
+    "DONE": "False"
+  }
+  "CONFIGURATION": {
+    "YEAR": [ "2017", "2018" ],
+    "INPUTS": [
+      "DNN_disc_4j_76vars",
+      "DNN_disc_6j_76vars"
+    ],
+    "CATEGORIES": {
+      "FULL": {
+        "LEP":  [ "E", "M" ],
+        "NHOT": [ "0", "1p" ],
+        "NTOP": [ "0p" ],
+        "NW":   [ "0p" ],
+        "NBOT": [ "2", "3", "4p" ],
+        "NJET": [ "6", "7", "8", "9", "10p" ]
+      },
+      "TEST": {
+        "LEP":  [ "E" ],
+        "NHOT": [ "0p" ],
+        "NTOP": [ "0p" ],
+        "NW":   [ "0p" ],
+        "NBOT": [ "2p" ],
+        "NJET": [ "4p" ]
+      },
+      "SYSTEMATICS": "True",
+      "TEST": "False"
+    }
+  }
+}
