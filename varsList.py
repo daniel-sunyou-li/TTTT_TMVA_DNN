@@ -577,33 +577,6 @@ varList["DNN"] = [
 varList["Step3"] = varList["DNN"][:] 
 varList["Step3"].append( tuple( ( "DNN_disc", "tttt discriminator", 0, 1, 101) ) )
 
-# systematics list
-systList = [
-#  "pileup",
-#  "prefire",
-#  "muRFcorrd",
-#  "muR",
-#  "muF",
-#  "isr",
-#  "fsr",
-#  "tau32",
-#  "jmst",
-#  "jmrt",
-#  "tau21",
-#  "jmsw",
-#  "jmrW",
-#  "tau21pt",
-#  "btag",
-#  "mistag",
-  "jec",
-  "jer",
-#  "hotstat",
-#  "hotcspure",
-#  "hotclosure",
-#  "njet",
-#  "njetsf"
-]
-
 # weight event count
 
 weightStr = "triggerXSF * pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPrefiringProb_CommonCalc * " + \
