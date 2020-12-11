@@ -7,21 +7,44 @@ from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument( "-s", "--step",   required = True,       help = "Single Lep Analyzer step to submit" )
 parser.add_argument( "-c", "--config", required = True,       help = ".json configuration file to use" )
-parser.add_argument( "-t", "--test",   action = "store_true", help = "Run a unit test on a single category" )
 args = parser.parse_args()
 
 it args.step not in [ "1", "2", "3", "4", "5" ]: 
   print( "[ERR] Invalid step option used.  Please use either 1, 2, 3, 4 or 5.  Exiting program." )
 
-with open( args.config, "r" ) as file:
-  jsonFile = json.load( file )
+try:
+  with open( args.config, "r" ) as file:
+    jsonFile = json.load( file )
+except:
+  print( "Config file: {}, was not found. Exiting program".format( args.config ) )
 
+# setup configuration file parameters
+  
 date_tag = datetime.datetime.now().strftime( "%d.%b.%Y" )
 configuration = jsonFile[ "CONFIGURATION" ]
+test = configuration[ "UNIT_TEST" ][ "UNIT_TEST" ]
+categories = jsonFile[ "CATEGORIES" ][ "FULL" ] if test.lower() != "true" else jsonFile[ "CATEGORIES" ][ "TEST" ]
+category_list = [
+  "is{}_nhot{}_nt{}_nw{}_nb{}_nj{}".format( cat[0], cat[1], cat[2], cat[3], cat[4], cat[5] ) for cat in list( itertools.product(
+    categories[ "LEP" ], categories[ "NHOT" ], categories[ "NTOP" ], categories[ "NW" ], categories[ "NBOT" ], categories[ "NJET" ] ) )
+]
 
-def print_options( configuration ):
+def print_options( configuration, categories, category_list ):
   print( ">> Using the configuration:" )
-  print( ">> " )
+  print( ">> Years: {}".format( configuration[ "YEAR" ] ) )
+  print( ">> Inputs ({}):".format( len( configuration[ "INPUTS" ] ) ) )
+  for input in configuration[ "INPUTS" ]:
+    print( ">>   {}".format( input ) )
+  print( ">> Categories ({}):".format( len( category_list ) ) )
+  for category in categories.keys():
+    print( ">>   {}: {}".format( category, categories[ category ] ) )
+  print( ">> UNIT TEST: {}".format( configuration[ "UNIT_TEST" ] ) )
+  print( ">> SYSTEMATICS: {}".format( configuration[ "USE_SYSTEMATICS" ] ) )
+  print( ">> PDF: {}".format( configuration[ "USE_PDF" ] ) )
+  if configuration[ "USE_SYSTEMATICS" ].lower() == "true":
+    print( ">> Using the systematics ({}):".format( len( configuration[ "SYSTEMATICS" ] ) ) )
+    for sytematic in configuration[ "SYSTEMATICS" ]:
+      print( ">>   {}".format( systematic ) )
 
 def check_step( jsonFile, step ):
   def check_step_one():
@@ -80,8 +103,9 @@ def step_one( jsonFile ):
   jsonFile[ "STEP 1" ][ "SUBMIT" ] = "True"
   
   for year in years:
-    for variable in variables:
-      os.system( "condor_submit log_step1_{}/{}_{}.job".format( date_tag, variable, year ) )
+    for category in categories:
+      for variable in variables:
+        os.system( "condor_submit log_step1_{}/{}_{}.job".format( date_tag, variable, year,  ) )
 
 def step_two( jsonFile ):
   check_step( jsonFile, 2 )
@@ -99,7 +123,8 @@ def step_five( jsonFile ):
   check_step( jsonFile, 5 )
   return
 
-def main( jsonFile, step ):
+def main( jsonFile, step, configuration, categories, category_list ):
+  print_options( configuration, categories, category_list )
   if args.step   == "1": jsonFile = step_one( jsonFile )
   elif args.step == "2": jsonFile = step_two( jsonFile )
   elif args.step == "3": jsonFile = step_three( jsonFile )
