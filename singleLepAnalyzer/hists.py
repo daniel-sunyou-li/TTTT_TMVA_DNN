@@ -83,7 +83,7 @@ def read_tree( file ):
   rootTree = rootFile.Get( "ljmet" )
   return rootFile, rootTree
 
-def run_data( categories, label, data, minBin, maxBin, nBin):
+def run_data( categories, label, data, minBin, maxBin, nBin ):
   treeData = {}
   fileData = {}
   for i, cat in enumerate(categories):
@@ -99,7 +99,7 @@ def run_data( categories, label, data, minBin, maxBin, nBin):
         del fileData[cat]
     pickle.dump( dataHists, open( os.path.join( outputDir, cat, "data_{}.pkl".format( args.variable ) ), "wb" ) )
 
-def run_signal( categories, label, sig, minBin, maxBin, nBin):
+def run_signal( categories, label, sig, minBin, maxBin, nBin ):
   treeSig = {}
   fileSig = {}
   for i, cat in enumerate(categories):
