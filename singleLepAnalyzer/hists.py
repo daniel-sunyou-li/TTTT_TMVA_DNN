@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # this is the equivalent script to singleLepAnalyzer/makeTemplates/doHists.py
+# this is run on a Condor node from step1.sh
 
 import os, sys, json, time, math, getpass, datetime, pickle, itertools, getopt
 from argparse import ArgumentParser
@@ -13,10 +14,9 @@ from analyze import analyze
 import utils
 
 parser = ArgumentParser()
-parser.add_argument( "-c", "--config",   required = True,       help = "singleLepAnalyzer configuration .json file" )
-parser.add_argument( "-t", "--test",     action = "store_true", help = "Run unit test" )
 parser.add_argument( "-y", "--year",     required = True,       help = "Sample year" )
 parser.add_argument( "-v", "--variable", required = True,       help = "Variable to produce a histogram for" )
+parser.add_argument( "-c", "--category", required = True )
 args = parser.parse_args()
 
 gROOT.SetBatch(1)
@@ -26,21 +26,24 @@ with open( args.config, "r" ) as file:
   jsonFile = json.load( file )
   
 configuration = jsonFile[ "CONFIGURATION" ]
+test = jsonFile[ "CONFIGURATION" ][ "UNIT_TEST" ].lower()
 systematics = configuration[ "USE_SYSTEMATICS" ].lower()
 pdf = configuration[ "USE_PDF" ].lower()
-categories = configuration[ "TEST" ] if args.test else configuration[ "FULL" ]
 
-# read in arguments
-leplist   = categories[ "LEP" ]
-nhottlist = categories[ "NHOT" ] 
-nttaglist = categories[ "NTOP" ]
-nWtaglist = categories[ "NW" ] 
-nbtaglist = categories[ "NBOT" ]
-njetslist = categories[ "NJET" ]
+print( ">> Running hists.py for:" )
+print( ">> Variable: {}".format( args.variable ) )
+print( ">> Category: {}".format( args.category ) )
+print( ">> Year: {}".format( args.year ) )
+print( ">> Test: {}".format( test ) )
+print( ">> Systematics: {}".format( systematics ) )
+print( ">> PDFs: {}".format( pdf ) )
 
 allSamples = varsList.all_samples[ str(args.year) ]
 inputDir = varsList.step3DirEOS[ str(args.year) ]
-outputDir = varsList.step3DirEOS[ str(args.year) ] + jsonFile[ "STEP 1" ][ "EOSFOLDER" ]
+outputDir = os.path.join( varsList.step3DirEOS[ str(args.year) ], jsonFile[ "STEP 1" ][ "EOSFOLDER" ], args.category )
+
+print( ">> Reading in step3 files from: {}".format( inputDir ) )
+print( ">> Saving histograms at: {}".format( outputDir ) )
 
 varList = varsList.varList[ "Step3" ]
 varIndx = np.argwhere( np.asarray(varList)[:,0] == args.variable )
@@ -69,11 +72,6 @@ if args.verbose:
   print( "{} hdamp samples found".format( len( hdamp ) ) )
   print( "{} ue samples found".format( len( ue ) ) )
   print( "{} background samples found".format( len( bkg ) ) )
-
-categories = [
-  "is{}_nhot{}_nt{}_nw{}_nb{}_nj{}".format(cat[0],cat[1],cat[2],cat[3],cat[4],cat[5]) for cat in list(itertools.product(
-    leplist,nhottlist,nttaglist,nWtaglist,nbtaglist,njetslist ) )
-]
 
 def read_tree( file ):
   if not os.path.exists(file):
