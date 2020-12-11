@@ -1,7 +1,8 @@
 {
   "Step 1": {
     "SUBMIT": "False",
-    "DONE": "False"
+    "DONE": "False",
+    "EOSFOLDER": "templates/"
   },
   "Step 2": {
     "SUBMIT": "False",
