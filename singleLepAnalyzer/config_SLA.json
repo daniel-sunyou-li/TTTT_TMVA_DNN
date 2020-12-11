@@ -19,7 +19,7 @@
   "Step 5": {
     "SUBMIT": "False",
     "DONE": "False"
-  }
+  },
   "CONFIGURATION": {
     "YEAR": [ "2017", "2018" ],
     "INPUTS": [
@@ -43,8 +43,7 @@
         "NBOT": [ "2p" ],
         "NJET": [ "4p" ]
       },
-      "SYSTEMATICS": "True",
-      "TEST": "False"
+      "SYSTEMATICS": "True"
     }
   }
 }
