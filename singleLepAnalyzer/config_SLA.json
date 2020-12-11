@@ -49,6 +49,7 @@
         "NJET": [ "4p" ]
       }
     },
+    "UNIT_TEST": "False",
     "USE_SYSTEMATICS": "True",
     "USE_PDF": "True",
     "SYSTEMATICS": [
