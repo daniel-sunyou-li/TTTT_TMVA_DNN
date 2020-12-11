@@ -40,6 +40,11 @@ step2DirEOS = {
   "2018": "root://cmseos.fnal.gov///store/user/{}/{}/".format( eosUserName, step2Sample[ "2018" ] )
 }
 
+step3DirEOS = {
+  "2017": "root://cmseos.fnal.gov///store/user/{}/{}/".format( eosUserName, step3Sample[ "2017" ] ),
+  "2018": "root://cmseos.fnal.gov///store/user/{}/{}/".format( eosUserName, step3Sample[ "2018" ] )
+}
+
 # full signal sample to be used in training
 sig_training = {
   "2017": [ "TTTT_TuneCP5_PSweights_13TeV-amcatnlo-pythia8_hadd.root" ],
