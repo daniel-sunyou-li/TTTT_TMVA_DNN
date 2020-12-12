@@ -14,7 +14,8 @@
   "STEP 3": {
     "SUBMIT": "False",
     "DONE": "False",
-    "LOGFOLDER": ""
+    "LOGFOLDER": "",
+    "PLOT": "modified" 
   },
   "STEP 4": {
     "SUBMIT": "False",
