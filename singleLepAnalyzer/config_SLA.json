@@ -2,24 +2,29 @@
   "STEP 1": {
     "SUBMIT": "False",
     "DONE": "False",
-    "EOSFOLDER": "templates/"
+    "EOSFOLDER": "templates/",
+    "LOGFOLDER": ""
   },
   "STEP 2": {
     "SUBMIT": "False",
-    "DONE": "False"
+    "DONE": "False",
+    "LOGFOLDER": ""
   },
   
   "STEP 3": {
     "SUBMIT": "False",
-    "DONE": "False"
+    "DONE": "False",
+    "LOGFOLDER": ""
   },
   "STEP 4": {
     "SUBMIT": "False",
-    "DONE": "False"
+    "DONE": "False",
+    "LOGFOLDER": ""
   },
   "STEP 5": {
     "SUBMIT": "False",
-    "DONE": "False"
+    "DONE": "False",
+    "LOGFOLDER": ""
   },
   "CONFIGURATION": {
     "YEAR": [ "2017", "2018" ],
