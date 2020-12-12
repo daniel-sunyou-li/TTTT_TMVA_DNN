@@ -40,7 +40,6 @@ print( ">> PDFs: {}".format( pdf ) )
 
 allSamples = varsList.all_samples[ str(args.year) ]
 inputDir = varsList.step3DirEOS[ str(args.year) ]
-outputDir = os.path.join( varsList.step3DirEOS[ str(args.year) ], jsonFile[ "STEP 1" ][ "EOSFOLDER" ], args.category )
 
 print( ">> Reading in step3 files from: {}".format( inputDir ) )
 print( ">> Saving histograms at: {}".format( outputDir ) )
@@ -93,7 +92,7 @@ def run_data( category, label, data, minBin, maxBin, nBin ):
       category, args.year, True ) )
     del treeData[cat]
     del fileData[cat]
-  pickle.dump( dataHists, open( os.path.join( outputDir, category, "data_{}.pkl".format( args.variable ) ), "wb" ) )
+  pickle.dump( dataHists, open( "data_{}.pkl".format( args.variable ), "wb" ) )
 
 def run_signal( category, label, sig, minBin, maxBin, nBin ):
   treeSig = {}
@@ -117,7 +116,7 @@ def run_signal( category, label, sig, minBin, maxBin, nBin ):
         for dir in [ "Up", "Down" ]:
           del treeSig[ sample + sys + dir ]
           del fileSig[ sample + sys + dir ]
-  pickle.dump( sigHists, open( os.path.join( outputDir, category, "sig_{}.pkl".format( args.variable ) ), "wb" ) )
+  pickle.dump( sigHists, open( "sig_{}.pkl".format( args.variable ), "wb" ) )
 
 def run_background( category, label, bkg, hdamp, ue, minBin, maxBin, nBin ):
   treeBkg = {}
@@ -155,7 +154,7 @@ def run_background( category, label, bkg, hdamp, ue, minBin, maxBin, nBin ):
         category, args.year, args.verbose ) )
       del fileBkg[sample]
       del treeBkg[sample]
-  pickle.dump( bkgHists, open( os.path.join( outputDir, category, "bkg_{}.pkl".format( args.variable ) ), "wb" ) )
+  pickle.dump( bkgHists, open( "bkg_{}.pkl".format( args.variable ), "wb" ) )
 
 def pickle_step3( label, minBin, maxBin, nBin, category, sample_type ):
   print(">> Storing {} as {}".format( args.variable, label ) )
