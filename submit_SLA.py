@@ -166,9 +166,9 @@ def step_five( jsonFile ):
   check_step( jsonFile, 5 )
   return
 
-def main( jsonFile, step, configuration, categories, category_list ):
+def main( jsonFile, step, configuration, variables, categories, category_list, date_tag ):
   print_options( configuration, categories, category_list )
-  if args.step   == "1": jsonFile = step_one( jsonFile )
+  if args.step   == "1": jsonFile = step_one( jsonFile, date_tag, years, category_list, variables )
   elif args.step == "2": jsonFile = step_two( jsonFile )
   elif args.step == "3": jsonFile = step_three( jsonFile )
   elif args.step == "4": jsonFile = step_four( jsonFile )
