@@ -130,6 +130,7 @@ def step_one( jsonFile, date_tag, years, category_list, variables ):
             "OUTPATH": os.path.join( path, jdf_name + ".out" ), 
             "ERRPATH": os.path.join( path, jdf_name + ".err" ),
             "YEAR": year, "CATEGORY": cateogry, "VARIABLE": variable,
+            "EOSDIR": os.path.join( varsList.step3Sample[ year ], jsonFile[ "STEP 1" ][ "EOSFOLDER" ], category ), 
             "EOS_USERNAME": varsList.eosUserName
           }
           jdf = open( os.path.join( path, jdf_name + ".job" ), "w" )
@@ -143,7 +144,7 @@ Output = %(OUTPATH)s
 Error = %(ERRPATH)s
 Log = %(LOGPATH)s
 Notification = Never
-Arguments = %(YEAR)s %(CATEGORY)s %(VARIABLE)s %(EOS_USERNAME)s
+Arguments = %(YEAR)s %(CATEGORY)s %(VARIABLE)s %(EOSDIR)s %(EOS_USERNAME)s
 Queue 1"""%jdf_dict )
           jdf.close()        
           os.system( "condor_submit {}".format( os.path.join( path, jdf_name ) ) )
