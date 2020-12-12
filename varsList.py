@@ -575,7 +575,12 @@ varList["DNN"] = [
 ]
 
 varList["Step3"] = varList["DNN"][:] 
-varList["Step3"].append( tuple( ( "DNN_disc", "tttt discriminator", 0, 1, 101) ) )
+varList["Step3"].append( tuple( ( "DNN_disc_4j_40vars", "tttt discriminator (4j, 40vars)", 0, 1, 101) ) )
+varList["Step3"].append( tuple( ( "DNN_disc_4j_50vars", "tttt discriminator (4j, 50vars)", 0, 1, 101) ) )
+varList["Step3"].append( tuple( ( "DNN_disc_4j_76vars", "tttt discriminator (4j, 76vars)", 0, 1, 101) ) )
+varList["Step3"].append( tuple( ( "DNN_disc_4j_40vars", "tttt discriminator (4j, 40vars)", 0, 1, 101) ) )
+varList["Step3"].append( tuple( ( "DNN_disc_4j_50vars", "tttt discriminator (4j, 50vars)", 0, 1, 101) ) )
+varList["Step3"].append( tuple( ( "DNN_disc_4j_76vars", "tttt discriminator (4j, 76vars)", 0, 1, 101) ) )
 
 # weight event count
 
