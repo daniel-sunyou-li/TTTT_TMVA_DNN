@@ -31,7 +31,7 @@ category_list = [
 ]
 
 def print_options( configuration, categories, category_list ):
-  print( ">> Using the configuration:" )
+  print( ">> Running Step {} Using the configuration:".format( args.step ) )
   print( ">> Years: {}".format( configuration[ "YEAR" ] ) )
   print( ">> Inputs ({}):".format( len( configuration[ "INPUTS" ] ) ) )
   for input in configuration[ "INPUTS" ]:
@@ -129,7 +129,8 @@ def step_one( jsonFile, date_tag, years, category_list, variables ):
             "LOGPATH": os.path.join( path, jdf_name + ".log" ), 
             "OUTPATH": os.path.join( path, jdf_name + ".out" ), 
             "ERRPATH": os.path.join( path, jdf_name + ".err" ),
-            "YEAR": year, "CATEGORY": cateogry, "VARIABLE": variable
+            "YEAR": year, "CATEGORY": cateogry, "VARIABLE": variable,
+            "EOS_USERNAME": varsList.eosUserName
           }
           jdf = open( os.path.join( path, jdf_name + ".job" ), "w" )
           jdf.write(
@@ -142,7 +143,7 @@ Output = %(OUTPATH)s
 Error = %(ERRPATH)s
 Log = %(LOGPATH)s
 Notification = Never
-Arguments = %(YEAR)s %(CATEGORY)s %(VARIABLE)s
+Arguments = %(YEAR)s %(CATEGORY)s %(VARIABLE)s %(EOS_USERNAME)s
 Queue 1"""%jdf_dict )
           jdf.close()        
           os.system( "condor_submit {}".format( os.path.join( path, jdf_name ) ) )
@@ -151,19 +152,19 @@ Queue 1"""%jdf_dict )
           
           
 def step_two( jsonFile ):
-  check_step( jsonFile, 2 )
+  #check_step( jsonFile, 2 )
   return jsonFile
 
 def step_three():
-  check_step( jsonFile, 3 )
+  #check_step( jsonFile, 3 )
   return
 
 def step_four( jsonFile ):
-  check_step( jsonFile, 4 )
+  #check_step( jsonFile, 4 )
   return
 
 def step_five( jsonFile ):
-  check_step( jsonFile, 5 )
+  #check_step( jsonFile, 5 )
   return
 
 def main( jsonFile, step, configuration, variables, categories, category_list, date_tag ):
@@ -176,6 +177,3 @@ def main( jsonFile, step, configuration, variables, categories, category_list, d
   
   with open( args.config, "w" ) as file:
     json.dump( jsonFile, file, indent = 2, sort_keys = False )
-  
-  
-                
