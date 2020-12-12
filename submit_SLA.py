@@ -23,6 +23,7 @@ except:
 date_tag = datetime.datetime.now().strftime( "%d.%b.%Y" )
 configuration = jsonFile[ "CONFIGURATION" ]
 test = configuration[ "UNIT_TEST" ][ "UNIT_TEST" ]
+inputs = configuration[ "INPUTS" ]
 categories = jsonFile[ "CATEGORIES" ][ "FULL" ] if test.lower() != "true" else jsonFile[ "CATEGORIES" ][ "TEST" ]
 category_list = [
   "is{}_nhot{}_nt{}_nw{}_nb{}_nj{}".format( cat[0], cat[1], cat[2], cat[3], cat[4], cat[5] ) for cat in list( itertools.product(
@@ -98,15 +99,57 @@ def check_step( jsonFile, step ):
   
   return jsonFile
 
-def step_one( jsonFile ):
-  # submission code here
+def step_one( jsonFile, date_tag, years, category_list, variables ):
   jsonFile[ "STEP 1" ][ "SUBMIT" ] = "True"
+  jsonFile[ "STEP 1" ][ "LOGFOLDER" ] = "log_step1_{}".format( date_tag )
+  
+  with os.path.join( "/singleLepAnalyzer", jsonFile[ "STEP 1" ][ "LOGFOLDER" ] ) as path:
+    if not os.path.exists( path ):
+      print( ">> Creating Step 1 log directory: {}".format( path ) )
+      os.system( "mkdir -p {}".format( path ) )
   
   for year in years:
-    for category in categories:
+    with os.path.join ( "/store/user/", varsList.eosUserName, varsList.step3Sample[ year ] ) as path:
+    if jsonFile[ "STEP 1" ][ "EOSFOLDER" ] not in subprocess.check_output( "eos root://cmseos.fnal.gov ls {}".format( path ), shell = True ):
+      print( ">> Creating EOS directory for singleLepAnalyzer ({}): {}".format( year, os.path.join( path, jsonFile[ "STEP 1" ][ "EOSFOLDER" ] ) ) )
+      sys_call( "eos root://cmseos.fnal.gov mkdir {}".format( os.path.join( path, jsonFile[ "STEP 1" ][ "EOSFOLDER" ] ) ), shell = True )
+      
+    for category in category_list:
+      with os.path.join( "/store/user/{}/".format( varsList.eosUserName ), varsList.step3Sample[ year ], jsonFile[ "STEP 1" ][ "EOSFOLDER" ] ) as path:
+        if category not in subprocess.check_output( "eos root://cmseos.fnal.gov ls {}".format( path ), shell = True ):
+          print( ">> Creating EOS directory for histogram category ({}): {}".format( year, os.path.join( path, category ) ) )
+          sys_call( "eos root://cmseos.fnal.gov mkdir {}".format( os.path.join( path, category ) ), shell = True )
+      if category not in subprocess.check_output( "ls {}".format( jsonFile[ "STEP 1" ][ "LOGFOLDER" ] ), shell = True ):
+        os.system( "mkdir -p {}".format( os.path.join( jsonFile[ "STEP 1" ][ "LOGFOLDER" ], category ) ) )
+            
       for variable in variables:
-        os.system( "condor_submit log_step1_{}/{}_{}.job".format( date_tag, variable, year,  ) )
-
+        with os.path.join( jsonFile[ "STEP 1" ][ "LOGFOLDER" ], category ) as path:
+          jdf_name = "{}_{}".format( variable, year )
+          jdf_dict = {
+            "LOGPATH": os.path.join( path, jdf_name + ".log" ), 
+            "OUTPATH": os.path.join( path, jdf_name + ".out" ), 
+            "ERRPATH": os.path.join( path, jdf_name + ".err" ),
+            "YEAR": year, "CATEGORY": cateogry, "VARIABLE": variable
+          }
+          jdf = open( os.path.join( path, jdf_name + ".job" ), "w" )
+          jdf.write(
+"""universe = vanilla
+Executable = singleLepAnalyzer/step1.sh
+Should_Transfer_Files = YES
+WhenToTransferOutput = ON_EXIT
+request_memory = 1024
+Output = %(OUTPATH)s
+Error = %(ERRPATH)s
+Log = %(LOGPATH)s
+Notification = Never
+Arguments = %(YEAR)s %(CATEGORY)s %(VARIABLE)s
+Queue 1"""%jdf_dict )
+          jdf.close()        
+          os.system( "condor_submit {}".format( os.path.join( path, jdf_name ) ) )
+          
+  return jsonFile
+          
+          
 def step_two( jsonFile ):
   check_step( jsonFile, 2 )
   return jsonFile
@@ -132,7 +175,7 @@ def main( jsonFile, step, configuration, categories, category_list ):
   elif args.step == "5": jsonFile = step_five( jsonFile )
   
   with open( args.config, "w" ) as file:
-    json.dump( jsonFile, file )
+    json.dump( jsonFile, file, indent = 2, sort_keys = False )
   
   
                 
