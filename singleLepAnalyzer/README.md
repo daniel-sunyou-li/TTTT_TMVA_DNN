@@ -4,10 +4,10 @@
 
 The singleLepAnalyzer framework is split into 5 overall steps, beginning with step3 `.root` files produced by `application.py` and ending with the calculation of the yield limits:
 
-__1.  Produce signal/background/data histograms for each variable__
-__2.  Produce the combine templates and compute all systematics, re-bin the histograms for combine, and visualize the distributions__
-3. 
-4.
+__1. Produce signal/background/data histograms for each variable__
+__2. Produce the combine templates and compute all systematics__
+3. Re-bin the histograms for combine and plot the templates (WIP)
+4.  
 5.
 
 Each step can be run using the `submit_SLA.py -s [#] -c [config file]` script using the input command `-s` to indicate a step from `1` to `5` and `-c` indicates which configuration file to use. A unit test submission can be made using the tag `--test`. The configuration file template with default values is provided as [`config_SLA.json`](https://github.com/daniel-sunyou-li/TTTT_TMVA_DNN/blob/test/singleLepAnalyzer/config_SLA.json) and __should be edited__ to the user's discretion.
@@ -33,6 +33,14 @@ The resulting histograms are stored in the EOS path(s): `root://cmseos.fnal.gov:
 ___Relevant Scripts:___
 * `submit_PLA.py`
 * `templates.py`
+
+In this step, a Condor job is submitted to consolidate all the background, signal and data histograms from each category into a single `ROOT` file.  A single job is submitted per year. The Condor job runs the script [`templates.py`](https://github.com/daniel-sunyou-li/TTTT_TMVA_DNN/blob/test/singleLepAnalyzer/templates.py).  The `templates.py` script performs several tasks:
+* Write Theta templates
+* Write Combine templates
+* Write Summary templates
+* Write yield tables
+
+The result of running `templates.py` is the production of various template `ROOT` files 
 
 ### Step 3: Produce the Configuration Files for Higgs Combine
 
