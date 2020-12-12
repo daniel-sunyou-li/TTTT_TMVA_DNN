@@ -136,7 +136,7 @@ def step_one( jsonFile, date_tag, years, category_list, variables ):
           jdf = open( os.path.join( path, jdf_name + ".job" ), "w" )
           jdf.write(
 """universe = vanilla
-Executable = singleLepAnalyzer/step1.sh
+Executable = singleLepAnalyzer/step1_SLA.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 request_memory = 1024
