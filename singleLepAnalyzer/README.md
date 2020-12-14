@@ -59,7 +59,7 @@ ___Relevant Scripts:___
 
 In this step, a Condor job is submitted that first re-bins the histograms for the Higgs Combine templates and then produces `.png` plots from the templates.  A single job is submitted per combination of variable and year. The result of the `modify_binning.py` script is to produce a new `ROOT` file for the previously produced Combine template with a modification to the naming by including the tag 'rebin'. Additionally, new yield tables are produced based on the modified binning. The result of the `plot_templates.py` script is the production of a plot for each combination of variable, category and year.  The `plot_templates.py` script can opt to either use the `original` or `modified` binning, this parameter "PLOT" is set in the `.json` [configuration file](https://github.com/daniel-sunyou-li/TTTT_TMVA_DNN/blob/test/singleLepAnalyzer/config_SLA.json#L18).
 
-__[ADD FURTHER EXPLANATION ABOUT HOW THE BINNING IS MODIFIED]__
+__[ADD FURTHER EXPLANATION ABOUT HOW THE BINNING IS MODIFIED]__  
 __[ADD FURTHER EXPLANATION ABOUT WHAT IS BEING PLOTTED]__
 
 ### Step 4: Run Higgs Combine on Either 2017 or 2018
