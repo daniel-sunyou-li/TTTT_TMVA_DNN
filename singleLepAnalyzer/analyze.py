@@ -16,14 +16,14 @@ def analyze( rootTree, process, doAllSys, doPDF, iPlot, plotDetails, catStr, sys
   plotTreeName = plotDetails[0]
   xbins = array("d", plotDetails[1])
   xAxisLabel = plotDetails[2]
-	process_weights = varsList.weights[ str(year) ]
+  process_weights = varsList.weights[ str(year) ]
 
   lumiStr = str( varsList.targetLumi / 1000. ).replace(".","p") + "fb" # 1/fb  
 	weights = {
-		"Nominal": "3" if process.lower().startswith( "ttjets" ) else "1"
+	  "Nominal": "3" if process.lower().startswith( "ttjets" ) else "1"
 	}
 	cuts = {
-		"Base": varsList.cutStr	
+	  "Base": varsList.cutStr	
 	}
 	
   # define the categories
@@ -49,15 +49,15 @@ def analyze( rootTree, process, doAllSys, doPDF, iPlot, plotDetails, catStr, sys
 	# modify weights
 	
   if "Data" not in process:
-		weights[ "Nominal" ] += " * triggerXSF * pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPrefiringProb_CommonCalc "
-		weights[ "Nominal" ] += " * ( MCWeight_MultiLepCalc / abs(MCWeight_MultiLepCalc) ) * {}".format( process_weights[process] )
+	  weights[ "Nominal" ] += " * triggerXSF * pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPrefiringProb_CommonCalc "
+	  weights[ "Nominal" ] += " * ( MCWeight_MultiLepCalc / abs(MCWeight_MultiLepCalc) ) * {}".format( process_weights[process] )
     weights[ "NoNjet" ] = weights[ "Nominal" ]
     weights[ "trigger" ] = { "Up": weights[ "Nominal" ].replace("triggerXSF","(triggerXSF+triggerXSFUncert)"),
-														 "Down": weights[ "Nominal" ].replace("triggerXSF","(triggerXSF-triggerXSFUncert)") }
+                             "Down": weights[ "Nominal" ].replace("triggerXSF","(triggerXSF-triggerXSFUncert)") }
     weights[ "pileup" ] = { "Up": weights[ "Nominal" ].replace("pileupWeight","pileupWeightUp"),
-													  "Down": weights[ "Nominal" ].replace("pileupWeight","pileupWeightDown") }
+                            "Down": weights[ "Nominal" ].replace("pileupWeight","pileupWeightDown") }
     weights[ "prefire" ] = { "Up": weights[ "Nominal" ].replace("L1NonPrefiringProb_CommonCalc","L1NonPrefiringProbUp_CommonCalc"),
-														 "Down": weights[ "Nominal" ].replace("L1NonPrefiringProb_CommonCalc","L1NonPrefiringProbDn_CommonCalc") }
+                             "Down": weights[ "Nominal" ].replace("L1NonPrefiringProb_CommonCalc","L1NonPrefiringProbDn_CommonCalc") }
     weights[ "muRFcorrd" ] = { "Up": "renormWeights[5] * {}".format( weights[ "Nominal" ] ),
 															 "Down": "renormWeights[3] * {}".format( weights[ "Nominal" ] ) }
     weights[ "muR" ] = { "Up": "renormWeights[4] * {}".format( weights[ "Nominal" ] ),
