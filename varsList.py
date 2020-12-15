@@ -603,8 +603,7 @@ branchRatio = {
 
 # weight events
 weights = {
-  "2017": { sample: targetLumi * all_samples["2017"][sample][1] / all_samples["2017"][sample][2] for sample in all_samples["2017"] },
-  "2018": { sample: targetLumi }
+  year: { sample: targetLumi * all_samples[ year ][ sample ][1] / all_samples[ year ][ sample ][2] for sample in all_samples[ year ] } for year in all_samples.keys()
 }
 
 # general cut, add selection based cuts in training scripts
