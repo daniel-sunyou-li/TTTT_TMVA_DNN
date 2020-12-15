@@ -28,6 +28,7 @@ with open( args.config, "r" ) as file:
 configuration = jsonFile[ "CONFIGURATION" ]
 test = jsonFile[ "CONFIGURATION" ][ "UNIT_TEST" ].lower()
 systematics = configuration[ "USE_SYSTEMATICS" ].lower()
+systematics_list = configuration[ "SYSTEMATICS" ]
 pdf = configuration[ "USE_PDF" ].lower()
 
 print( ">> Running hists.py for:" )
@@ -80,21 +81,21 @@ def read_tree( file ):
   rootTree = rootFile.Get( "ljmet" )
   return rootFile, rootTree
 
-def run_data( label, data, minBin, maxBin, nBin ):
+def run_data( label, data, minBin, maxBin, nBin, systlist ):
   treeData = {}
   fileData = {}
   dataHists = {}
   for sample in data:
     fileData[ sample ], treeData[ sample ] = read_tree( os.path.join( inputDir, "nominal/", allSamples[ sample ][ 0 ] ) )
     dataHists.update( analyze(
-      treeData, sample, "", False, pdf, args.variable,
+      treeData, sample, False, pdf, args.variable,
       [ args.variable, np.linspace(minBin,maxBin,nBin).tolist(), label ],
-      args.category, args.year, True ) )
+      args.category, systlist, args.year, True ) )
     del treeData[cat]
     del fileData[cat]
   pickle.dump( dataHists, open( "data_{}.pkl".format( args.variable ), "wb" ) )
 
-def run_signal( label, sig, minBin, maxBin, nBin ):
+def run_signal( label, sig, minBin, maxBin, nBin, systlist ):
   treeSig = {}
   fileSig = {}
   sigHists = {}
@@ -106,9 +107,9 @@ def run_signal( label, sig, minBin, maxBin, nBin ):
           fileSig[ sample + sys + dir ], treeSig[ sample + sys + dir ] = read_tree(
             os.path.join( inputDir, sys.Upper() + dir.lower(), + allSamples[ sample ][ 0 ] )
     sigHists.update( analyze(
-      treeSig, sample, "", systematics, pdf, args.variable, 
+      treeSig, sample, systematics, pdf, args.variable, 
       ( args.variable, np.linspace( minBin, maxBin, nBin ).tolist(), label ),
-      args.category, args.year, True ) )
+      args.category, systlist, args.year, True ) )
     del treeSig[ sample ]
     del fileSig[ sample ]
     if systematics:
@@ -118,7 +119,7 @@ def run_signal( label, sig, minBin, maxBin, nBin ):
           del fileSig[ sample + sys + dir ]
   pickle.dump( sigHists, open( "sig_{}.pkl".format( args.variable ), "wb" ) )
 
-def run_background( label, bkg, hdamp, ue, minBin, maxBin, nBin ):
+def run_background( label, bkg, hdamp, ue, minBin, maxBin, nBin, systlist ):
   treeBkg = {}
   fileBkg = {}
   bkgHists = {}
@@ -130,9 +131,9 @@ def run_background( label, bkg, hdamp, ue, minBin, maxBin, nBin ):
           fileBkg[ sample + sys + dir ] = read_tree(
             os.path.join( inputDir, sys.Upper() + dir.lower(), allSamples[ sample ][ 0 ] )
     bkgHists.update( analyze(
-      treeBkg, sample, "", systematics, pdf, args.variable,
+      treeBkg, sample, systematics, pdf, args.variable,
       [ args.variable, np.linspace( minBin, maxBin, nBin ).tolist(), label ],
-      args.category, args.year, True ) )
+      args.category, systlist, args.year, True ) )
     for sys in [ "jec" , "jer" ]:
       for dir in [ "Up" , "Down" ]:
         del treeBkg[ sample + sys + dir ]
@@ -141,42 +142,42 @@ def run_background( label, bkg, hdamp, ue, minBin, maxBin, nBin ):
     for sample in hdamp:
       fileBkg[ sample ], treeBkg[ sample ] = read_tree( os.path.join( inputDir, "nominal/", allSamples[ sample ][ 0 ] ) )
       bkgHists.update( analyze(
-        treeBkg, sample, "", False, pdf, args.variable,
+        treeBkg, sample, False, pdf, args.variable,
         [ args.variable, np.linspace( minBin, maxBin, nBin ).tolist(), varList[ varIndx, 1 ] ],
-        args.category, args.year, args.verbose ) )
+        args.category, systlist, args.year, args.verbose ) )
       del fileBkg[ sample ]
       del treeBkg[ sample ]
     for sample in ue:
       fileBkg[ sample ], treeBkg[ sample ] = read_tree( os.path.join( inputDir, "nominal/", allSamples[ sample ][ 0 ] ) )
       bkgHists.update( analyze(
-        treeBkg, sample, "", False, pdf, args.variable,
+        treeBkg, sample, False, pdf, args.variable,
         [ args.variable, np.linspace( minBin, maxBin, nBin).tolist(), label ],
-        args.category, args.year, args.verbose ) )
+        args.category, systlist, args.year, args.verbose ) )
       del fileBkg[sample]
       del treeBkg[sample]
   pickle.dump( bkgHists, open( "bkg_{}.pkl".format( args.variable ), "wb" ) )
 
-def pickle_step3( label, minBin, maxBin, nBin, sample_type ):
+def pickle_step3( label, minBin, maxBin, nBin, systlist, sample_type ):
   print(">> Storing {} as {}".format( args.variable, label ) )
   print(">> Using binning: ({},{},{})".format(minBin,maxBin,nBin))
   startTime = time.time()
   if sample_type.lower() == "sig":
     print( ">> Pickling signal samples..." )
-    run_signal( label, sig, minBin, maxBin, nBin )
+    run_signal( label, sig, minBin, maxBin, nBin, systlist )
     print( "[OK ] Finished pickling signal samples in {:.2f} minutes.".format( ( time.time()-startTime ) / 60. ) )
   elif sample_type.lower() == "bkg":
     print( ">> Plotting background samples..." )
-    run_background( label, bkg, hdamp, ue, minBin, maxBin, nBin)
+    run_background( label, bkg, hdamp, ue, minBin, maxBin, nBin, systlist )
     print( "[OK ] Finished pickling background samples in {:.2f} minutes.".format( ( time.time()-startTime ) / 60. ) )
   elif sample_type.lower() == "data":
     print( ">> Plotting data samples..." )
-    run_data( label, data, minBin, maxBin, nBin)
+    run_data( label, data, minBin, maxBin, nBin, systlist )
     print( "[OK ] Finished pickling data samples stored in {:.2f} minutes.".format( ( time.time()-startTime ) / 60. ) )
 
 varTuple = varList[ varIndx[0][0] ]
 if ( len(bkg) > 0 or len(hdamp) > 0 or len(ue) > 0 ): 
-  pickle_step3( varTuple[1], varTuple[2], varTuple[3], varTuple[4], "bkg" )
+  pickle_step3( varTuple[1], varTuple[2], varTuple[3], varTuple[4], systematics_list, "bkg" )
 if len(sig) > 0: 
-  pickle_step3( varTuple[1], varTuple[2], varTuple[3], varTuple[4], "sig" )
+  pickle_step3( varTuple[1], varTuple[2], varTuple[3], varTuple[4], systematics_list, "sig" )
 if len(data) > 0: 
-  pickle_step3( varTuple[1], varTuple[2], varTuple[3], varTuple[4], "data" )
+  pickle_step3( varTuple[1], varTuple[2], varTuple[3], varTuple[4], systematics_list, "data" )
