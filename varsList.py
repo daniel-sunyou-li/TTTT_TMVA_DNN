@@ -589,9 +589,14 @@ weightStr = "triggerXSF * pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPr
 
 # step3 weight event
 targetLumi = 41530. # 1/pb
-lumiSys = {
-  "2017": 0.023,
-  "2018": 0.025
+uncertainties = {
+  "lumiSys": { "2017": 0.023, "2018": 0.025 },
+  "eltrigSys": { "2017": 0.0, "2018": 0.0 },
+  "mutrigSys": { "2017": 0.0, "2018": 0.0 },
+  "elIdSys": { "2017": 0.03, "2018": 0.03 },
+  "muIdSys": { "2017": 0.03, "2018": 0.03 },
+  "elIsoSys": { "2017": 0.0, "2018": 0.0 },
+  "muIsoSys": { "2017": 0.0, "2018", 0.0 },
 }
 
 # branching ratios
