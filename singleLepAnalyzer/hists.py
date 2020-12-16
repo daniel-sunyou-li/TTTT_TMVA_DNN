@@ -27,10 +27,10 @@ with open( args.config, "r" ) as file:
   jsonFile = json.load( file )
   
 configuration = jsonFile[ "CONFIGURATION" ]
-test = jsonFile[ "CONFIGURATION" ][ "UNIT_TEST" ].lower()
-systematics = configuration[ "USE_SYSTEMATICS" ].lower()
+test = configuration[ "UNIT_TEST" ]
+systematics = configuration[ "USE_SYSTEMATICS" ]
 systematics_list = configuration[ "SYSTEMATICS" ]
-pdf = configuration[ "USE_PDF" ].lower()
+pdf = configuration[ "USE_PDF" ]
 
 print( ">> Running hists.py for:" )
 print( ">> Variable: {}".format( args.variable ) )
