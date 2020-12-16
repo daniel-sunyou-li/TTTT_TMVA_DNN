@@ -1,8 +1,9 @@
 #!/bin/bash
 
 YEAR=${1}
-EOSDIR=${2}
-EOS_USERNAME=${3}
+JSON=${2}
+EOSDIR=${3}
+EOS_USERNAME=${4}
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
@@ -14,4 +15,4 @@ cd ./CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN
 
 eval `scramv1 runtime -sh`
 
-python templates.py -y $YEAR
+python templates.py -y $YEAR -j $JSON
