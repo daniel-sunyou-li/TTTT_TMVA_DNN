@@ -73,9 +73,9 @@
         "NJET": [ "4p" ]
       }
     },
-    "UNIT_TEST": "False",
-    "USE_SYSTEMATICS": "True",
-    "USE_PDF": "True",
+    "UNIT_TEST": false,
+    "USE_SYSTEMATICS": true,
+    "USE_PDF": true,
     "SYSTEMATICS": [
       "pileup", 
       "prefire", 
