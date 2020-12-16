@@ -14,9 +14,10 @@ from analyze import analyze
 import utils
 
 parser = ArgumentParser()
-parser.add_argument( "-y", "--year",     required = True,       help = "Sample year" )
-parser.add_argument( "-v", "--variable", required = True,       help = "Variable to produce a histogram for" )
+parser.add_argument( "-y", "--year",     required = True )
+parser.add_argument( "-v", "--variable", required = True )
 parser.add_argument( "-c", "--category", required = True )
+parser.add_argument( "-j", "--config",     required = True )
 args = parser.parse_args()
 
 gROOT.SetBatch(1)
