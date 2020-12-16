@@ -599,13 +599,6 @@ uncertainties = {
   "muIsoSys": { "2017": 0.0, "2018", 0.0 },
 }
 
-# branching ratios
-branchRatio = {
-  "BW": [0.0,0.50,0.0,0.0,0.0,0.0,0.0,0.0,0.2,0.2,0.2,0.2,0.2,0.4,0.4,0.4,0.4,0.6,0.6,0.6,0.8,0.8,1.0],
-  "TH": [0.5,0.25,0.0,0.2,0.4,0.6,0.8,1.0,0.0,0.2,0.4,0.6,0.8,0.0,0.2,0.4,0.6,0.0,0.2,0.4,0.0,0.2,0.0],
-  "TZ": [0.5,0.25,1.0,0.8,0.6,0.4,0.2,0.0,0.8,0.6,0.4,0.2,0.0,0.6,0.4,0.2,0.0,0.4,0.2,0.0,0.2,0.0,0.0]
-}
-
 # weight events
 weights = {
   year: { sample: targetLumi * all_samples[ year ][ sample ][1] / all_samples[ year ][ sample ][2] for sample in all_samples[ year ] } for year in all_samples.keys()
