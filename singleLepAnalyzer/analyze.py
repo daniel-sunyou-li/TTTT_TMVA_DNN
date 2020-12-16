@@ -5,14 +5,6 @@ from array import array
 import varsList
 
 def analyze( rootTree, process, doAllSys, doPDF, iPlot, plotDetails, catStr, systList, year, verbose ):
-# 'rootTree' is a dict that contains ROOT rootTrees of all the processes
-# 'process' is a string of the physics process
-# 'flv' is a string for the final state flavor (i.e. _ttlf, _ttcc, _ttbb")
-# 'doAllSys' is a boolean to include hists of the correction plots
-# 'doPDF' is a boolean to compute the PDF for the process
-# 'plotDetails' = [ tree name, number of bins, x axis label ] 
-# 'catStr' is a string describing the control/signal region parameters
-# 'iPlot' is the variable tag
   plotTreeName = plotDetails[0]
   xbins = array("d", plotDetails[1])
   xAxisLabel = plotDetails[2]
