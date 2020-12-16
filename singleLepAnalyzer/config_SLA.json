@@ -1,14 +1,32 @@
 {
   "STEP 1": {
-    "SUBMIT": "False",
-    "DONE": "False",
+    "SUBMIT": false,
+    "DONE": false,
     "EOSFOLDER": "templates",
     "LOGFOLDER": ""
   },
   "STEP 2": {
-    "SUBMIT": "False",
-    "DONE": "False",
-    "LOGFOLDER": ""
+    "SUBMIT": false,
+    "DONE": false,
+    "LOGFOLDER": "",
+    "CONFIGURATION": {
+      "SUMMARY": true,
+      "SCALE_TO_1_PB": false,
+      "CR_SYS": false,
+      "NORMALIZE_PDF": false,
+      "BR_SCAN": false,
+      "REBIN": -1, 
+      "LUMISCALE": 1,
+      "ZERO": 1e-12,
+      "REMOVE_THRESHOLD": 0.015,
+      "ttHFsf": 1.2051282,
+      "ttLFsf": -1,
+    },
+    "BRANCHRATIOS": {
+      "BW": [0.0,0.50,0.0,0.0,0.0,0.0,0.0,0.0,0.2,0.2,0.2,0.2,0.2,0.4,0.4,0.4,0.4,0.6,0.6,0.6,0.8,0.8,1.0],
+      "TH": [0.5,0.25,0.0,0.2,0.4,0.6,0.8,1.0,0.0,0.2,0.4,0.6,0.8,0.0,0.2,0.4,0.6,0.0,0.2,0.4,0.0,0.2,0.0],
+      "TZ": [0.5,0.25,1.0,0.8,0.6,0.4,0.2,0.0,0.8,0.6,0.4,0.2,0.0,0.6,0.4,0.2,0.0,0.4,0.2,0.0,0.2,0.0,0.0]
+    }
   },
   
   "STEP 3": {
