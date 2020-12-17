@@ -24,7 +24,7 @@ date_tag = datetime.datetime.now().strftime( "%d.%b.%Y" )
 configuration = jsonFile[ "CONFIGURATION" ]
 test = configuration[ "UNIT_TEST" ][ "UNIT_TEST" ]
 inputs = configuration[ "INPUTS" ]
-categories = jsonFile[ "CATEGORIES" ][ "FULL" ] if test.lower() != "true" else jsonFile[ "CATEGORIES" ][ "TEST" ]
+categories = jsonFile[ "CATEGORIES" ][ "FULL" ] if test.lower() == "false" else jsonFile[ "CATEGORIES" ][ "TEST" ]
 category_list = [
   "is{}_nhot{}_nt{}_nw{}_nb{}_nj{}".format( cat[0], cat[1], cat[2], cat[3], cat[4], cat[5] ) for cat in list( itertools.product(
     categories[ "LEP" ], categories[ "NHOT" ], categories[ "NTOP" ], categories[ "NW" ], categories[ "NBOT" ], categories[ "NJET" ] ) )
@@ -129,7 +129,7 @@ def step_one( jsonFile, date_tag, years, category_list, variables ):
             "LOGPATH": os.path.join( path, jdf_name + ".log" ), 
             "OUTPATH": os.path.join( path, jdf_name + ".out" ), 
             "ERRPATH": os.path.join( path, jdf_name + ".err" ),
-            "YEAR": year, "CATEGORY": cateogry, "VARIABLE": variable,
+            "YEAR": year, "CATEGORY": cateogry, "VARIABLE": variable, "JSON": args.config,
             "EOSDIR": os.path.join( varsList.step3Sample[ year ], jsonFile[ "STEP 1" ][ "EOSFOLDER" ], category ), 
             "EOS_USERNAME": varsList.eosUserName
           }
@@ -144,16 +144,45 @@ Output = %(OUTPATH)s
 Error = %(ERRPATH)s
 Log = %(LOGPATH)s
 Notification = Never
-Arguments = %(YEAR)s %(CATEGORY)s %(VARIABLE)s %(EOSDIR)s %(EOS_USERNAME)s
+Arguments = %(YEAR)s %(CATEGORY)s %(VARIABLE)s %(JSON)s %(EOSDIR)s %(EOS_USERNAME)s
 Queue 1"""%jdf_dict )
           jdf.close()        
-          os.system( "condor_submit {}".format( os.path.join( path, jdf_name ) ) )
+          os.system( "condor_submit {}.job".format( os.path.join( path, jdf_name ) ) )
           
   return jsonFile
           
-          
-def step_two( jsonFile ):
+def step_two( jsonFile, years ):
   #check_step( jsonFile, 2 )
+  jsonFile[ "STEP 2" ][ "SUBMIT" ] = "True"
+  jsonFile[ "STEP 2" ][ "LOGFOLDER" ] = "log_step2_{}".format( date_tag )
+  
+  for year in years:
+    with os.path.join( jsonFile[ "STEP 2" ][ "LOGFOLDER" ] ) as path:
+      jdf_name = "{}".format( year )
+      jdf_dict = {
+        "LOGPATH": os.path.join( path, jdf_name + ".log" ), 
+        "OUTPATH": os.path.join( path, jdf_name + ".out" ), 
+        "ERRPATH": os.path.join( path, jdf_name + ".err" ),
+        "YEAR": year, "JSON": args.config,
+        "EOSDIR": os.path.join( varsList.step3Sample[ year ], jsonFile[ "STEP 1" ][ "EOSFOLDER" ], category ), 
+        "EOS_USERNAME": varsList.eosUserName
+      }
+      jdf = open( os.path.join( path, jdf_name + ".job" ), "w" )
+      jdf.write(
+"""universe = vanilla
+Executable = singleLepAnalyzer/step2_SLA.sh
+Should_Transfer_Files = YES
+WhentoTransferOutput = ON_EXIT
+request_memory = 3072
+Output = %(OUTPATH)s
+Error = %(ERRPATH)s
+Log = %(LOGPATH)s
+Notification = Never
+Arguments = %(YEAR)s %(JSON)s %(EOSDIR)s %(EOS_USERNAME)s
+Queue 1"""%jdf_dict )
+      jdf.close()
+      os.system( "condor_submit {}.job".format( os.path.join( path, jdf_name ) ) ) 
+    
   return jsonFile
 
 def step_three():
