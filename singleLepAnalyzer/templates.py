@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # this is the equivalent of singleLepAnalyzer/makeTemplates/doTemplates.py
 
-import os, sys, time, math, datetime, pickle, itertools, fnmatch
+import os, sys, json, time, math, datetime, pickle, itertools, fnmatch
 from argparse import ArgumentParser
 from ROOT import gROOT, TFile, TH1F
 import numpy as np
@@ -12,145 +12,127 @@ import varsList
 gROOT.SetBatch(1)
 
 parser = ArgumentParser()
-
-parser.add_argument("-y","--year",default="2017",help="Production year")
-# the dataset argument should have a name akin to "/templates_[date]/"
-parser.add_argument("-d","--dataset",help="Directory where pickled files are stored and where results will be stored")
-parser.add_argument("-L","--lepton",default="E",help="Electron (E) or Muon (E)")
-parser.add_argument("-S","--summary",action="store_true",help="Write summary histogram")
-parser.add_argument("-s","--sys",action="store_true",help="Do all systematics (HDAMP,UE,ETC)")
-parser.add_argument("-p","--pdf",action="store_true",help="Run PDF systematics")
-parser.add_argument("-t","--threshold",default="0.015",help="Threshold ratio to remove a process")
-parser.add_argument("-r","--rebin",default="-1",help="-1 for no rebinning, >0 for rebinning")
-parser.add_argument("-l","--lumiscale",default="1.",help="Lumiscale scale factor used in hists.py")
-parser.add_argument("-b","--BRscan",action="store_true",help="Perform branching ratio scan")
-parser.add_argument("-c","--CRsys",action="store_true",help="Control region uncertainties defined locally")
-parser.add_argument("-V","--verbose",action="store_true",help="Turn on verbosity")
-parser.add_argument("-v","--variable",default="",help="Variable to plot")
-parser.add_argument("-n","--normalize",action="store_true",help="Normalize the renormalization/pdf uncertainties to nominal templates")
-
+parser.add_argument( "-y", "--year", required = True )
+parser.add_argument( "-j", "--config", required = True )
 args = parser.parse_args()
 
-dateTag = datetime.datetime.now().strftime("%d.%b.%Y")
-dataset = args.dataset[:-1] if args.dataset.endswith( "/" ) else args.dataset
+with open( args.config, "r" ) as file:
+  jsonFile = json.load( file )
 
-allSamples = varsList.all2017 if args.year == "2017" else varsList.all2018
-weights = varsList.weight2017 if args.year == "2017" else varsList.weight2018
-systList = varsList.systList
+allSamples = varsList.all_samples[ args.year ]
+weights = varsList.weights[ args.year ]
 
-# categories based on the directory save structure from hists.py path/to/hists/category/[data/sig/bkg]
-categories = [ category for category in os.walk( dataset ).next()[1] ]
-tags = [ category[4:] for category in categories if "isE" in category ]
-nHOTs = list( set( [ tag.split("_")[0] for tag in tags ] ) )
-nTs   = list( set( [ tag.split("_")[1] for tag in tags ] ) )
-nWs   = list( set( [ tag.split("_")[2] for tag in tags ] ) )
-nBs   = list( set( [ tag.split("_")[3] for tag in tags ] ) )
-nJets = list( set( [ tag.split("_")[4] for tag in tags ] ) )
+configuration = jsonFile[ "CONFIGURATION" ]
+step2_configuration = jsonFile[ "STEP 2" ][ "CONFIGURATION" ]
 
-lumiStr = str(varsList.targetLumi/1000.).replace(".","p") + "fb" 
+systematics = configuration[ "USE_SYSTEMATICS" ]
+systematics_list = configuration[ "SYSTEMATICS" ]
+test = configuration[ "UNIT_TEST" ]
+pdf = configuration[ "USE_PDF" ]
 
-zero = 1E-12 # define a non-zero "zero" value to avoid division by 0
+summary = step2_configuration[ "SUMMARY" ]
+scale_to_1_pb = step2_configuration[ "SCALE_TO_1_PB" ]
+cr_systematic = step2_configuration[ "CR_SYS" ]
+normalize_pdf = step2_configuration[ "NORMALIZE_PDF" ]
+br_scan = step2_configuration[ "BR_SCAN" ]
+rebin = step2_configuration[ "REBIN" ]
+lumiscale = step2_configuration[ "LUMISCALE" ]
+zero = step2_configuration[ "ZERO" ]
+remove_threshold = step2_configuration[ "REMOVE_THRESHOLD" ]
+ttHFsf = step2_configuration[ "ttHFsf" ]
+ttLFsf = step2_configuration[ "ttLFsf" ]
 
-# uncertainties
-
-particleSys = {
-    "eTrig": 0.0,   # electron trigger uncertainty
-    "mTrig": 0.0,   # muon trigger uncertainty
-    "eID": 0.03,    # electron ID uncertainty
-    "mID": 0.03,    # muon ID uncertainty
-    "eISO": 0.0,     # electron isolation uncertainty
-    "mISO": 0.0     # muon isolation uncertainty
-}
-
-eSysTot = math.sqrt( particleSys["eTrig"]**2 + particleSys["eID"]**2 + particleSys["eISO"]**2 )
-mSysTot = math.sqrt( particleSys["mTrig"]**2 + particleSys["mID"]**2 + particleSys["mISO"]**2 )
-
-bkgGrupList = [
-  "ttnobb", "ttbb",
-  "top", "ewk", "qcd"
+categories = jsonFile[ "CATEGORIES" ][ "FULL" ] if not test else jsonFile[ "CATEGORIES" ][ "TEST" ]
+category_list = [
+  "is{}_nhot{}_nt{}_nw{}_nb{}_nj{}".format( cat[0], cat[1], cat[2], cat[3], cat[4], cat[5] ) for cat in list( itertools.product(
+    categories[ "LEP" ], categories[ "NHOT" ], categories[ "NTOP" ], categories[ "NW" ], categories[ "NBOT" ], categories[ "NJET" ] ) )  
 ]
 
-def test_hist_labels():
-  sig = [ "TTTT" ]
-  bkg = {}
-  hdamp = {}
-  ue = {}
-  data = []
-  ht = [ "ewk", "WJets", "qcd" ]
-  topPt = [ "ttjj", "ttcc", "ttbb", "tt1b", "tt2b", "ttbj", "ttnobb" ]
+variables = configuration[ args.year ][ "INPUTS" ]
 
-  return sig, bkg, data, hdamp, ue, ht, topPt
+lumiStr = str(varsList.targetLumi/1000.).replace(".","p") + "fb" 
+uncertainties = varsList.uncertainties
 
-def get_hist_labels():
-  sig = [ "TTTT" ]
-  TT = [
-    "TTJetsHad",
-    "TTJets2L2nu",
-    "TTJetsSemiLepNjet9bin",
-    "TTJetsSemiLepNJet0",
-    "TTJetsSemiLepNjet9"
-  ]
-# the key entries are the general background categorizations which encompass the entries in the lists
-# background samples will be grouped based on general process
-# the grouping is important since it will affect the final limits
-# it seems like bkgProcList are the backgrounds without grouping
-# it seems like bkgGrupList are the backgrounds with grouping
-# want to find a way to integrate these two separate groupings into the overall bkg dict
-  bkg = {
-    "T":     [ "Ts", "Tbt", "TbtW", "TtW", "Tt" ],
-    "TTV":   [ "TTWl", "TTZlM10", "TTZlM1to10", "TTHB", "TTHnoB" ],
-    "TTXY":  [ "TTHH", "TTTJ", "TTTW", "TTWH", "TTWW", "TTWZ", "TTZH", "TTZZ" ],
+bkg = {}
+sig = {}
+data = {}
+# begin by specifying the individual processes
+with [ "TTJetsHad", "TTJets2L2nu", "TTJetsSemiLepNjet9bin", "TTJetsSemiLepNjet0", "TTJetsSemiLepNjet9" ] as tt_list:
+  # corresponds to bkgProcList
+  bkg[ "PROCESS" ] = { 
     "WJets": [ "WJetsMG200", "WJetsMG400", "WJetsMG600", "WJetsMG800" ],
     "ZJets": [ "DYMG200", "DYMG400", "DYMG600", "DYMG800", "DYMG1200", "DYMG2500" ],
-    "VV":    [ "WW", "WZ", "ZZ" ],
-    "ttjj":  [ tt + "TTjj" for tt in TT if tt != "TTJetsSemiLepNjet0" ],
-    "ttcc":  [ tt + "TTcc" for tt in TT ], 
-    "ttbb":  [ tt + "TTbb" for tt in TT ], 
-    "tt1b":  [ tt + "TT1b" for tt in TT ], 
-    "tt2b":  [ tt + "TT2b" for tt in TT ],
-    "qcd":   [ "QCDht200", "QCDht300", "QCDht500", "QCDht700", "QCDht1000", "QCDht1500", "QCDht2000" ]
+    "VV": [ "WW", "WZ", "ZZ" ],
+    "T": [ "Ts", "Tt", "Tbt", "TtW", "TbtW" ], 
+    "TTV": [ "TTWl", "TTZlM10", "TTZlM1to10", "TTHB", "TTHnoB" ],
+    "TTXY": [ "TTHH", "TTTJ", "TTTW", "TTWH", "TTWW", "TTWZ", "TTZH", "TTZZ" ],
+    "qcd": [ "QCDht200", "QCDht300", "QCDht500", "QCDht700", "QCDht1000", "QCDht1500", "QCDht2000" ],
+    "tt1b": [ tt + "TT1b" for tt in tt_list ],
+    "tt2b": [ tt + "TT2b" for tt in tt_list ],
+    "ttbb": [ tt + "TTbb" for tt in tt_list ],
+    "ttcc": [ tt + "TTcc" for tt in tt_list ],
+    "ttjj": [ tt + "TTjj" for tt in tt_list if tt != "TTJetsSemiLepNjet0" ]
   }
-  # add further WJet entries based on the number of existing samples
-  if args.year == "2017":
-    bkg[ "WJets" ] += [ "TTJetsSemiLepNjet0TTjj" + str(i) for i in [ 1, 2, 3, 4, 5 ] ]
-  elif args.year == "2018":
-    bkg[ "WJets" ] += [ "TTJetsSemiLepNjet0TTjj" + str(i) for i in [ 1, 2 ] ]
-  
-  # define 
-  bkg[ "ttonobb" ] = bkg[ "ttjj" ]  + bkg[ "ttcc" ]  + bkg[ "tt1b" ] + bkg[ "tt2b" ]
-  bkg[ "ewk" ]     = bkg[ "WJets" ] + bkg[ "ZJets" ] + bkg[ "VV" ]
-  bkg[ "top" ]     = bkg[ "T" ]     + bkg[ "TTV" ]   + bkg[ "TTXY" ]
-  
-  data = [
-    "DataE", "DataM"
-  ]
-  
-  hdamp = {} # might be able to simplify this notation once i understand it better 
-  ue = {}
-  for jj in [ "jj", "cc", "bb", "1b", "2b" ]:
-    hdamp[ "tt" + jj + "_hdup" ] = [ "TTJetsHadHDAMPupTT" + jj, "TTJets2L2nuHDAMPupTT" + jj, "TTJetsSemiLepHDAMPupTT" + jj ]
-    hdamp[ "tt" + jj + "_hddn" ] = [ "TTJetsHadHDAMPdnTT" + jj, "TTJets2L2nuHDAMPdnTT" + jj, "TTJetsSemiLepHDAMPdnTT" + jj ]
-    ue[ "tt" + jj + "_ueup" ] = [ "TTJetsHadUEupTT" + jj,    "TTJets2L2nuUEupTT" + jj,    "TTJetsSemiLepUEupTT" + jj    ]
-    ue[ "tt" + jj + "_uedn" ] = [ "TTJetsHadUEdnTT" + jj,    "TTJets2L2nuUEdnTT" + jj,    "TTJetsSemiLepUEdnTT" + jj    ]
-  
-  for sys in [ "hdup", "hddn" ]:
-    hdamp[ "ttbj_" + sys ]   = hdamp[ "tt1b_" + sys ] + hdamp[ "tt2b_" + sys ]
-    hdamp[ "ttnobb_" + sys ] = hdamp[ "ttjj_" + sys ] + hdamp[ "ttcc_" + sys ] + hdamp[ "tt1b_" + sys ] + hdamp[ "tt2b_" + sys ] 
-  
-  for sys in [ "ueup", "uedn" ]:
-    ue[ "ttbj_" + sys ]   = ue[ "tt1b_" + sys ] + ue[ "tt2b_" + sys ]
-    ue[ "ttnobb_" + sys ] = ue[ "ttjj_" + sys ] + ue[ "ttcc_" + sys ] + ue[ "tt1b_" + sys ] + ue[ "tt2b_" + sys ]  
+  bkg[ "PROCESS" ][ "WJets" ] += [ "WJetsMG1200" + str(i) for i in [1,2,3] ] if args.year == "2017" else [ "WJetsMG1200" ]
+  bkg[ "PROCESS" ][ "WJets" ] += [ "WJetsMG2500" + str(i) for i in [2,3,4] ] if args.year == "2017" else [ "WJetsMG2500" ]
+  if args.year == "2017": bkg[ "PROCESS" ][ "T" ] += [ "Tbs" ]
 
-  ht = [ "ewk", "WJets", "qcd" ]
-  topPt = [ "ttjj", "ttcc", "ttbb", "tt1b", "tt2b", "ttbj", "ttnobb" ]
+# specify the grouped processes
+with bkg[ "PROCESS" ] as process:
+  # corresponds to bkgGrupList
+  bkg[ "GROUP" ] = {
+    "ttnobb": process[ "ttjj" ] + process[ "ttcc" ] + process[ "tt1b" ] + process[ "tt2b" ],
+    "ttbb": process[ "ttbb" ],
+    "top": process[ "T" ] + process[ "TTV" ] + process[ "TTXY" ],
+    "ewk": process[ "WJets" ] + process[ "ZJets" ] + process[ "VV" ],
+    "qcd": process[ "qcd" ]
+  }
+  # corresponds to ttbarGruplist
+  bkg[ "TTBAR_GROUPS" ] = { tt: bkg[ "GROUP" ][ tt ] for tt in [ "ttnobb", "ttbb" ] }
+  # corresponds to ttbarProcList
+  bkg[ "TTBAR_PROCESS" ] = { tt: process[ tt ] for tt in [ "ttjj", "ttcc", "ttbb", "tt1b", "tt2b" ] }
   
-  return sig, bkg, data, hdamp, ue, ht, topPt
-  
-def init_hists( variable, hists, dataHists, sigHists, bkgHists, data, sig, bkg, ue, hdamp, category, tagBR ):
-# this is used in make_category_templtes to initialize the histograms 
-# hists from hists.py are stored with the keys "[variable]_[lumiStr]_[category]_[sample][flv]"
-# for the systematics: "[variable][sys][dir]_[lumiStr]_[catStr]_[sample][flv]"
-# for the pdf: "[variable]pdf[i]_[lumiStr]_[catStr]_[sample][flv]"
+# specify the systematics
+bkg[ "SYSTEMATICS" ] = {}
+with { "hd": "HDAMP", "ue": "UE" } as syst_key: 
+  for syst in [ "hd", "ue" ]:
+    for dir in [ "up", "dn" ]:
+      for flavor in [ "jj", "cc", "bb", "1b", "2b" ]:
+        bkg[ "SYSTEMATICS" ][ "tt{}_{}{}".format( flavor, syst, dir ) ] = [
+          "TTJetsHad{}{}TT{}".format( syst_key[ syst ], dir, flavor ),
+          "TTJets2L2nu{}{}TT{}".format( syst_key[ syst ], dir, flavor ),
+          "TTJetsSemiLep{}{}TT{}".format( syst_key[ syst ], dir, flavor )
+        ]
+      bkg[ "SYSTEMATICS" ][ "ttbj_" + syst + dir ] = []
+      bkg[ "SYSTEMATICS" ][ "ttnobb_" + syst + dir ] = []
+      for flavor in [ "1b", "2b" ]:
+        bkg[ "SYSTEMATICS" ][ "ttbj_" + syst + dir ] += bkg[ "SYSTEMATICS" ][ "tt{}_{}{}".format( flavor, syst, dir ) ]
+      for flavor in [ "jj", "cc", "1b", "2b" ]:
+        bkg[ "SYSTEMATICS" ][ "ttnobb_" + syst + dir ] += bkg[ "SYSTEMATICS" ][ "tt{}_{}{}".format( flavor, syst, dir ) ] 
+
+# specify the ht processes
+bkg[ "HT" ] = { # corresponds to htProcs
+  "ewk": bkg[ "GROUP" ][ "ewk" ],
+  "WJets": bkg[ "PROCESS" ][ "WJets" ],
+  "qcd": bkg[ "GROUP" ][ "qcd" ]
+}
+
+# specify the toppt processes
+bkg[ "TOPPT" ] = { # corresponds to topptProcs
+  "ttbj": bkg[ "PROCESS" ][ "tt1b" ] + bkg[ "PROCESS" ][ "tt2b" ],
+  "ttnobb": bkg[ "GROUP" ][ "ttnobb" ],
+  tt: bkg[ "PROCESS" ][ tt ] for tt in [ "ttjj", "ttcc", "ttbb", "tt1b", "tt2b", "ttbj", "ttnobb" ]
+}
+
+sig[ "PROCESS" ] = [ "tttt" ]
+
+data[ "PROCESS" ] = [ "DataE", "DataM" ]
+
+def init_hists( variable, hists, dataHists, sigHists, bkgHists, data, sig, bkg, category, tagBR ):
+# this is used in make_category_templates to initialize the histograms 
+# hists from hists.py are stored with the keys "[variable]_[lumiStr]_[category]_[sample]"
+# for the systematics: "[variable][sys][dir]_[lumiStr]_[catStr]_[sample]"
+# for the pdf: "[variable]pdf[i]_[lumiStr]_[catStr]_[sample]"
 
   if args.verbose: print("Processing category: {}".format(category))
   histKey = "{}_{}_{}".format( variable, lumiStr, category )
@@ -968,7 +950,5 @@ def main( data, sig, bkg, hdamp, ue, ht, topPt, categories, variable ):
   
   if args.verbose: print( "Finished creating templates in {:.2f} minutes".format( ( tStart - time.time() ) / 60. ) )
   
-#sig, bkg, data, hdamp, ue, ht, topPt = get_hist_labels()
-sig, bkg, data, hdamp, ue, ht, topPt = test_hist_labels()
-main( data, sig, bkg, hdamp, ue, ht, topPt, categories, args.variable )
+main( data, sig, bkg, categories, variables )
 
