@@ -11,6 +11,8 @@
     "LOGFOLDER": "",
     "CONFIGURATION": {
       "SUMMARY": true,
+      "AN": true,
+      "PAS": true,
       "SCALE_TO_1_PB": false,
       "CR_SYS": false,
       "NORMALIZE_PDF": false,
