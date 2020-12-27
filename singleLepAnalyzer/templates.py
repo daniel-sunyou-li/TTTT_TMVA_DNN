@@ -29,10 +29,12 @@ do_test = configuration[ "UNIT_TEST" ]
 do_pdf = configuration[ "USE_PDF" ]
 
 do_summary = step2_configuration[ "SUMMARY" ]                 # bool
-do_scale_to_1_pb = step2_configuration[ "SCALE_TO_1_PB" ]     # bool
-do_cr_systematic = step2_configuration[ "CR_SYS" ]            # bool
+do_scale_to_1_pb = step2_configuration[ "SCALE_TO_1_PB" ]     # not implemented
+do_cr_systematic = step2_configuration[ "CR_SYS" ]            # not implemented
 do_normalize_pdf = step2_configuration[ "NORMALIZE_PDF" ]     # bool
-do_br_scan = step2_configuration[ "BR_SCAN" ]                 # bool
+do_an = step2_configuration[ "AN" ]                           # bool
+do_pas = step2_configuration[ "PAS" ]                         # bool
+do_br_scan = step2_configuration[ "BR_SCAN" ]                 # not implemented
 rebin = step2_configuration[ "REBIN" ]                        # int
 lumiscale = step2_configuration[ "LUMISCALE" ]                # float
 
