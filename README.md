@@ -51,13 +51,15 @@ Setup the environment for submitting the Condor jobs
     # source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.16.00/x86_64-centos7-gcc48-opt/bin/thisroot.sh
     
 Note that after running these source commands, you will not be able to upload files to CMSEOS.  You will need to restart the console and follow the previous steps. Submit _n_ seed Condor jobs.  The `.job`, `.log`, `.out` and `.err` files are stored in the directory `condor_log_[day].[month].[year]`. The following options should be modified depending on your situation:
-* `year (-y)` = `2017` or `2018`
-* `njets (-nj)` = `2` or `4`
-* `correlation (-c)` = `50` to `100`, `60` (recommended)
-* `seeds (-n)` = `500` (recommnded)
+* `year (-y)` = `2017` or `2018`  
+* `njets (-nj)` = `2` or `4`  
+* `correlation (-c)` = `50` to `100`, `60` (recommended)  
+* `seeds (-n)` = `500` (recommnded)  
+
+Submit the jobs using:
 
     python submit.py -y 2017 -nj 4 -c 60 -n 500
-    
+
 While the jobs run, check on the progress using:
  
     python folders.py condor_log_[day].[month].[year]
