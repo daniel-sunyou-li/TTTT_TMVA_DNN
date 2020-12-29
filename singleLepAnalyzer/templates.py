@@ -22,6 +22,7 @@ weights = varsList.weights [ args.year ]
 
 configuration = jsonFile[ "CONFIGURATION" ]
 step2_configuration = jsonFile[ "STEP 2" ][ "CONFIGURATION" ]
+out_directory = os.path.join( varsList.step3DirEOS[ args.year ], jsonFile[ "STEP 1" ][ "EOSFOLDER" ] )
 
 do_systematics = configuration[ "USE_SYSTEMATICS" ]
 systematics_list = configuration[ "SYSTEMATICS" ]
@@ -375,7 +376,7 @@ def make_tables( hists, variable ): # done
       
       for hist_key in tables[ "ERROR" ][ key ].keys(): tables[ "ERROR" ][ key ][ hist_key ] = math.sqrt( tables[ "ERROR" ][ key ][ hist_key ] )
     if do_systematics: tables = table_systematics( tables, category )
-    
+      
   return tables
   
 def theta_templates( hists ): # done
@@ -387,20 +388,23 @@ def theta_templates( hists ): # done
     with sum( [ hists[ "CMB" ][ group + category ].Integral() for group in list( groups[ "BKG" ][ "GROUP" ].keys() ) as total:
       for group in list( groups[ "BKG" ][ "GROUP" ].keys() ) + [ "tttt" ]:
         if hists[ "CMB" ][ group + category ].Integral() / total <= remove_threshold:
-          print( ">> Process {} in category {} beneath threshold ({:.3f}), skipping".format( hists[ "CMB" ][ group + category ].Integral() / total ) )
+          print( ">> Process {} in category {} beneath threshold ({:.3f}), skipping".format( group, category, hists[ "CMB" ][ group + category ].Integral() / total ) )
           continue
         hists[ "CMB" ][ group + category ].Write()
-        
+               
         if do_systematics:
           for syst in systematics_list + [ "hd", "ue" ]:
             for dir in [ "Up", "Down" ]:
-              if hists[ "CMB" ][ group + category + syst + dir ].Write()
-              
+              if hists[ "CMB" ][ group + category + syst + dir ].Integral() / total <= remove_threshold:
+                print( ">> Process {} in category {} for {} beneath threshold ({:.3f}), skipping".format( group, category, syst + dir, hists[ "CMB" ][ group + category + syst + dir ].Integral() / total ) )
+                continue
+              hists[ "CMB" ][ group + category + syst + dir ].Write()
         if do_pdf:
           for i in range(100): hists[ "CMB" ][ group + category + "pdf{}".format( i ) ].Write()
   theta_file.Close()
-  print( "[OK ] Finished writing Theta template" )
-
+  print( "[OK ] Finished writing Theta template, transferring to {}".format( out_directory ) )
+  os.system( "xrdcp -f {} {}".format( theta_name, out_directory ) )
+              
 def combine_templates( hists ): # done
   print( ">> Writing Combine templates" )
   combine_name = "combine_{}_{}.root".format( variable, lumiStr )
@@ -445,7 +449,8 @@ def combine_templates( hists ): # done
             hists[ "CMB" ][ group + category + "pdf{}".format( i ) ].Write()
         
   combine_file.Close()
-  print( "[OK ] Finished writing Combine template" )
+  print( "[OK ] Finished writing Combine template, transferring to {}".format( out_directory ) )
+  os.system( "xrdcp -f {} {}".format( combine_name, out_directory ) )
   
 def summary_templates( hists ): # done
   print( ">> Writing summary templates" )
@@ -502,7 +507,9 @@ def summary_templates( hists ): # done
           for dir in [ "Up", "Down" ]:
             hists[ "YIELD" ][ lep + group + syst + dir ].Write()
       
-  yield_file.Close()  
+  yield_file.Close()
+  print( "[OK ] Finished writing Summary template, transferring to {}".format( out_directory ) )
+  os.system( "xrdcp -f {} {}".format( yield_name, out_directory ) )
   
 def print_tables( tables, variable ):
   def nominal_table( tables ):
@@ -709,6 +716,7 @@ def print_tables( tables, variable ):
       print >> out_file
       
     out_file.close()
+    os.system( "xrdcp -f yields_{}_{}.txt {}".format( variable, lumiStr, out_directory ) )
     
   print( ">> Producing yield tables" )
   
@@ -734,7 +742,3 @@ def main():
     print_tables( tables, variable )
     del hists
     del tables
-  
-  
-  
-  
