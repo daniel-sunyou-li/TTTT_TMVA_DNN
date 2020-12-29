@@ -35,7 +35,12 @@
     "SUBMIT": "False",
     "DONE": "False",
     "LOGFOLDER": "",
-    "PLOT": "modified" 
+    "CONFIGURATION": {
+      "REBIN_COMBINE": true,
+      "REBIN_THETA": false
+      "PLOT_ORIGINAL": false,
+      "PLOT_REBIN": true
+    }
   },
   "STEP 4": {
     "SUBMIT": "False",
