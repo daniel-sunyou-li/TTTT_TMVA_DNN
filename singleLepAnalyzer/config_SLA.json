@@ -36,8 +36,16 @@
     "DONE": "False",
     "LOGFOLDER": "",
     "CONFIGURATION": {
+      "SHAPES": false,
+      "PDF": true,
+      "MURF": true,
+      "PSWEIGHTS": true,
+      "NORMALIZE_THEORY_SYST_SIG": true,
+      "NORMALIZE_THEORY_SYST_BKG": false,
       "REBIN_COMBINE": true,
       "REBIN_THETA": false,
+      "REBIN_THRESHOLD": 0.3,
+      "STATISTICAL_THRESHOLD": 0.05,
       "PLOT_ORIGINAL": false,
       "PLOT_REBIN": true
     }
