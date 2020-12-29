@@ -46,6 +46,7 @@
       "REBIN_THETA": false,
       "REBIN_THRESHOLD": 0.3,
       "STATISTICAL_THRESHOLD": 0.05,
+      "REMOVE_FROM_YIELD": [ "hdamp", "ue", "njet", "njetsf" ]
       "PLOT_ORIGINAL": false,
       "PLOT_REBIN": true
     }
