@@ -138,6 +138,8 @@ PARAMETERS = {
     "nbjets",
     "weight_string",
     "cut_string",
+    "start_index",
+    "end_index",
     "variables",
     "weightLSig",
     "weightQSig",
@@ -156,6 +158,8 @@ PARAMETERS = {
 
     "n_calls": 20,
     "n_starts": 15,
+    "start_index": subDirName.split( "to" )[0],
+    "end_index": subDirName.split( "to" )[1]
 }
 # Update parameters given file
 if args.parameters != None and os.path.exists(args.parameters):
