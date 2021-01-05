@@ -119,7 +119,7 @@ def get_correlated_groups(corr_mat, variables, cutoff):
     in_pairs = lambda p: len([x for x in pairs if x[0] == p]) != 0
     for i in range(shape[0]):
         for j in range(i + 1, shape[1]):
-            if corr_mat[i,j] >= cutoff:
+            if corr_mat[i,j] >= float( cutoff ):
                 pair = set([variables[i], variables[j]])
                 if not in_pairs(pair):
                     pairs.append((pair, corr_mat[i, j]))
