@@ -111,7 +111,7 @@ def get_correlated_groups(corr_mat, variables, cutoff):
   pairs = []
   for i in range(shape[0]):
     for j in range(i+1, shape[1]):
-      if abs(corr_mat[i,j]) >= cutoff:
+      if abs(corr_mat[i,j]) >= float( cutoff ):
         pairs.append([variables[i],variables[j]])
 
   # Find correlated groups
