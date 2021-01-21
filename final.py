@@ -76,7 +76,6 @@ for config_num, config_path in enumerate(config_order):
   if not os.path.exists(cv_folder):
     os.mkdir(cv_folder)
         
-  model_path = os.path.join(folder, config_path[config_path.rfind("/") + 1:].rstrip(".json") + ".h5")
 
   # Load JSON data
   parameters = None
@@ -84,18 +83,20 @@ for config_num, config_path in enumerate(config_order):
     parameters = load_json(f.read())
 
   # Load variables list
-  with open(config_path.replace("optimized_parameters", "parameters"), "r") as f:
-    full_params = load_json(f.read())
-    parameters["variables"] = full_params["variables"]
-    parameters["patience"] = full_params["patience"][-1] if type(full_params["patience"]) == list else full_params["patience"]
-    parameters["epochs"] = full_params["epochs"][-1] if type(full_params["epochs"]) == list else full_params["epochs"]
-  print( ">> Using njets >= {} and nbjets >= {}".format( full_params[ "njets" ], full_params[ "nbjets" ] ) )
+  with open(config_path.replace("optimized_params", "config"), "r") as f:
+    config = load_json(f.read())
+    parameters["variables"] = config["variables"]
+    parameters["patience"] = config["patience"][-1] if type(config["patience"]) == list else config["patience"]
+    parameters["epochs"] = config["epochs"][-1] if type(config["epochs"]) == list else config["epochs"]
+  print( ">> Using njets >= {} and nbjets >= {}".format( config[ "njets" ], config[ "nbjets" ] ) )
+  
+  model_path = os.path.join(folder, "final_model_{}j_{}to{}.h5".format( config[ "njets" ], config[ "start_index" ], config[ "end_index" ] ) )
 
   model = mltools.CrossValidationModel(
     parameters,
     signal_files, background_files, 
     cv_folder, 
-    full_params["njets"], full_params["nbjets"], int(args.num_folds ) )
+    config["njets"], config["nbjets"], int(args.num_folds ) )
   if not args.no_cut_save:
     if not os.path.exists(mltools.CUT_SAVE_FILE):
       print( ">> Generating saved cut event files." )
