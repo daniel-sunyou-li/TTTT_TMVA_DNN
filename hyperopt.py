@@ -110,7 +110,7 @@ if args.numvars == "all":
 else:
   if ":" in args.numvars:
     indices = [ int(x) for x in args.numvars.split(":") ]
-    variables = var_order[ indices[0]:( indices[1] + 1 ) ]
+    variables = var_order[ ( indices[0] - 1 ):indices[1] ]
     subDirName = "{}to{}".format( indices[0], indices[1] )
   else:
     variables = var_order[:int(args.numvars)]
@@ -120,11 +120,13 @@ os.system( "mkdir ./{}/".format( os.path.join( args.dataset, subDirName ) ) )
 print( ">> Variables used in optimization:\n - {}".format( "\n - ".join( variables ) ) )
 
 # Calculate re-weighted significance
-weightLSig, weightQSig = reweight_importances( year, variables, [ var_data[ "importance" ][ var_data[ "variable name" ].index(v) ] for v in variables ], args.njets, args.nbjets )
+LMS, QMS = reweight_importances( year, variables, [ var_data[ "importance" ][ var_data[ "variable name" ].index(v) ] for v in variables ], args.njets, args.nbjets )
+LSI = sum( [ var_data[ "mean" ][ var_data[ "variable name" ].index(v) ] for v in variables ] )
+LSS = sum( [ var_data[ "importance" ][ var_data[ "variable name" ].index(v) ] for v in variables ] )
 
 # Determine static and hyper parameter
 timestamp = datetime.now()
-PARAMETERS = {
+CONFIG = {
   "static": [
     "static",
     "epochs",
@@ -141,8 +143,10 @@ PARAMETERS = {
     "start_index",
     "end_index",
     "variables",
-    "weightLSig",
-    "weightQSig",
+    "LMS",
+    "QMS",
+    "LSI",
+    "LSS"
   ],
     "epochs": 20,
     "patience": 5,
@@ -166,28 +170,30 @@ if args.parameters != None and os.path.exists(args.parameters):
   print(">> Loading updated parameters from {}.".format(args.parameters))
   with open(args.parameters, "r") as f:
     u_params = load_json(f.read())
-    PARAMETERS.update(u_params)
+    CONFIG.update(u_params)
 
-PARAMETERS.update({
+CONFIG.update({
   "tag": timestamp.strftime("%d.%b.%Y_%H"),
-  "log_file": os.path.join(args.dataset, subDirName, "optimize_log_" + timestamp.strftime("%d.%b.%Y_%H") + ".txt"),
+  "log_file": os.path.join(args.dataset, subDirName, "hpo_log_" + timestamp.strftime("%d.%b.%Y_%H") + ".txt"),
   "weight_string": varsList.weightStr,
   "cut_string": varsList.cutStr,
   "variables": variables,
-  "weightLSig": sum(weightLSig),
-  "weightQSig": sum(weightQSig),
+  "LMS": sum(LMS),
+  "QMS": sum(QMS),
+  "LSI": LSI,
+  "LSS": LSS,
   "njets": args.njets,
   "nbjets": args.nbjets
 } )
 
 # Save used parameters to file
-parameter_file = os.path.join( args.dataset, subDirName, "parameters_" + PARAMETERS["tag"] + ".json" )
-with open( parameter_file, "w" ) as f:
-  f.write( write_json( PARAMETERS, indent=2 ) )
+config_file = os.path.join( args.dataset, subDirName, "config_" + CONFIG["tag"] + ".json" )
+with open( config_file, "w" ) as f:
+  f.write( write_json( CONFIG, indent=2 ) )
 print( "[OK ] Parameters saved to dataset folder." )
 
 # Start the logfile
-logfile = open(PARAMETERS["log_file"], "w")
+logfile = open( CONFIG["log_file"], "w" )
 logfile.write("{:7}, {:7}, {:7}, {:7}, {:9}, {:14}, {:10}, {:7}\n".format(
       "Hidden",
       "Nodes",
@@ -196,7 +202,7 @@ logfile.write("{:7}, {:7}, {:7}, {:7}, {:9}, {:14}, {:10}, {:7}\n".format(
       "Pattern",
       "Regulator",
       "Activation",
-      "ROC"
+      "AUC"
     )
   )
 
@@ -204,8 +210,8 @@ logfile.write("{:7}, {:7}, {:7}, {:7}, {:9}, {:14}, {:10}, {:7}\n".format(
 opt_space = []
 opt_order = {}
 i = 0
-for param, value in PARAMETERS.iteritems():
-  if param not in PARAMETERS["static"]:
+for param, value in CONFIG.iteritems():
+  if param not in CONFIG["static"]:
     if type(value[0]) == str:
       opt_space.append( Categorical(value, name=param) )
     elif param == "learning_rate":
@@ -225,14 +231,14 @@ def objective(**X):
   global cut_events
     
   print(">> Configuration:\n{}\n".format(X))
-  if not "variables" in X: X["variables"] = PARAMETERS["variables"]
-  if not "patience" in X: X["patience"] = PARAMETERS["patience"]
-  if not "epochs" in X: X["epochs"] = PARAMETERS["epochs"]
+  if not "variables" in X: X["variables"] = CONFIG["variables"]
+  if not "patience" in X: X["patience"] = CONFIG["patience"]
+  if not "epochs" in X: X["epochs"] = CONFIG["epochs"]
   model = mltools.HyperParameterModel(
     X, 
     signal_files, background_files,
     args.njets, args.nbjets, 
-    PARAMETERS["model_name"]
+    CONFIG["model_name"]
   )
     
   if cut_events == None:
@@ -264,7 +270,7 @@ def objective(**X):
     )
   )
   opt_metric = log(1 - model.auc_test)
-  print( ">> Metric: {}".format(round(opt_metric, 3) ) )
+  print( ">> Metric: {:.4f}".format( opt_metric ) )
   return opt_metric
 
 
@@ -274,18 +280,18 @@ start_time = datetime.now()
 res_gp = gp_minimize(
             func = objective,
             dimensions = opt_space,
-            n_calls = PARAMETERS["n_calls"],
-            n_random_starts = PARAMETERS["n_starts"],
+            n_calls = CONFIG["n_calls"],
+            n_random_starts = CONFIG["n_starts"],
             verbose = True
             )
 
 logfile.close()
 
 # Report results
-print(">> Writing optimized parameter log to: optimized_parameters_" + PARAMETERS["tag"] + ".txt and .json")
-with open(os.path.join(args.dataset, subDirName, "optimized_params_" + PARAMETERS["tag"] + ".txt"), "w") as f:
+print(">> Writing optimized parameter log to: optimized_params_" + CONFIG["tag"] + ".txt and .json")
+with open(os.path.join(args.dataset, subDirName, "optimized_params_" + CONFIG["tag"] + ".txt"), "w") as f:
   f.write("TTTT DNN Hyper Parameter Optimization Parameters \n")
-  f.write("Static and Parameter Space stored in: {}\n".format(parameter_file))
+  f.write("Static and Parameter Space stored in: {}\n".format(config_file))
   f.write("Optimized Parameters:\n")
   f.write("    Hidden Layers: {}\n".format(res_gp.x[opt_order["hidden_layers"]]))
   f.write("    Initial Nodes: {}\n".format(res_gp.x[opt_order["initial_nodes"]]))
@@ -294,6 +300,6 @@ with open(os.path.join(args.dataset, subDirName, "optimized_params_" + PARAMETER
   f.write("    Node Pattern: {}\n".format(res_gp.x[opt_order["node_pattern"]]))
   f.write("    Regulator: {}\n".format(res_gp.x[opt_order["regulator"]]))
   f.write("    Activation Function: {}\n".format(res_gp.x[opt_order["activation_function"]]))
-with open(os.path.join(args.dataset, subDirName, "optimized_parameters_" + PARAMETERS["tag"] + ".json"), "w") as f:
+with open(os.path.join(args.dataset, subDirName, "optimized_params_" + CONFIG["tag"] + ".json"), "w") as f:
   f.write(write_json(dict([(key, res_gp.x[val]) for key, val in opt_order.iteritems()]), indent=2))
 print( "[OK ] Finished optimization in: {}".format( datetime.now() - start_time ) )
