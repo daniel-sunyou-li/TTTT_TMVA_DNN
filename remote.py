@@ -66,7 +66,7 @@ for bkg in varsList.bkg_training[ args.year ]:
 
 # Set weights and cuts
 cutStr = varsList.cutStr
-cutStr += " && ( NJetsCSVwithSF_MultiLepCalc >= {} )".format( args.nbjets ) 
+cutStr += " && ( NJetsCSV_MultiLepCalc >= {} )".format( args.nbjets ) 
 cutStr += " && ( NJets_JetSubCalc >= {} )".format( args.njets ) 
 cutStr += " && ( ( isTraining == 1 ) || ( isTraining == 2 ) )"
 
@@ -78,7 +78,7 @@ cut = TCut( cutStr )
 # Prepare tree
 loader.PrepareTrainingAndTestTree( 
     cut, cut, 
-    "SplitMode=Alternate:MixMode=Alternate:NormMode=NumEvents:!V"
+    "SplitMode=Random:NormMode=NumEvents:!V"
 )
 
 # Build model
