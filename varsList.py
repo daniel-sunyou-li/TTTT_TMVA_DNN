@@ -559,7 +559,7 @@ varList["DNN"] = [
   ("NresolvedTops1pFake", "resolved t-tagged jet multiplicity", 0, 5, 6),
   ("NJetsTtagged", "t-tagged jet multiplicity", 0, 4, 5),
   ("NJetsWtagged", "W-tagged multiplicity", 0, 5, 6),
-  ("NJetsCSVwithSF_MultiLepCalc", "b-tagged jet multiplicity", 0, 10, 11),
+  ("NJetsCSV_MultiLepCalc", "b-tagged jet multiplicity", 0, 10, 11),
   ("HOTGoodTrijet1_mass", "HOTGoodTrijet1_mass [GeV]", 0, 300, 51),               # Trijet variables
   ("HOTGoodTrijet1_dijetmass", "HOTGoodTrijet1_dijetmass [GeV]", 0, 250, 51),
   ("HOTGoodTrijet1_pTratio", "HOTGoodTrijet1_pTratio" , 0, 1, 51),
@@ -585,7 +585,7 @@ varList["Step3"].append( tuple( ( "DNN_disc_4j_76vars", "tttt discriminator (4j,
 # weight event count
 
 weightStr = "triggerXSF * pileupWeight * lepIdSF * EGammaGsfSF * isoSF * L1NonPrefiringProb_CommonCalc * " + \
-            "(MCWeight_MultiLepCalc / abs(MCWeight_MultiLepCalc) ) * xsecEff * tthfWeight * njetsWeight"
+            "(MCWeight_MultiLepCalc / abs(MCWeight_MultiLepCalc) ) * xsecEff * tthfWeight * njetsWeight * btagCSVWeight * btagCSVRenormWeight"
 
 # step3 weight event
 targetLumi = 41530. # 1/pb
