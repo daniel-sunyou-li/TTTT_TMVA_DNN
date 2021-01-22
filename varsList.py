@@ -613,13 +613,13 @@ weights = {
 }
 
 # general cut, add selection based cuts in training scripts
-cutStr =  "( ( leptonPt_MultiLepCalc > 50 && isElectron == 1 ) || " + \
-          "( leptonPt_MultiLepCalc > 50 && isMuon == 1 ) ) && " + \
+cutStr =  "( ( leptonPt_MultiLepCalc > 20 && isElectron ) || " + \
+          "( leptonPt_MultiLepCalc > 20 && isMuon ) ) && " + \
           "( corr_met_MultiLepCalc > 60 ) && " + \
           "( MT_lepMet > 60 ) && " + \
           "( theJetPt_JetSubCalc_PtOrdered[0] > 0 ) && " + \
           "( theJetPt_JetSubCalc_PtOrdered[1] > 0 ) && " + \
           "( theJetPt_JetSubCalc_PtOrdered[2] > 0 ) && " + \
           "( minDR_lepJet > 0.4 ) && " + \
-          "( AK4HT > 510 ) && " + \
+          "( AK4HT > 500 ) && " + \
           "( DataPastTriggerX == 1 ) && ( MCPastTriggerX == 1 )"
