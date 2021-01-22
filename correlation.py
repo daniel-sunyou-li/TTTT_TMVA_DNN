@@ -49,7 +49,7 @@ def get_correlation_matrix(year, variables, njets, nbjets):
 
   # Set cuts
   cutStr = varsList.cutStr
-  cutStr += " && ( NJetsCSVwithSF_MultiLepCalc >= {} )".format( nbjets ) 
+  cutStr += " && ( NJetsCSV_MultiLepCalc >= {} )".format( nbjets ) 
   cutStr += " && ( NJets_JetSubCalc >= {} )".format( njets )
   cutStr += " && ( ( isTraining == 1 ) || ( isTraining == 2 ) )"
   cut_string = TCut( cutStr )
@@ -75,6 +75,8 @@ def get_correlation_matrix(year, variables, njets, nbjets):
 
 def reweight_importances( year, variables, importances, njets, nbjets ):
   # Re-weight the variable importances
+  for i, importance in enumerate( importances ):
+    if importance < 0: importances[i] = 0 
   corr_mat = abs( get_correlation_matrix( int(year), variables, njets, nbjets ) / 100.0 )
   mod_corr_mat = np.zeros( ( len( corr_mat ), len( corr_mat ) ) )
   for i in range(len(corr_mat)):
