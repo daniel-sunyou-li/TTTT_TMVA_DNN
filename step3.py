@@ -78,6 +78,7 @@ def fill_tree( modelNames, jetlist, varlist, indexlist, disclist, rootTree ):
         disc_name[ modelName ] = "DNN_{}j_{}to{}".format( str( jetlist[i] ), str( indexlist[i][0] ), str( indexlist[i][1] ) )
         print( ">> Creating new step3 branch: {}".format( disc_name[ modelName ] ) )
         branches[ modelName ] = newTree.Branch( disc_name[ modelName ], DNN_disc[ modelName ], disc_name[ modelName ] + "/F" );
+        print( "   - {:.3f} pm {:.3f}".format( np.mean( disclist[i] ), np.std( disclist[i] ) ) )
     for i in range( len(disclist[0]) ):
         rootTree.GetEntry(i)
         for j, modelName in enumerate( sorted( modelNames ) ):
@@ -98,8 +99,3 @@ def main():
     fill_tree( modelNames, jetlist, varlist, indexlist, disclist, rootTree )
 
 main()
-
-
-
-
-
