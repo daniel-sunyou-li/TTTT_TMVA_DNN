@@ -27,7 +27,7 @@ import varsList
 CUT_VARIABLES = ["leptonPt_MultiLepCalc", "isElectron", "isMuon",
                  "corr_met_MultiLepCalc", "MT_lepMet", "minDR_lepJet",
                  "AK4HT", "DataPastTriggerX", "MCPastTriggerX", "isTraining",
-                 "NJetsCSVwithSF_MultiLepCalc", "NJets_JetSubCalc"]
+                 "NJetsCSV_MultiLepCalc", "NJets_JetSubCalc"]
 
 # TODO: maybe move to varslist?
 base_cut = "((%(leptonPt_MultiLepCalc)s > 50 and %(isElectron)s == 1) or " + \
@@ -53,7 +53,7 @@ class MLTrainingInstance(object):
     self.signal_paths = signal_paths
     self.background_paths = background_paths
     self.cut = base_cut + \
-               " and ( %(NJetsCSVwithSF_MultiLepCalc)s >= {} ) ".format( nbjets ) + \
+               " and ( %(NJetsCSV_MultiLepCalc)s >= {} ) ".format( nbjets ) + \
                " and ( %(NJets_JetSubCalc)s >= {} )".format( njets)
 
   def load_cut_events(self, path):
