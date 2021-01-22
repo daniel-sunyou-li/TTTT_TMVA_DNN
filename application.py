@@ -42,7 +42,7 @@ else:
     for syst in [ "JEC", "JER" ]:
       for dir in [ "up", "down" ]:
         files_step2[ syst+dir ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/{}{}/".format( varsList.eosUserName, step2Sample, syst, dir ), shell=True).split("\n")[:-1]
-        files_step3[ syst+dir ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/{}{}/".format( varsList.eosUserName, step3Sample, syst, dir ), shell=True).split("\n")[:-1]
+        if args.resubmit != None: files_step3[ syst+dir ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/{}{}/".format( varsList.eosUserName, step3Sample, syst, dir ), shell=True).split("\n")[:-1]
 
 submit_files = {}
 if args.verbose: print( ">> Converting the following samples to step3:" )
@@ -102,13 +102,13 @@ sampleDir    = varsList.step2Sample[ args.year ] # sample directory name
 jsonFiles = []
 jsonNames = [] 
 for folder in resultDir:
-  jsonCheck = glob.glob( "{}/parameters*.json".format(folder) )
+  jsonCheck = glob.glob( "{}/config*.json".format(folder) )
   if len(jsonCheck) > 0:
     if args.verbose: print( ">> Using parameters file: {}".format( jsonCheck[0] ) )
     jsonNames.append(jsonCheck[0])
     jsonFiles.append(load_json(open(jsonCheck[0]).read()))
   else:
-    print( "[ERR] No parameters .json file was found in {}, exiting program...".format( folder ) )
+    print( "[ERR] No config .json file was found in {}, exiting program...".format( folder ) )
     sys.exit()
 
 jsonNames_arg = ""
@@ -121,7 +121,7 @@ for folder in resultDir:
   modelCheck = glob.glob("{}/*.h5".format(folder))
   opt_model = None
   for modelName in modelCheck:
-    if "optimized" in modelName.lower(): opt_model = modelName
+    if "final" in modelName.lower(): opt_model = modelName
   if len(modelCheck) > 0:
     if args.verbose: print( ">> Using model: {}".format(opt_model))
     models.append(opt_model)
@@ -160,7 +160,7 @@ def voms_init():
 def condor_job( fileName, condorDir, outputDir, logDir, tag ):
   request_memory = "3072" 
   if "tttosemilepton" in fileName.lower() and "ttjj_hadd" in fileName.lower(): request_memory = "6144" 
-  if args.resubmit != None: request_memory = "7168"
+  if args.resubmit != None: request_memory = "10240"
   dict = {
     "MODEL"     : models_arg,          # stays the same across all samples
     "PARAMFILE" : jsonNames_arg,       # stays the same across all samples
