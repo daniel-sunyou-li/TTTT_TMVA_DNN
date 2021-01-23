@@ -172,9 +172,10 @@ if args.parameters != None and os.path.exists(args.parameters):
     u_params = load_json(f.read())
     CONFIG.update(u_params)
 
+tag = "{}j_{}to{}".format( args.njets, subDirName.split( "to" )[0], subDirName.split( "to" )[1] )
 CONFIG.update({
-  "tag": timestamp.strftime("%d.%b.%Y_%H"),
-  "log_file": os.path.join(args.dataset, subDirName, "hpo_log_" + timestamp.strftime("%d.%b.%Y_%H") + ".txt"),
+  "tag": tag,
+  "log_file": os.path.join(args.dataset, subDirName, "hpo_log_" + tag + ".txt"),
   "weight_string": varsList.weightStr,
   "cut_string": varsList.cutStr,
   "variables": variables,
