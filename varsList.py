@@ -595,19 +595,37 @@ uncertainties = {
     "TRIGGER": { "2017": 0.0, "2018": 0.0 },
     "ID": { "2017": 0.03, "2018": 0.03 },
     "ISOLATION": { "2017": 0.0, "2018": 0.0 },
+<<<<<<< HEAD
     "TOTAL": { "2017": 0, "2018": 0 } },
+=======
+    "TOTAL": { "2017": 0.0, "2018": 0.0 }
+  },
+>>>>>>> b2a4826b548a6cac81724ea016314fd7f29cb654
   "MUON": {
     "TRIGGER": { "2017": 0.0, "2018": 0.0 },
     "ID": { "2017": 0.03, "2018": 0.03 },
     "ISOLATION": { "2017": 0.0, "2018": 0.0 },
+<<<<<<< HEAD
     "TOTAL": { "2017": 0, "2018": 0 } }
+=======
+    "TOTAL": { "2017": 0.0, "2018": 0.0 }
+  }
+>>>>>>> b2a4826b548a6cac81724ea016314fd7f29cb654
 }
 
 for lepton in [ "ELECTRON", "MUON" ]:
+<<<<<<< HEAD
   for year in uncertainties[ lepton ][ "TOTAL" ]:
     uncertainties[ lepton ][ "TOTAL" ][ year ] = ( uncertainties[ lepton ][ "TRIGGER" ][ year ] + 
                                                    uncertainties[ lepton ][ "ID" ][ year ] + 
                                                    uncertainties[ lepton ][ "ISOLATION" ][ year ] +
+=======
+  
+  for year in uncertainties[ lepton ][ "TRIGGER" ]:
+    uncertainties[ lepton ][ "TOTAL" ][ year ] = ( uncertainties[ lepton ][ "TRIGGER" ][ year ]**2 + 
+                                                   uncertainties[ lepton ][ "ID" ][ year ]**2 + 
+                                                   uncertainties[ lepton ][ "ISOLATION" ][ year ]**2 +
+>>>>>>> b2a4826b548a6cac81724ea016314fd7f29cb654
                                                    uncertainties[ "LUMINOSITY" ][ year ] )**0.5
                                                      
 # weight events
