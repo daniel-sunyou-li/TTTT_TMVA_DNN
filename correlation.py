@@ -100,7 +100,9 @@ def reweight_importances( year, variables, importances, njets, nbjets ):
       if j > i:
         weightLSig[i] -= wgt_sig_mat[i,j]
         weightQSig[i] -= wgt_sig_mat[i,j]**2
-    
+  
+  for i in range(len(weightQSig)):
+    if weightQSig[i] < 0: weightQSig[i] = 0  
   print("Weighted Quadratic Sum: {}".format(np.sum(np.sqrt(weightQSig))))
   print("Weighted Linear Sum: {}".format(np.sum(weightLSig)))
   return weightLSig, np.sqrt(weightQSig)

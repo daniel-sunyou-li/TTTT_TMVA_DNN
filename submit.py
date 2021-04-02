@@ -119,7 +119,7 @@ def submit_job(job):
 Executable = %(RUNDIR)s/remote.sh
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT
-request_memory = 2.8 GB
+request_memory = 3.8 GB
 request_cpus = 2
 Output = %(FILENAME)s.out
 Error = %(FILENAME)s.err

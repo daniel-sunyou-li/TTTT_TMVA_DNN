@@ -38,7 +38,7 @@ for dataset in datasets:
   if os.path.exists(dataset):
     if os.path.isdir(dataset):
       for dfile in os.listdir(dataset):
-        if dfile.startswith("optimized_parameters") and dfile.endswith(".json"):
+        if dfile.startswith("optimized_params") and dfile.endswith(".json"):
           try:
             with open( os.path.join( dataset, dfile ), "r") as f:
               hpo_data[os.path.join(dataset, dfile)] = load_json(f.read())

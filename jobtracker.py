@@ -231,6 +231,7 @@ class JobFolder(object):
             return
         if dest == "default":
             dest = os.path.join(os.getcwd(), self.path[self.path.rfind("/")+1:] + ".jtd")
+            print( ">> Compacting as {}".format( dest ) )
 
         # Perform compaction
         self.compacted = True

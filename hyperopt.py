@@ -120,9 +120,16 @@ os.system( "mkdir ./{}/".format( os.path.join( args.dataset, subDirName ) ) )
 print( ">> Variables used in optimization:\n - {}".format( "\n - ".join( variables ) ) )
 
 # Calculate re-weighted significance
+print(">> Significance:")
 LMS, QMS = reweight_importances( year, variables, [ var_data[ "importance" ][ var_data[ "variable name" ].index(v) ] for v in variables ], args.njets, args.nbjets )
+print(">> Importance:")
+LMI, QMI = reweight_importances( year, variables, [ var_data[ "mean" ][ var_data[ "variable name" ].index(v) ] for v in variables ], args.njets, args.nbjets )
 LSI = sum( [ var_data[ "mean" ][ var_data[ "variable name" ].index(v) ] for v in variables ] )
 LSS = sum( [ var_data[ "importance" ][ var_data[ "variable name" ].index(v) ] for v in variables ] )
+
+print( "Linear Sum of Importance: {}".format( LSI ) )
+print( "Linear Sum of Significance: {}".format( LSS ) )
+
 
 # Determine static and hyper parameter
 timestamp = datetime.now()
@@ -148,20 +155,20 @@ CONFIG = {
     "LSI",
     "LSS"
   ],
-    "epochs": 20,
+    "epochs": 25,
     "patience": 5,
     "model_name": os.path.join( args.dataset, subDirName, "hpo_model.h5" ),
 
-    "hidden_layers": [ 1, 3 ],
+    "hidden_layers": [ 1, 2 ],
     "initial_nodes": [ len(variables), len(variables) * 10 ],
     "node_pattern": [ "static", "dynamic" ],
-    "batch_power": [ 8, 11 ],
-    "learning_rate": [ 1e-5, 1e-4, 1e-3, 1e-2],
+    "batch_power": [ 9, 11 ],
+    "learning_rate": [ 1e-3, 5e-3, 1e-2],
     "regulator": [ "dropout", "none" ],
-    "activation_function": [ "relu", "softplus", "elu", "tanh" ],
+    "activation_function": [ "softplus", "elu" ],
 
-    "n_calls": 20,
-    "n_starts": 15,
+    "n_calls": 50,
+    "n_starts": 20,
     "start_index": subDirName.split( "to" )[0],
     "end_index": subDirName.split( "to" )[1]
 }
@@ -172,9 +179,10 @@ if args.parameters != None and os.path.exists(args.parameters):
     u_params = load_json(f.read())
     CONFIG.update(u_params)
 
+tag = "{}j_{}to{}".format( args.njets, subDirName.split( "to" )[0], subDirName.split( "to" )[1] )
 CONFIG.update({
-  "tag": timestamp.strftime("%d.%b.%Y_%H"),
-  "log_file": os.path.join(args.dataset, subDirName, "hpo_log_" + timestamp.strftime("%d.%b.%Y_%H") + ".txt"),
+  "tag": tag,
+  "log_file": os.path.join(args.dataset, subDirName, "hpo_log_" + tag + ".txt"),
   "weight_string": varsList.weightStr,
   "cut_string": varsList.cutStr,
   "variables": variables,

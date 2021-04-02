@@ -55,14 +55,13 @@ if args.resubmit != None:
   # check for failed jobs based on .out file -- ran, but failed during filling tree in step3.py
   for out_file in out_files:
     lines = open( os.path.join( args.resubmit, out_file ) ).readlines()
-      if "[OK ]" not in lines[-1]:
-        sample_name = out_file.split( "hadd" )[0] + "hadd.root" 
-        sample_tag = out_file.split( "hadd_" )[1].split( "." )[0] 
-        if sample_tag not in submit_files.keys():
-          submit_files[ sample_tag ] = [ sample_name ]
-        else: submit_files[ sample_tag ].append( sample_name )
-          resubmit_count += 1
-        if args.verbose: print( ">> Resubmitting failed job: {}".format( sample_name ) )
+    if "[OK ]" not in lines[-1]:
+      sample_name = out_file.split( "hadd" )[0] + "hadd.root" 
+      sample_tag = out_file.split( "hadd_" )[1].split( "." )[0] 
+      if sample_tag not in submit_files.keys(): submit_files[ sample_tag ] = [ sample_name ]
+      else: submit_files[ sample_tag ].append( sample_name )
+      resubmit_count += 1
+      if args.verbose: print( ">> Resubmitting failed job: {}".format( sample_name ) )
   # check for failed jobs based on .log and .out file -- job was held due to insufficient memory requested, resubmit with more memory
   for log_file in log_files:
     if log_file.split( "." )[0] + ".out" not in out_files:
@@ -158,9 +157,9 @@ def voms_init():
     print( "[OK ] VOMS initialized" )
  
 def condor_job( fileName, condorDir, outputDir, logDir, tag ):
-  request_memory = "3072" 
-  if "tttosemilepton" in fileName.lower() and "ttjj_hadd" in fileName.lower(): request_memory = "6144" 
-  if args.resubmit != None: request_memory = "10240"
+  request_memory = "10240" 
+  if "tttosemilepton" in fileName.lower() and "ttjj_hadd" in fileName.lower(): request_memory = "12288" 
+  if args.resubmit != None: request_memory = "12288"
   dict = {
     "MODEL"     : models_arg,          # stays the same across all samples
     "PARAMFILE" : jsonNames_arg,       # stays the same across all samples
