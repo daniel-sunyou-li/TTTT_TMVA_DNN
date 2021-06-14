@@ -186,7 +186,6 @@ def brux_to_eos( year, systematics, samples, split ):
       sys_call( "xrdcp {}{} {}nominal/".format(
         step2DirLPC + "nominal/",
         sample.replace( "hadd", split_tag ),
-        varsList.eosUserName,
         step2DirEOS
       ), shell = True )
       if args.remove and sample not in training_samples:
