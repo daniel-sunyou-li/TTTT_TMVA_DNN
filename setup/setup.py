@@ -110,6 +110,7 @@ def brux_to_lpc( directoryBRUX, sample, step2Dir ):
     
   opt = 1
   while opt == 1:
+    # when you run this for the first time, you will get an error message so manually transfer something first then run this code
     opt = child.expect( [ varsList.bruxUserName + "@brux.hep.brown.edu's password: ",
       "Are you sure you want to continue connecting (yes/no)? " ] )
     if opt == 1:
