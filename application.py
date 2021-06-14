@@ -58,16 +58,10 @@ if args.resubmit != None:
     if "[OK ]" not in lines[-1]:
       sample_name = out_file.split( "hadd" )[0] + "hadd.root" 
       sample_tag = out_file.split( "hadd_" )[1].split( "." )[0] 
-<<<<<<< HEAD
       if sample_tag not in submit_files.keys(): submit_files[ sample_tag ] = [ sample_name ]
       else: submit_files[ sample_tag ].append( sample_name )
       resubmit_count += 1
-=======
-      if sample_tag not in submit_files.keys():
-        submit_files[ sample_tag ] = [ sample_name ]
-      else: submit_files[ sample_tag ].append( sample_name )
-        resubmit_count += 1
->>>>>>> b2a4826b548a6cac81724ea016314fd7f29cb654
+
       if args.verbose: print( ">> Resubmitting failed job: {}".format( sample_name ) )
   # check for failed jobs based on .log and .out file -- job was held due to insufficient memory requested, resubmit with more memory
   for log_file in log_files:
