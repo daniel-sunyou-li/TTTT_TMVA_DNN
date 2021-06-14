@@ -22,6 +22,7 @@ Retrieve the CMSSW environment (BASH #TCSH)
     # setenv SCRAM_ARCH slc7_amd64_gcc630
     source /cvmfs/cms.cern.ch/cmsset_default.sh
     # source /cvmfs/cms.cern.ch/cmsset_default.csh
+    cmsrel CMSSW_9_4_6_patch1
     
 Clone the repository
 
