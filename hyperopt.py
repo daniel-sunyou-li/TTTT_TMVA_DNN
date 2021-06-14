@@ -155,7 +155,7 @@ CONFIG = {
     "LSI",
     "LSS"
   ],
-    "epochs": 25,
+    "epochs": 5,
     "patience": 5,
     "model_name": os.path.join( args.dataset, subDirName, "hpo_model.h5" ),
 
@@ -167,8 +167,8 @@ CONFIG = {
     "regulator": [ "dropout", "none" ],
     "activation_function": [ "softplus", "elu" ],
 
-    "n_calls": 50,
-    "n_starts": 20,
+    "n_calls": 2,
+    "n_starts": 1,
     "start_index": subDirName.split( "to" )[0],
     "end_index": subDirName.split( "to" )[1]
 }

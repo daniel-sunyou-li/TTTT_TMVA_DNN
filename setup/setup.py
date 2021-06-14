@@ -263,12 +263,13 @@ def create_tar():
     print( ">> Deleting existing CMSSW946.tgz" ) 
     os.system( "rm {}{}".format( home, "CMSSW946.tgz" ) )
   print( ">> Creating new tar file for CMSSW946.tgz" )
-  os.system( "tar -C ~/nobackup/ -zcvf CMSSW946.tgz --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\"  --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" {}".format(
+  os.system( "tar -C ~/nobackup/ -zcvf CMSSW946.tgz --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\"  --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" {}".format(
     tarDir + "FWLJMET*",
     tarDir + "condor_log*",
     tarDir + "dataset*",
     tarDir + "application_log*",
     tarDir + "notebooks/*",
+    tarDir + "parquet*",
     tarDir + "etc/*",
     tarDir + "cut_events*",
     tarDir + "CMSSW946.tgz",

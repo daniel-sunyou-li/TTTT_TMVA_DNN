@@ -8,4 +8,7 @@ args = parser.parse_args()
 
 df = pd.read_parquet( args.folder )
 
-print( df[0:1] )
+print( len(df.index) )
+print( len( df.iloc[0].as_matrix()[:-1] ) )
+print( df.iloc[0]["type"] )
+
