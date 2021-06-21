@@ -7,7 +7,7 @@ from sys import exit as sys_exit
 from correlation import generate_uncorrelated_seeds
 from base64 import b64encode
 import os
-import varsList
+import config
 
 
 parser = ArgumentParser()
@@ -29,8 +29,8 @@ args = parser.parse_args()
 jt.LOG = args.verbose
 
 # set some parameters
-step2Sample = varsList.step2Sample[ "2017" ] if args.year == "2017" else varsList.step2Sample[ "2018" ]
-step2DirLPC = varsList.step2DirLPC[ "2017" ] if args.year == "2017" else varsList.step2DirLPC[ "2018" ]
+step2Sample = config.step2Sample[ "2017" ] if args.year == "2017" else config.step2Sample[ "2018" ]
+step2DirLPC = config.step2DirLPC[ "2017" ] if args.year == "2017" else config.step2DirLPC[ "2018" ]
 
 # collect folders to use in resubmission
 folders = []
@@ -49,7 +49,7 @@ variables = None
 if not args.resubmit:
   variables = []
   if args.varlist.lower() == "all":
-    variables = [ v[0] for v in varsList.varList["DNN"] ]
+    variables = [ v[0] for v in config.varList["DNN"] ]
   else:
     print(">> Reading variable list from {}.".format(args.varlist))
     with open(args.varlist, "r") as vlf:
@@ -107,7 +107,7 @@ def submit_job(job):
     "RUNDIR": runDir,
     "FILENAME": job.name,
     "SEEDVARS": seed_vars,
-    "EOSUSERNAME": varsList.eosUserName,
+    "EOSUSERNAME": config.eosUserName,
     "YEAR": args.year,
     "NJETS": args.njets,
     "NBJETS": args.nbjets 
@@ -222,10 +222,14 @@ def submit_new_jobs():
   jf = jt.JobFolder.create(folders[0])
   print( ">> Submitting new jobs into folder: {}".format(jf.path))
   seeds = generate_uncorrelated_seeds( args.seeds, variables, args.correlation, args.year, args.njets, args.nbjets )
+  jf.pickle[ "YEAR" ] = args.year
+  jf.pickle[ "BACKGROUND" ] = config.bkg_training[ args.year ]
+  jf.pickle[ "CUTS" ][ "NJETS" ] = args.njets
+  jf.pickle[ "CUTS" ][ "NBJETS" ] = args.nbjets
 
   print "Generating jobs."
-  if jf.jobs == None:
-    jf.jobs = []
+  if jf.pickle[ "JOBS" ] == None:
+    jf.pickle[ "JOBS" ] = []
   job_list = []
   for seed in seeds:
     seed_num = int(seed.binary, base=2)
@@ -249,7 +253,7 @@ def submit_new_jobs():
   if args.test:
     job_list = [job_list[0]]
 
-  jf.jobs.extend(job_list)
+  jf.pickle[ "JOBS" ].extend(job_list)
   jf._save_jtd()
   print(">> {} jobs generated and saved.".format(len(job_list)))
 

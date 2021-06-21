@@ -12,9 +12,9 @@ echo ">> Setting Up TTTT Job"
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
 # Copy and Unpack Resources
-xrdcp -s root://cmseos.fnal.gov//store/user/$eos_username/CMSSW946.tgz .
-tar -xf CMSSW946.tgz
-rm CMSSW946.tgz
+xrdcp -s root://cmseos.fnal.gov//store/user/$eos_username/CMSSW946_4T.tgz .
+tar -xf CMSSW946_4T.tgz
+rm CMSSW946_4T.tgz
 
 cd ./CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN
 

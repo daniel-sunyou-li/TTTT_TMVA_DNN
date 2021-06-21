@@ -14,7 +14,7 @@ parser = ArgumentParser()
 parser.add_argument("folders", nargs="*", default=[], help="condor_log folders to use, default is all condor_log*")
 parser.add_argument("-f", "--output-folder", default="auto", help="The folder to output calculations to.")
 parser.add_argument("-v", "--verbose", action="store_true", help="Display output from job tracker system.")
-parser.add_argument("-o", "--sort-order", default="importance", help="Which attribute to sort variables by in resulting files. Choose from (importance, freq, sum, mean, rms).")
+parser.add_argument("-o", "--sort-order", default="significance", help="Which attribute to sort variables by in resulting files. Choose from (importance, freq, sum, mean, rms).")
 parser.add_argument("--sort-increasing", action="store_true", help="Sort in increasing instead of decreasing order")
 args = parser.parse_args()
 
@@ -45,8 +45,8 @@ else:
 jt.LOG = args.verbose
 
 # Interpret sort order
-sort_order = "importance"
-if args.sort_order.lower() not in ["importance", "freq", "sum", "mean", "rms"]:
+sort_order = "significance"
+if args.sort_order.lower() not in ["significance", "freq", "sum", "mean", "rms"]:
   print(">> Invalid sort option: {}. Using \"importance\".".format(args.sort_order.lower()))
 else:
   sort_order = args.sort_order.lower()
@@ -56,9 +56,17 @@ print( ">> Using Folders: \n - " + "\n - ".join(condor_folders) )
 
 print( ">> Loading job data" )
 job_folders = []
+bkg_samples = []
+cut_variables = [ "NJETS", "NBJETS" ]
+cuts = { variable: [] for variable in cut_variables }
+years = []
 for folder in condor_folders:
   jf = jt.JobFolder(folder)
-  if jf.jobs == None:
+  for variable in cut_variables:
+    cuts[ variable ].append( jf.pickle[ "CUTS" ][ variable ] )
+  years.append( jf.pickle[ "YEAR" ] )
+  bkg_samples.append( jf.pickle[ "BACKGROUND" ] )
+  if jf.pickle[ "JOBS" ] == None:
     # Folder needs to be imported
     print( "[WARN] The folder {} has not been loaded by the job tracker.".format(folder) )
     choice = raw_input ("Import with default variables? (Y/n)")
@@ -71,11 +79,36 @@ for folder in condor_folders:
   print(">> Loaded {}".format(folder))
 print( "[OK ] All data loaded." )
 
+
+print( ">> Checking year consistency between folders..." )
+
+if len( set( years ) ) > 1:
+  print( "[ERR] Exiting calculate.py, compacted folders have multiple years..." )
+  quit()
+
+print( ">> Checking background sample consistency between folders..." )
+
+quit_ = False
+for i, bkg_sample in enumerate( bkg_samples ):
+  if set( bkg_sample ) != set( bkg_samples[0] ):
+    print( "[WARN] Different collection of background samples in {}: {}...".format( condor_folders[i], set( bkg_samples[0] ).difference( bkg_sample ) ) )
+
+print( ">> Checking cut consistency between folders..." )
+
+quit_ = False
+for variable in cut_variables:
+  if len( set( cuts[ variable ] ) ) > 1:
+    print( "[WARN] Inconsistent cut settings for {}: {}...".format( variable, set( cuts[ variable ] ) ) )
+    quit_ = True
+if quit_ is True:
+  print( "[ERR] Exiting calculate.py, cut conditions are not consistent..." )
+  quit()
+
 print( ">> Computing Importances..." )
 
 # Compute importances, stats, and normalization
-importances = {}
-importance_stats = {}
+significances = {}
+significances_stats = {}
 normalization = 0
 
 # Find ROC-integral values for all seeds
@@ -86,10 +119,10 @@ for jf in job_folders:
       seed_rocs[seed_j.seed] = (seed_j.roc_integral, jf)
       for var, included in seed_j.seed.states.iteritems():
         if included:
-          if var in importance_stats:
-            importance_stats[var]["freq"] += 1
+          if var in significances_stats:
+            significances_stats[var]["freq"] += 1
           else:
-            importance_stats[var] = { "freq": 1 }
+            significances_stats[var] = { "freq": 1 }
 
 print( "Found " + str(len(seed_rocs.keys())) + " seed ROC-integrals." )
 
@@ -103,66 +136,67 @@ for seed, seed_roc in seed_rocs.iteritems():
     if subseed_j.has_result:
       for var, included in subseed_j.subseed.states.iteritems():
         if not included and seed.states[var]:
-          if var in importances:
-            importances[var].append(seed_roc[0] - subseed_j.roc_integral)
+          if var in significances:
+            significances[var].append(seed_roc[0] - subseed_j.roc_integral)
           else:
-            importances[var] = [seed_roc[0] - subseed_j.roc_integral]
+            significances[var] = [seed_roc[0] - subseed_j.roc_integral]
     
 print( "\n>> Computing stats." )
-for var, importance in importances.iteritems():
-  normalization += sum(importance)
+for var, significance in significances.iteritems():
+  normalization += sum(significance)
 
   # Compute stats
-  mean = np.mean(importance)
-  std = np.std(importance)
+  mean = np.mean(significance)
+  std = np.std(significance)
 
-  importance_stats[var]["mean"] = mean
-  importance_stats[var]["rms"] = std
-  importance_stats[var]["importance"] = mean / std
-  importance_stats[var]["sum"] = sum(importance)
+  significances_stats[var]["mean"] = mean
+  significances_stats[var]["rms"] = std
+  significances_stats[var]["significance"] = mean / std
+  significances_stats[var]["sum"] = sum(significance)
 
 print( "[OK ] Importances computed." )
 
 print( ">> Writing to output files." )
 
-num_vars = len(importances.keys())
-sorted_vars = list(sorted(importances.keys(), key=lambda k: importance_stats[k][sort_order]))
+num_vars = len(significances.keys())
+sorted_vars = list(sorted(significances.keys(), key=lambda k: significances_stats[k][sort_order]))
 if not sort_increasing:
   sorted_vars = list(reversed(sorted_vars))
 
 # Variable Importance File
 with open(os.path.join(ds_folder, "VariableImportanceResults_" + str(num_vars) + "vars.txt"), "w") as f:
+  f.write("Year:{}\n".format(years[0]))
   f.write("Weight: {}\n".format(varsList.weightStr))
-  f.write("Cut: {}\n".format(varsList.cutStr))
+  for variable in cut_variables: f.write( "{}:{}\n".format( variable, cuts[ variable ][0] ) )
   f.write("Folders: \n - " + "\n - ".join(condor_folders) + "\n")
   f.write("Number of Variables: {}\n".format(num_vars))
   f.write("Date: {}\n".format(datetime.today().strftime("%Y-%m-%d")))
   f.write("\nImportance Calculation:")
   f.write("\nNormalization: {}".format(normalization))
-  f.write("\n{:<6} / {:<34} / {:<6} / {:<7} / {:<7} / {:<11} / {:<11}".format(
+  f.write("\n{:<6} / {:<34} / {:<6} / {:<8} / {:<7} / {:<7} / {:<11}".format(
     "Index",
     "Variable Name",
     "Freq.",
     "Sum",
     "Mean",
     "RMS",
-    "Importance"
+    "Significance"
   ))
     
   for i, var in enumerate(sorted_vars):
     f.write("\n{:<6} / {:<34} / {:<6} / {:<8.4f} / {:<7.4f} / {:<7.4f} / {:<11.3f}".format(
       str(i + 1) + ".",
       var,
-      importance_stats[var]["freq"],
-      importance_stats[var]["sum"],
-      importance_stats[var]["mean"],
-      importance_stats[var]["rms"],
-      importance_stats[var]["importance"]
+      significances_stats[var]["freq"],
+      significances_stats[var]["sum"],
+      significances_stats[var]["mean"],
+      significances_stats[var]["rms"],
+      significances_stats[var]["significance"]
     ))
 print( "[OK ] Wrote VariableImportanceResults_" + str(num_vars) + "vars.txt" )
 
 # ROC Hists File
-np.save(os.path.join(ds_folder, "ROC_hists_" + str(num_vars) + "vars"), importances)
+np.save(os.path.join(ds_folder, "ROC_hists_" + str(num_vars) + "vars"), significances)
 print( "Wrote ROC_hists_" + str(num_vars) + "vars" )
 
 # Importance Order File
@@ -170,7 +204,7 @@ with open(os.path.join(ds_folder, "VariableImportanceOrder_" + str(num_vars) + "
   for var in sorted_vars:
     f.write(var + "\n")
 
-print( "[OK \ Wrote " + "VariableImportanceOrder_" + str(num_vars) + "vars.txt" )
+print( "[OK ] Wrote " + "VariableImportanceOrder_" + str(num_vars) + "vars.txt" )
 
 print( "[OK ] Finished obtaining all variable importance results." )
     

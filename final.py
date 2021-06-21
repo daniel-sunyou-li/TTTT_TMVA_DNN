@@ -6,11 +6,10 @@ from datetime import datetime
 from shutil import rmtree, copy
 import numpy as np
 
-import varsList
+import config
 import mltools
 
 parser = ArgumentParser()
-parser.add_argument( "-y", "--year", required=True, help="The dataset to use when training. Specify 2017 or 2018")
 parser.add_argument( "datasets", nargs="*", default=[], help="The dataset folders to search for HPO information")
 parser.add_argument( "-f", "--folder", default="auto", help="The name of the output folder.")
 parser.add_argument( "-k", "--num-folds", default="5", help="The number of cross-validation iterations to perform for each configuration")
@@ -19,14 +18,6 @@ args = parser.parse_args()
 
 print( ">> Final Model Training: k-fold Cross Validation" )
 
-# Parse year
-if args.year != "2017" and args.year != "2018":
-  raise ValueError( "[ERR] Invaid year selected: {}. Year must be 2017 or 2018.".format( args.year ) )
-
-# Gather list of signal and background folders
-tree_folder = varsList.step2DirLPC[ args.year ] + "nominal"
-signal_files = [ os.path.join( tree_folder, sig ) for sig in varsList.sig_training[ args.year ] ]
-background_files = [ os.path.join( tree_folder, bkg ) for bkg in varsList.bkg_training[ args.year ] ]
 
 # Look for HPO data files
 hpo_data = {}
@@ -84,30 +75,35 @@ for config_num, config_path in enumerate(config_order):
 
   # Load variables list
   with open(config_path.replace("optimized_params", "config"), "r") as f:
-    config = load_json(f.read())
-    parameters["variables"] = config["variables"]
-    parameters["patience"] = config["patience"][-1] if type(config["patience"]) == list else config["patience"]
-    parameters["epochs"] = config["epochs"][-1] if type(config["epochs"]) == list else config["epochs"]
-  print( ">> Using njets >= {} and nbjets >= {}".format( config[ "njets" ], config[ "nbjets" ] ) )
+    config_json = load_json(f.read())
+    parameters["variables"] = config_json["variables"]
+    #parameters["patience"] = config_json["patience"][-1] if type(config_json["patience"]) == list else config_json["patience"]
+    parameters["patience"] = 10
+    #parameters["epochs"] = config_json["epochs"][-1] if type(config_json["epochs"]) == list else config_json["epochs"]
+    parameters["epochs"] = 100
+  print( ">> Using njets >= {} and nbjets >= {}".format( config_json[ "njets" ], config_json[ "nbjets" ] ) )
   
-  model_path = os.path.join(folder, "final_model_{}j_{}to{}.h5".format( config[ "njets" ], config[ "start_index" ], config[ "end_index" ] ) )
+  model_path = os.path.join(folder, "final_model_{}j_{}to{}.h5".format( config_json[ "njets" ], config_json[ "start_index" ], config_json[ "end_index" ] ) )
+  
+  # Gather list of signal and background folders
+  tree_folder = config.step2DirLPC[ config_json[ "year" ] ] + "nominal"
+  signal_files = [ os.path.join( tree_folder, sig ) for sig in config.sig_training[ config_json[ "year" ] ] ]
+  background_files = [ os.path.join( tree_folder, bkg ) for bkg in config.bkg_training[ config_json[ "year" ] ] ]
 
   model = mltools.CrossValidationModel(
     parameters,
-    signal_files, background_files, 
+    signal_files, background_files, config_json[ "ratio" ],
     cv_folder, 
-    config["njets"], config["nbjets"], int(args.num_folds ) )
+    config_json["njets"], config_json["nbjets"], int(args.num_folds ) )
   if not args.no_cut_save:
     if not os.path.exists(mltools.CUT_SAVE_FILE):
       print( ">> Generating saved cut event files." )
-      model.load_trees()
       model.apply_cut()
       model.save_cut_events(mltools.CUT_SAVE_FILE)
     else:
       print( ">> Loading saved cut event files." )
       model.load_cut_events(mltools.CUT_SAVE_FILE)
   else:
-    model.load_trees()
     model.apply_cut()
 
   print( ">> Starting cross-validation." )

@@ -259,11 +259,11 @@ def lpc_only( year, systematics, samples, split ):
 def create_tar():
   # tar the CMSSW repo
   tarDir = "CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/"
-  if "CMSSW.tgz" in os.listdir( home ):
-    print( ">> Deleting existing CMSSW946.tgz" ) 
-    os.system( "rm {}{}".format( home, "CMSSW946.tgz" ) )
-  print( ">> Creating new tar file for CMSSW946.tgz" )
-  os.system( "tar -C ~/nobackup/ -zcvf CMSSW946.tgz --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\"  --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" {}".format(
+  if "CMSSW946_4T.tgz" in os.listdir( home ):
+    print( ">> Deleting existing CMSSW946_4T.tgz" ) 
+    os.system( "rm {}{}".format( home, "CMSSW946_4T.tgz" ) )
+  print( ">> Creating new tar file for CMSSW946_4T.tgz" )
+  os.system( "tar -C ~/nobackup/ -zcvf CMSSW946_4T.tgz --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\"  --exclude=\"{}\" --exclude=\"{}\" --exclude=\"{}\" {}".format(
     tarDir + "FWLJMET*",
     tarDir + "condor_log*",
     tarDir + "dataset*",
@@ -271,13 +271,13 @@ def create_tar():
     tarDir + "notebooks/*",
     tarDir + "parquet*",
     tarDir + "etc/*",
-    tarDir + "cut_events*",
-    tarDir + "CMSSW946.tgz",
+    tarDir + "tttt*",
+    tarDir + "CMSSW946_4T.tgz",
     tarDir + ".git/*",
     "CMSSW_9_4_6_patch1/" 
   ) )
-  print( ">> Transferring CMSSW946.tgz to EOS" )
-  os.system( "xrdcp -f CMSSW946.tgz root://cmseos.fnal.gov//store/user/{}".format( varsList.eosUserName ) )
+  print( ">> Transferring CMSSW946_4T.tgz to EOS" )
+  os.system( "xrdcp -f CMSSW946_4T.tgz root://cmseos.fnal.gov//store/user/{}".format( varsList.eosUserName ) )
   print( "[OK ] Transfer complete!" )
  
 def main():

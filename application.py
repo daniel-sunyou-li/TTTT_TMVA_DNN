@@ -1,6 +1,6 @@
 # import libraries and other scripts
 import glob, os, sys, subprocess
-import varsList
+import config
 import numpy as np
 from datetime import datetime
 from argparse import ArgumentParser
@@ -25,24 +25,24 @@ if args.verbose:
     print(">> Running step 3 application for the .h5 DNN, producing new step3 ROOT files...")
 
 # set some paths
-condorDir   = varsList.step2DirEOS[ args.year ] # location where samples stored on EOS
-step2Sample = varsList.step2Sample[ args.year ] 
-step3Sample = varsList.step3Sample[ args.year ] 
+condorDir   = config.step2DirEOS[ args.year ] # location where samples stored on EOS
+step2Sample = config.step2Sample[ args.year ] 
+step3Sample = config.step3Sample[ args.year ] 
 files_step2 = {}
 files_step3 = {}
 
 # test on one signal and one background sample
 if args.test:
-  files_step2[ "nominal" ] = [ varsList.all_samples[ args.year ]["TTTT"][0] ]
-  files_step2[ "nominal" ] = [ varsList.all_samples[ args.year ][ "TTJetsSemiLepNJet9TTjj" ][0] ]
+  files_step2[ "nominal" ] = [ config.all_samples[ args.year ]["TTTT"] ]
+#  files_step2[ "nominal" ] = [ config.all_samples[ args.year ][ "TTJetsSemiLepNJet9TTjj" ][0] ]
 else:
-  files_step2[ "nominal" ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/nominal/".format( varsList.eosUserName, step2Sample ),shell=True).split("\n")[:-1]
-  if args.resubmit != None: files_step3[ "nominal" ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/nominal/".format( varsList.eosUserName, step3Sample ),shell=True).split("\n")[:-1]
+  files_step2[ "nominal" ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/nominal/".format( config.eosUserName, step2Sample ),shell=True).split("\n")[:-1]
+  if args.resubmit != None: files_step3[ "nominal" ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/nominal/".format( config.eosUserName, step3Sample ),shell=True).split("\n")[:-1]
   if args.systematics:
     for syst in [ "JEC", "JER" ]:
       for dir in [ "up", "down" ]:
-        files_step2[ syst+dir ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/{}{}/".format( varsList.eosUserName, step2Sample, syst, dir ), shell=True).split("\n")[:-1]
-        if args.resubmit != None: files_step3[ syst+dir ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/{}{}/".format( varsList.eosUserName, step3Sample, syst, dir ), shell=True).split("\n")[:-1]
+        files_step2[ syst+dir ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/{}{}/".format( config.eosUserName, step2Sample, syst, dir ), shell=True).split("\n")[:-1]
+        if args.resubmit != None: files_step3[ syst+dir ] = subprocess.check_output("eos root://cmseos.fnal.gov ls /store/user/{}/{}/{}{}/".format( config.eosUserName, step3Sample, syst, dir ), shell=True).split("\n")[:-1]
 
 submit_files = {}
 if args.verbose: print( ">> Converting the following samples to step3:" )
@@ -96,7 +96,7 @@ else:
 
 resultDir    = args.folders                      # location where model/weights stored and where new files are output
 logDir       = args.log                          # location where condor job outputs are stored
-sampleDir    = varsList.step2Sample[ args.year ] # sample directory name
+sampleDir    = config.step2Sample[ args.year ] # sample directory name
     
 # check for parameters from json file
 jsonFiles = []
@@ -134,7 +134,7 @@ for model in models:
   models_arg += model + ", "
 
 # define variables and containers
-varList      = np.asarray( varsList.varList["DNN"] )[:,0]
+varList      = np.asarray( config.varList["DNN"] )[:,0]
 variables    = [ list( jsonFile["variables"] ) for jsonFile in jsonFiles ]
    
 def check_voms():
@@ -169,7 +169,7 @@ def condor_job( fileName, condorDir, outputDir, logDir, tag ):
     "OUTPUTDIR" : outputDir,           # stays the same across all samples
     "LOGDIR"    : logDir,              # stays the same across all samples
     "TAG"       : tag,                 # changes with sample 
-    "EOSNAME"   : varsList.eosUserName,
+    "EOSNAME"   : config.eosUserName,
     "MEMORY"    : request_memory
   }
   jdfName = "{}/{}_{}.job".format(logDir,fileName,tag)
@@ -194,9 +194,9 @@ Queue 1"""%dict
 def submit_jobs( files, key, condorDir, logrDir, sampleDir ):
   os.system( "mkdir -p " + logrDir )
   outputDir = sampleDir.replace("step2","step3") + "/" + key
-  if args.verbose: print( ">> Making new EOS directory: store/user/{}/{}/".format( varsList.eosUserName, outputDir ) )
-  os.system( "eos root://cmseos.fnal.gov mkdir store/user/{}/{}/".format( varsList.eosUserName, sampleDir.replace( "step2","step3" ) ) )
-  os.system( "eos root://cmseos.fnal.gov mkdir store/user/{}/{}/".format( varsList.eosUserName, outputDir ) ) 
+  if args.verbose: print( ">> Making new EOS directory: store/user/{}/{}/".format( config.eosUserName, outputDir ) )
+  os.system( "eos root://cmseos.fnal.gov mkdir store/user/{}/{}/".format( config.eosUserName, sampleDir.replace( "step2","step3" ) ) )
+  os.system( "eos root://cmseos.fnal.gov mkdir store/user/{}/{}/".format( config.eosUserName, outputDir ) ) 
   jobCount = 0
   for file in files[key]:
     if args.verbose: print( ">> Submitting Condor job for {}/{}".format( key, file ) )

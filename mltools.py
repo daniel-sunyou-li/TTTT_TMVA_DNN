@@ -1,4 +1,5 @@
 import os, sys
+import numpy as np
 from pickle import load as pickle_load
 from pickle import dump as pickle_dump
 
@@ -12,6 +13,7 @@ from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.backend import clear_session
 
+import ROOT
 from ROOT import TFile
 
 from sklearn.model_selection import train_test_split
@@ -19,9 +21,7 @@ from sklearn.metrics import roc_auc_score, roc_curve, auc
 from sklearn.model_selection import ShuffleSplit
 from sklearn.utils import shuffle as shuffle_data
 
-import numpy as np
-
-import varsList
+import config
 
 # The parameters to apply to the cut.
 CUT_VARIABLES = ["leptonPt_MultiLepCalc", "isElectron", "isMuon",
@@ -29,47 +29,60 @@ CUT_VARIABLES = ["leptonPt_MultiLepCalc", "isElectron", "isMuon",
                  "AK4HT", "DataPastTriggerX", "MCPastTriggerX", "isTraining",
                  "NJetsCSV_MultiLepCalc", "NJets_JetSubCalc"]
 
-# TODO: maybe move to varslist?
-base_cut = "((%(leptonPt_MultiLepCalc)s > 50 and %(isElectron)s == 1) or " + \
-            "(%(leptonPt_MultiLepCalc)s > 50 and %(isMuon)s == 1)) and " + \
-            "%(corr_met_MultiLepCalc)s > 60 and %(MT_lepMet)s > 60 and " + \
-            "%(minDR_lepJet)s > 0.4 and %(AK4HT)s > 510 and " + \
-            "( %(DataPastTriggerX)s == 1 and %(MCPastTriggerX)s == 1 ) and " + \
-            "( %(isTraining)s == 1 or %(isTraining)s == 2 )"
+base_cut =  "( %(DataPastTriggerX)s == 1 and %(MCPastTriggerX)s == 1 )" + \
+            " and ( %(isTraining)s == 1 or %(isTraining)s == 2 )" + \
+            " and ( ( %(leptonPt_MultiLepCalc)s > {} and %(isElectron)s == 1 ) or ( %(leptonPt_MultiLepCalc)s > {} and %(isMuon)s == 1 ) )".format( config.cuts[ "ELECTRONPT" ], config.cuts[ "MUONPT" ] ) + \
+            " and %(AK4HT)s >= {} and %(corr_met_MultiLepCalc)s > {} and %(MT_lepMet)s > {} %(minDR_lepJets)s > {}".format( config.cuts[ "HT" ], config.cuts[ "MET" ], config.cuts[ "MT" ], config.cuts[ "MINDR" ] )
 
-ML_VARIABLES = [ x[0] for x in varsList.varList[ "DNN" ] ]
+ML_VARIABLES = [ x[0] for x in config.varList[ "DNN" ] ]
 VARIABLES = list( sorted( list( set( ML_VARIABLES ).union( set( CUT_VARIABLES ) ) ) ) )
 CUT_VARIABLES = [ ( v, VARIABLES.index(v) ) for v in CUT_VARIABLES ]
 
-# Standard saved event locations
-CUT_SAVE_FILE = os.path.join( os.getcwd(), "cut_events.pkl" )
-
 SAVE_FPR_TPR_POINTS = 20
+
+CUT_SAVE_FILE = "tttt_events.pkl"
 
 print(">> mltools.py using {} variables.".format(len(VARIABLES)))
 
 class MLTrainingInstance(object):
-  def __init__(self, signal_paths, background_paths, njets, nbjets):
+  def __init__(self, signal_paths, background_paths, ratio, njets, nbjets):
     self.signal_paths = signal_paths
     self.background_paths = background_paths
+    self.samples = signal_paths + background_paths
+    self.ratio = ratio
+    self.njets = njets
+    self.nbjets = nbjets
     self.cut = base_cut + \
                " and ( %(NJetsCSV_MultiLepCalc)s >= {} ) ".format( nbjets ) + \
-               " and ( %(NJets_JetSubCalc)s >= {} )".format( njets)
+               " and ( %(NJets_JetSubCalc)s >= {} )".format( njets )
 
   def load_cut_events(self, path):
     # Save the cut signal and background events to pickled files 
+    override = False
     if os.path.exists( path ):
       with open( path, "rb" ) as f:
         cut_events = pickle_load( f )
         if cut_events["condition"] != self.cut:
-          print( "[WARN] Cut condition in file {} is different from cut condition in program.".format( path ) )
-          print( ">> File will be regenerated." )
-          self.load_trees()
-          self.apply_cut()
-          self.save_cut_events( path )
-          print( "[OK] Cut condition file saved." )
-          return
-        self.cut_events = cut_events
+          print( "[WARN] Cut condition in file {} differs from cut used in existing pickle file...".format( path ) )
+          print( ">> Cut events file will be overridden..." )
+          override = True
+        if set( cut_events[ "samples" ] ) != set( self.samples ):
+          print( "[WARN] Samples used in {} is different from samples used in existing pickle file...".format( path ) )
+          print( ">> Cut events file will be overridden..." )
+          override = True
+        if cut_events[ "ratio" ] != self.ratio:
+          print( "[WARN] Ratio used in {} is different from ratio used in existing pickle file...".format( path ) )
+          print( ">> Cut events file will be overridden..." )
+          override = True
+
+      if override:
+        #self.load_trees()
+        self.apply_cut()
+        self.save_cut_events( path )
+        print( "[OK] Cut events saved." )
+        return
+
+      self.cut_events = cut_events
 
   def save_cut_events( self, path ):
     # Load pickled events files
@@ -91,50 +104,76 @@ class MLTrainingInstance(object):
       self.background_trees[ path ] = self.background_files[ path ].Get( "ljmet" )
     
   def apply_cut( self ):
-    # Apply cut parameters to the loaded signals and backgrounds
-    # Load in events
-    test_cut = lambda d: eval( self.cut % d )
     all_signals = {}
-    for path, signal_tree in self.signal_trees.iteritems():
-      sig_list = np.asarray( signal_tree.AsMatrix( VARIABLES ) )
-      if path in all_signals:
-        all_signals[path] = np.concatenate( ( all_signals[path], sig_list ) )
-      else:
-        all_signals[path] = sig_list
+    n_s, c_s = 0, 0
+    for path in self.signal_paths:
+      print( "    >> Applying cuts to {}...".format( path.split("/")[-1] ) )
+      rDF = ROOT.RDataFrame( "ljmet", path )
+      n_s += rDF.Count().GetValue()
+      rDF_trig = rDF.Filter( "isTraining == 1 || isTraining == 2" ).Filter( "DataPastTriggerX == 1 && MCPastTriggerX == 1" ).Filter( "( isElectron == 1 && leptonPt_MultiLepCalc > {} ) || ( isMuon == 1 && leptonPt_MultiLepCalc > {} )".format( config.cuts[ "ELECTRONPT" ], config.cuts[ "MUONPT" ] ) )
+      rDF_cut = rDF_trig.Filter( "AK4HT > {} && corr_met_MultiLepCalc > {} && MT_lepMet > {} && minDR_lepJet > {}".format( config.cuts[ "HT" ], config.cuts[ "MET" ], config.cuts[ "MT" ], config.cuts[ "MINDR" ] ) ) 
+      rDF_jets = rDF_cut.Filter( "NJetsCSV_MultiLepCalc >= {} && NJets_JetSubCalc >= {}".format( self.nbjets, self.njets ) )
+      sig_dict = rDF_jets.AsNumpy( columns = VARIABLES )
+      sig_list = []
+      for x, y in sig_dict.items(): sig_list.append(y)
+      all_signals[ path ] = np.array( sig_list ).transpose()
+      print( "        - {}/{} events passed".format( rDF_jets.Count().GetValue(), rDF.Count().GetValue() ) )
+      c_s += rDF_jets.Count().GetValue()
+
     all_backgrounds = {}
-    for path, background_tree in self.background_trees.iteritems():
-      bkg_list = np.asarray( background_tree.AsMatrix( VARIABLES ) )
-      if path in all_backgrounds:
-        all_backgrounds[ path ] = np.concatenate( ( all_backgrounds[path], bkg_list ) )
-      else:
-        all_backgrounds[ path ] = bkg_list
-    # Apply cuts
+    n_b, c_b = 0, 0
+    for path in self.background_paths:
+      print( "     >> Applying cuts to {}...".format( path.split("/")[-1] ) )
+      rDF = ROOT.RDataFrame( "ljmet", path )
+      n_b += rDF.Count().GetValue()
+      rDF_trig = rDF.Filter( "isTraining == 1 || isTraining == 2" ).Filter( "DataPastTriggerX == 1 && MCPastTriggerX == 1" ).Filter( "( isElectron == 1 && leptonPt_MultiLepCalc > {} ) || ( isMuon == 1 && leptonPt_MultiLepCalc > {} )".format( config.cuts[ "ELECTRONPT" ], config.cuts[ "MUONPT" ] ) )
+      rDF_cut = rDF_trig.Filter( "AK4HT > {} && corr_met_MultiLepCalc > {} && MT_lepMet > {} && minDR_lepJet > {}".format( config.cuts[ "HT" ], config.cuts[ "MET" ], config.cuts[ "MT" ], config.cuts[ "MINDR" ] ) )
+      rDF_jets = rDF_cut.Filter( "NJetsCSV_MultiLepCalc >= {} && NJets_JetSubCalc >= {}".format( self.nbjets, self.njets ) )
+      bkg_dict = rDF_jets.AsNumpy( columns = VARIABLES )
+      bkg_list = []
+      for x, y in bkg_dict.items(): bkg_list.append(y)
+      all_backgrounds[ path ] = np.array( bkg_list ).transpose()
+      print( "       - {}/{} events passed".format( rDF_jets.Count().GetValue(), rDF.Count().GetValue() ) )
+      c_b += rDF_jets.Count().GetValue()
+
     self.cut_events = {
       "condition": self.cut,
+      "samples": self.samples,
+      "ratio": self.ratio,
       "signal": {},
       "background": {}
     }
-    n_s = 0
-    c_s = 0
+    
     for path, events in all_signals.iteritems():
       self.cut_events[ "signal" ][ path ] = []
-      n_s += len( events )
-      for event in events:
-        if test_cut( { var: event[i] for var, i in CUT_VARIABLES } ):
-          self.cut_events[ "signal" ][ path ].append( event )
-          c_s += 1
-    n_b = 0
-    c_b = 0
+      for event in events: self.cut_events[ "signal" ][ path ].append( np.append( event, 1 ) )
     for path, events in all_backgrounds.iteritems():
       self.cut_events[ "background" ][ path ] = []
-      n_b += len( events )
-      for event in events:
-        if test_cut( { var: event[i] for var, i in CUT_VARIABLES } ):
-          self.cut_events[ "background" ][ path ].append( event )
-          c_b += 1
+      for event in events: self.cut_events[ "background" ][ path ].append( np.append( event, 1 ) )
 
-    print(">> Signal {}/{}, Background {}/{}".format(c_s, n_s, c_b, n_b))
-                
+    bkg_frac = float( self.ratio ) * float( c_s ) / float( c_b )
+    r_b = 0
+    if bkg_frac > 1:
+      print( "[WARN] The reduced background fraction is >1.0, setting to 1.0..." )
+      bkg_frac = 1.
+    if int( self.ratio ) < 0:
+      print( ">> Using all background samples for training..." )
+      bkg_frac = 1.
+    for path in self.cut_events[ "background" ]:
+      print( "ratio: {}, bkg_frac: {}".format( self.ratio, bkg_frac ) )
+      bkg_excl = np.around( ( 1. - bkg_frac ) * len( self.cut_events[ "background" ][ path ] ), 0 )
+      if bkg_excl < 0: bkg_excl = 0
+      bkg_incl = len( self.cut_events[ "background" ][ path ] ) - bkg_excl
+      print( bkg_excl, bkg_incl )
+      mask = np.concatenate( ( np.full( int( bkg_incl ), 1 ), np.full( int( bkg_excl ), 0 ) ) )
+      np.random.shuffle( mask )
+      self.cut_events[ "background" ][ path ] = np.array( self.cut_events[ "background" ][ path ] )[ mask.astype(bool) ]
+      r_b += len( self.cut_events[ "background" ][ path ] )
+
+    print( ">> Signal: {}/{}, Background: {}/{}".format( c_s, n_s, c_b, n_b ) )
+    if bkg_frac > 0 and bkg_frac < 1:
+      print( ">> Reducing background to be x{} of signal size: {} events".format( self.ratio, r_b ) )     
+
   def build_model(self):
     # Override with the code that builds the Keras model.
     pass
@@ -144,8 +183,8 @@ class MLTrainingInstance(object):
     pass        
 
 class HyperParameterModel(MLTrainingInstance):
-  def __init__(self, parameters, signal_paths, background_paths, njets, nbjets, model_name=None):
-    MLTrainingInstance.__init__(self, signal_paths, background_paths, njets, nbjets)
+  def __init__(self, parameters, signal_paths, background_paths, ratio, njets, nbjets, model_name=None):
+    MLTrainingInstance.__init__(self, signal_paths, background_paths, ratio, njets, nbjets)
     self.parameters = parameters
     self.model_name = model_name
 
@@ -261,8 +300,8 @@ class HyperParameterModel(MLTrainingInstance):
     self.auc_test  = auc( self.fpr_test,  self.tpr_test )
 
 class CrossValidationModel( HyperParameterModel ):
-  def __init__( self, parameters, signal_paths, background_paths, model_folder, njets, nbjets, num_folds = 5 ):
-    HyperParameterModel.__init__( self, parameters, signal_paths, background_paths, njets, nbjets, None )
+  def __init__( self, parameters, signal_paths, background_paths, ratio, model_folder, njets, nbjets, num_folds = 5 ):
+    HyperParameterModel.__init__( self, parameters, signal_paths, background_paths, ratio, njets, nbjets, None )
         
     self.model_folder = model_folder
     self.num_folds = num_folds

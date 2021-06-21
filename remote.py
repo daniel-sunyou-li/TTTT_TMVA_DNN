@@ -13,7 +13,7 @@ from keras.optimizers import Adam
 from argparse import ArgumentParser
 
 import jobtracker as jt
-import varsList
+import config
 
 # Parse the arguments
 parser = ArgumentParser()
@@ -26,13 +26,13 @@ args = parser.parse_args()
 year = int(args.year)
 seed_vars = set(b64decode(args.seedvars).split(","))
 
-print(">> TTTT Condor Job using data from: {}".format( varsList.step2Sample[ args.year ] ) )
+print(">> TTTT Condor Job using data from: {}".format( config.step2Sample[ args.year ] ) )
 
 # Initialize TMVA
 TMVA.Tools.Instance()
 TMVA.PyMethodBase.PyInitialize()
 
-inputDir = varsList.step2DirEOS[ args.year ] + "nominal/"
+inputDir = config.step2DirEOS[ args.year ] + "nominal/"
 loader = TMVA.DataLoader( "tmva_data" )
 factory = TMVA.Factory("VariableImportance",
                        "!V:!ROC:Silent:!Color:!DrawProgressBar:Transformations=I;:AnalysisType=Classification")
@@ -40,7 +40,7 @@ factory = TMVA.Factory("VariableImportance",
 # Add variables from seed to loader
 num_vars = 0
 print( ">> Using the following variables: " )
-for var_data in varsList.varList["DNN"]:
+for var_data in config.varList["DNN"]:
   if var_data[0] in seed_vars:
     num_vars += 1
     print( "    {:<4} {}".format( str(num_vars) + ".", var_data[0] ) )
@@ -51,13 +51,13 @@ signals = []
 signal_trees = []
 backgrounds = []
 background_trees = []  
-for sig in varsList.sig_training[ args.year ]:
+for sig in config.sig_training[ args.year ]:
   signals.append( TFile.Open( inputDir + sig ) )
   signal_trees.append( signals[-1].Get("ljmet") )
   signal_trees[-1].GetEntry(0)
   loader.AddSignalTree( signal_trees[-1], 1 )
 
-for bkg in varsList.bkg_training[ args.year ]:
+for bkg in config.bkg_training[ args.year ]:
   backgrounds.append( TFile.Open( inputDir + bkg ) )
   background_trees.append( backgrounds[-1].Get( "ljmet" ) )
   background_trees[-1].GetEntry(0)
@@ -65,15 +65,14 @@ for bkg in varsList.bkg_training[ args.year ]:
     loader.AddBackgroundTree( background_trees[-1], 1 )
 
 # Set weights and cuts
-cutStr = varsList.cutStr
-cutStr += " && ( NJetsCSV_MultiLepCalc >= {} )".format( args.nbjets ) 
-cutStr += " && ( NJets_JetSubCalc >= {} )".format( args.njets ) 
-cutStr += " && ( ( isTraining == 1 ) || ( isTraining == 2 ) )"
+base_cut = config.base_cut
+base_cut += " && ( NJetsCSV_MultiLepCalc >= {} )".format( args.nbjets ) 
+base_cut += " && ( NJets_JetSubCalc >= {} )".format( args.njets ) 
 
-loader.SetSignalWeightExpression( varsList.weightStr )
-loader.SetBackgroundWeightExpression( varsList.weightStr )
+loader.SetSignalWeightExpression( config.weightStr )
+loader.SetBackgroundWeightExpression( config.weightStr )
 
-cut = TCut( cutStr )
+cut = TCut( base_cut )
 
 # Prepare tree
 loader.PrepareTrainingAndTestTree( 
@@ -89,7 +88,7 @@ model.add( Dense( num_vars,
                 activation = "relu") )
 for _ in range( 3 ):
     model.add( BatchNormalization() )
-    model.add( Dropout( 0.5 ) )
+    model.add( Dropout( 0.3 ) )
     model.add( Dense( 50, activation = "relu" ) )
 model.add( Dense( 2, activation="sigmoid" ) )
 

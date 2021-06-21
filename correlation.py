@@ -3,7 +3,7 @@ from random import randint
 import numpy as np
 import os
 from jobtracker import Seed
-import varsList
+import config
 
 # Initialize TMVA library
 TMVA.Tools.Instance()
@@ -12,12 +12,10 @@ TMVA.PyMethodBase.PyInitialize()
 def get_correlation_matrix(year, variables, njets, nbjets):
   # Returns the correlation matrix of the given variables
   # Get signal and background paths
-  signal_path = os.path.join(os.getcwd(),
-                             varsList.step2Sample[ str(year) ] + "/nominal/",
-                             varsList.sig_training[ str(year) ][0] )
-  bkgrnd_path = os.path.join(os.getcwd(),
-                             varsList.step2Sample[ str(year) ] + "/nominal/",
-                             varsList.bkg_training[ str(year) ][0] )
+  signal_path = os.path.join(config.step2DirLPC[ str(year) ] + "/nominal/",
+                             config.sig_training[ str(year) ][0] )
+  bkgrnd_path = os.path.join(config.step2DirLPC[ str(year) ] + "/nominal/",
+                             config.bkg_training[ str(year) ][0] )
 
   # Create TMVA object
   loader = TMVA.DataLoader("tmva_data")
@@ -25,7 +23,7 @@ def get_correlation_matrix(year, variables, njets, nbjets):
   # Load used variables
   for var in variables:
     try:
-      var_data = varsList.varList["DNN"][ [ v[0] for v in varsList.varList["DNN"] ].index(var) ]
+      var_data = config.varList["DNN"][ [ v[0] for v in config.varList["DNN"] ].index(var) ]
       loader.AddVariable( var_data[0], var_data[1], "", "F" )
     except ValueError:
       print( "[WARN] The variable {} was not found. Omitting.".format(var) )
@@ -43,16 +41,15 @@ def get_correlation_matrix(year, variables, njets, nbjets):
   loader.fTreeB = bkgrnd
 
   # Set weights
-  weight_string = varsList.weightStr
+  weight_string = config.weightStr
   loader.SetSignalWeightExpression( weight_string )
   loader.SetBackgroundWeightExpression( weight_string )
 
   # Set cuts
-  cutStr = varsList.cutStr
-  cutStr += " && ( NJetsCSV_MultiLepCalc >= {} )".format( nbjets ) 
-  cutStr += " && ( NJets_JetSubCalc >= {} )".format( njets )
-  cutStr += " && ( ( isTraining == 1 ) || ( isTraining == 2 ) )"
-  cut_string = TCut( cutStr )
+  base_cut = config.base_cut
+  base_cut += " && ( NJetsCSV_MultiLepCalc >= {} )".format( nbjets ) 
+  base_cut += " && ( NJets_JetSubCalc >= {} )".format( njets )
+  cut_string = TCut( base_cut )
   loader.PrepareTrainingAndTestTree(
     cut_string, cut_string,
     "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V:VerboseLevel=Info"

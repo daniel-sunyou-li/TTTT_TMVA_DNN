@@ -36,7 +36,7 @@ elif args.import_data != None:
                     varlist.append(line.rstrip().strip())
     for folder in folders:
         jf = jobtracker.JobFolder(folder)
-        if jf.jobs != None:
+        if jf.pickle[ "JOBS" ] != None:
             print("{} already has a spec file!".format(folder))
             choice = raw_input("Overwrite? (y/N) ")
             if not "y" in choice.lower():
@@ -53,7 +53,7 @@ else:
     for folder in folders:
         print("FOLDER: {}".format(folder))
         jf = jobtracker.JobFolder(folder)
-        if jf.jobs == None:
+        if jf.pickle[ "JOBS" ] == None:
             print "This folder has not been imported yet. Run script with -i"
             continue
         stats = jf.get_stats()

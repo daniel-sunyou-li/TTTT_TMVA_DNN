@@ -1,37 +1,32 @@
-import os
+import os, sys
 from datetime import datetime
 from argparse import ArgumentParser
 from json import loads as load_json
 from json import dumps as write_json
 from math import log
 
-import mltools
-from correlation import reweight_importances
 
 from skopt.space import Real, Integer, Categorical
 from skopt.utils import use_named_args
 from skopt import gp_minimize
 
-import varsList
 
 parser = ArgumentParser()
 parser.add_argument(      "dataset", help="The dataset folder to use variable importance results from.")
-parser.add_argument("-o", "--sort-order", default="importance", help="Which attribute to sort variables by. Choose from (importance, freq, sum, mean, rms, or specify a filepath).")
+parser.add_argument( "-o", "--sort-order", default="significance", help="Which attribute to sort variables by. Choose from (importance, freq, sum, mean, rms, or specify a filepath).")
 parser.add_argument(      "--sort-increasing", action="store_true", help="Sort in increasing instead of decreasing order")
-parser.add_argument("-n", "--numvars", default="all", help="How many variables, from the top of the sorted order, to use.")
-parser.add_argument("-y", "--year", required=True, help="The dataset to use when training. Specify 2017 or 2018")
-parser.add_argument("-p", "--parameters", default=None, help="Specify a JSON folder with static and hyper parameters.")
-parser.add_argument("-nj", "--njets", default = "4", help = "Number of jets to cut on" )
-parser.add_argument("-nb", "--nbjets", default = "2", help = "Number of b jets to cut on" )
+parser.add_argument( "-r", "--ratio",   default="-1", help = "Ratio of background to signal training samples. Default = -1 to use all backgrounds." )
+parser.add_argument( "-n", "--numvars", default="all", help="How many variables, from the top of the sorted order, to use.")
+parser.add_argument( "-p", "--parameters", default=None, help="Specify a JSON folder with static and hyper parameters.")
+parser.add_argument( "-t", "--tag", default="", help="Tag for the Hyper Parameter Optimization directory" )
 args = parser.parse_args()
 
-# Parse year
-year = args.year
-if year != "2017" and year != "2018":
-  raise ValueError( "[ERR] Invaid year selected: {}. Year must be 2017 or 2018.".format( year ) )
-tree_folder = varsList.step2DirLPC[ year ] + "nominal/"
-signal_files = [ os.path.join( tree_folder, sig ) for sig in ( varsList.sig_training[ year ] ) ]
-background_files = [ os.path.join( tree_folder, bkg ) for bkg in ( varsList.bkg_training[ year ] ) ]
+sys.argv = []
+
+import mltools
+from correlation import reweight_importances
+import config
+
 
 # Load dataset
 datafile_path = None
@@ -46,14 +41,24 @@ if datafile_path == None:
 
 print( ">> Loading variable importance data from {}.".format( datafile_path ) )
 # Read the data file
+cut_variables = [ "NJETS", "NBJETS" ]
+cut = { variable: 0 for variable in cut_variables }
 var_data = {}
+year = None
 with open( datafile_path, "r" ) as f:
   # Scroll to variable entries
   line = f.readline()
+  if "Year" in line:
+    year = line.split(":")[-1][:-1]
+    print( ">> Running year: {}".format( year ) )
   while not "Normalization" in line:
     line = f.readline()
     if line == "":
       raise IOError( ">> End of File Reached, no data found." )
+    for variable in cut_variables:
+      if variable in line:
+        cut[ variable ] = line.split(":")[-1][:-1]
+        print( "{}: {}".format( variable, cut[ variable ] ) )
   # Data reached.
   # Read headers
   headers = [ h.strip().rstrip().lower().replace(".", "") for h in f.readline().rstrip().split("/") ]
@@ -92,7 +97,7 @@ else:
   sort_order = args.sort_order.lower()
   if sort_order not in var_data:
     print( ">> Invalid sort option: {}. Using \"importance\".".format( sort_order ) )
-    sort_order = "importance"
+    sort_order = "significance"
   else:
     print( ">> Sorting {} variables by {}.".format( len( var_data[ "variable name" ] ), sort_order ) )
   sorted_vars = sorted( [ (n, i) for i, n in enumerate( var_data[ "variable name" ] ) ],
@@ -115,17 +120,23 @@ else:
   else:
     variables = var_order[:int(args.numvars)]
     subDirName = "1to{}".format( len(variables) )
+if args.tag != "": subDirName += "_{}".format( args.tag )
 print( ">> Creating hyper parameter optimization sub-directory: {}".format( args.dataset + subDirName + "/" ) )
 os.system( "mkdir ./{}/".format( os.path.join( args.dataset, subDirName ) ) ) 
 print( ">> Variables used in optimization:\n - {}".format( "\n - ".join( variables ) ) )
 
+# Parse year
+tree_folder = config.step2DirLPC[ year ] + "nominal/"
+signal_files = [ os.path.join( tree_folder, sig ) for sig in ( config.sig_training[ year ] ) ]
+background_files = [ os.path.join( tree_folder, bkg ) for bkg in ( config.bkg_training[ year ] ) ]
+
 # Calculate re-weighted significance
 print(">> Significance:")
-LMS, QMS = reweight_importances( year, variables, [ var_data[ "importance" ][ var_data[ "variable name" ].index(v) ] for v in variables ], args.njets, args.nbjets )
+LMS, QMS = reweight_importances( year, variables, [ var_data[ "significance" ][ var_data[ "variable name" ].index(v) ] for v in variables ], cut[ "NJETS" ], cut[ "NBJETS" ] )
 print(">> Importance:")
-LMI, QMI = reweight_importances( year, variables, [ var_data[ "mean" ][ var_data[ "variable name" ].index(v) ] for v in variables ], args.njets, args.nbjets )
+LMI, QMI = reweight_importances( year, variables, [ var_data[ "mean" ][ var_data[ "variable name" ].index(v) ] for v in variables ], cut[ "NJETS" ], cut[ "NBJETS" ] )
 LSI = sum( [ var_data[ "mean" ][ var_data[ "variable name" ].index(v) ] for v in variables ] )
-LSS = sum( [ var_data[ "importance" ][ var_data[ "variable name" ].index(v) ] for v in variables ] )
+LSS = sum( [ var_data[ "significance" ][ var_data[ "variable name" ].index(v) ] for v in variables ] )
 
 print( "Linear Sum of Importance: {}".format( LSI ) )
 print( "Linear Sum of Significance: {}".format( LSS ) )
@@ -135,6 +146,9 @@ print( "Linear Sum of Significance: {}".format( LSS ) )
 timestamp = datetime.now()
 CONFIG = {
   "static": [
+    "year",
+    "background",
+    "ratio",
     "static",
     "epochs",
     "patience",
@@ -146,24 +160,25 @@ CONFIG = {
     "njets",
     "nbjets",
     "weight_string",
-    "cut_string",
     "start_index",
     "end_index",
     "variables",
     "LMS",
     "QMS",
     "LSI",
-    "LSS"
+    "LSS",
+    "LMI",
+    "QMI",
   ],
-    "epochs": 5,
+    "epochs": 10,
     "patience": 5,
     "model_name": os.path.join( args.dataset, subDirName, "hpo_model.h5" ),
 
-    "hidden_layers": [ 1, 2 ],
+    "hidden_layers": [ 1, 3 ],
     "initial_nodes": [ len(variables), len(variables) * 10 ],
     "node_pattern": [ "static", "dynamic" ],
-    "batch_power": [ 9, 11 ],
-    "learning_rate": [ 1e-3, 5e-3, 1e-2],
+    "batch_power": [ 8, 11 ],
+    "learning_rate": [ 1e-5, 1e-4, 1e-3, 1e-2 ],
     "regulator": [ "dropout", "none" ],
     "activation_function": [ "softplus", "elu" ],
 
@@ -179,19 +194,23 @@ if args.parameters != None and os.path.exists(args.parameters):
     u_params = load_json(f.read())
     CONFIG.update(u_params)
 
-tag = "{}j_{}to{}".format( args.njets, subDirName.split( "to" )[0], subDirName.split( "to" )[1] )
+tag = "{}j_{}to{}".format( cut[ "NJETS" ], subDirName.split( "to" )[0], subDirName.split( "to" )[1] )
 CONFIG.update({
+  "year": year,
+  "background": background_files,
+  "ratio": args.ratio,
   "tag": tag,
   "log_file": os.path.join(args.dataset, subDirName, "hpo_log_" + tag + ".txt"),
-  "weight_string": varsList.weightStr,
-  "cut_string": varsList.cutStr,
+  "weight_string": config.weightStr,
   "variables": variables,
   "LMS": sum(LMS),
   "QMS": sum(QMS),
+  "LMI": sum(LMI),
+  "QMI": sum(QMI),
   "LSI": LSI,
   "LSS": LSS,
-  "njets": args.njets,
-  "nbjets": args.nbjets
+  "njets": cut["NJETS"],
+  "nbjets": cut["NBJETS"]
 } )
 
 # Save used parameters to file
@@ -244,15 +263,14 @@ def objective(**X):
   if not "epochs" in X: X["epochs"] = CONFIG["epochs"]
   model = mltools.HyperParameterModel(
     X, 
-    signal_files, background_files,
-    args.njets, args.nbjets, 
+    signal_files, background_files, float(args.ratio),
+    cut["NJETS"], cut["NBJETS"],
     CONFIG["model_name"]
   )
     
   if cut_events == None:
     if not os.path.exists(mltools.CUT_SAVE_FILE):
       print( ">> Generating saved cut event file." )
-      model.load_trees()
       model.apply_cut()
       model.save_cut_events(mltools.CUT_SAVE_FILE)
     else:

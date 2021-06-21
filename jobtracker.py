@@ -68,6 +68,7 @@ class Seed(object):
     def random(variables):
         # Generate a random seed given variables
         rss = "{:0{}b}".format(randint(0, int("1" * len(variables), 2)), len(variables))
+        while rss.count( "1" ) < 2: rss = "{:0{}b}".format( randint( 0, int( "1" * len(variables), 2 )), len( variables ) )
         return Seed.from_binary(rss, variables)
 
     @staticmethod
@@ -143,7 +144,15 @@ class JobFolder(object):
         if path.endswith("/"):
             path = path.rstrip("/")
         self.path = os.path.join(getcwd(), path) if os.path.exists(os.path.join(getcwd(), path)) else path
-        self.jobs = None
+        self.pickle = {
+          "JOBS": None,
+          "YEAR": 0,
+          "BACKGROUND": [],
+          "CUTS": {
+            "NJETS": 0,
+            "NBJETS": 0
+          }
+        }
         if path.endswith(".jtd"):
             # The folder has been compacted
             self.compacted = True
@@ -173,12 +182,12 @@ class JobFolder(object):
     def _read_jtd(self):
         # Read the jobs spec file
         with open(os.path.join(self.path, "jobs.jtd") if not self.compacted else self.path, "rb") as f:
-            self.jobs = pickle.load(f)
+            self.pickle = pickle.load(f)
 
     def _save_jtd(self):
         # Save the jobs spec file
         with open(os.path.join(self.path, "jobs.jtd") if not self.compacted else self.path, "wb") as f:
-            pickle.dump(self.jobs, f, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(self.pickle, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def import_folder(self, variables):
         # Reads jobs from the raw files in an existing condor log folder, given variables used.
@@ -187,7 +196,7 @@ class JobFolder(object):
             return
         
         # Read jobs from the file list
-        self.jobs = []
+        self.pickle[ "JOBS" ] = []
 
         # Find all files and all jobs
         flist = listdir(self.path)
@@ -199,7 +208,7 @@ class JobFolder(object):
             if not "Subseed" in name:
                 seed_n = long(name[name.find("Seed_")+5:])
                 seeds[seed_n] = Seed.from_binary("{:0{}b}".format(seed_n, len(variables)), variables)
-                self.jobs.append(Job(self.path,
+                self.pickle[ "JOBS" ].append(Job(self.path,
                                      name,
                                      seeds[seed_n],
                                      None))
@@ -212,7 +221,7 @@ class JobFolder(object):
             seed_n = long(name[name.find("Seed_")+5:name.find("_", name.find("Seed_")+5)])
             subseed_n = long(name[name.rfind("_")+1:])
             
-            self.jobs.append(Job(self.path,
+            self.pickle[ "JOBS" ].append(Job(self.path,
                                  name,
                                  seeds[seed_n],
                                  Seed.from_binary("{:0{}b}".format(subseed_n, len(variables)), variables)))
@@ -226,7 +235,7 @@ class JobFolder(object):
         if self.compacted:
             log("Already compacted!")
             return
-        if len([j for j in self.jobs if not j.finished]) > 0:
+        if len([j for j in self.pickle[ "JOBS" ] if not j.finished]) > 0:
             log("Unable to compact! Contains unfinished jobs!")
             return
         if dest == "default":
@@ -237,7 +246,7 @@ class JobFolder(object):
         self.compacted = True
         old_path = self.path
         self.path = dest
-        for job in self.jobs:
+        for job in self.pickle[ "JOBS" ]:
             job.folder = None
         self._save_jtd()
         log("Compacted {} into spec file {}.".format(old_path, self.path))
@@ -252,7 +261,7 @@ class JobFolder(object):
             return
         log("Checking" + (" subset of {}".format(len(subset)) if subset != None else "") + " job statuses in {}".format(self.path))
         if subset == None:
-            subset = self.jobs
+            subset = self.pickle[ "JOBS" ]
         for job in subset:
             job.check_finished()
         if len(subset) > 1:
@@ -260,22 +269,22 @@ class JobFolder(object):
 
     def __len__(self):
         # The number of jobs in this folder
-        return len(self.jobs) if self.jobs != None else -1
+        return len(self.pickle[ "JOBS" ]) if self.pickle[ "JOBS" ] != None else -1
 
     @property
     def seed_jobs(self):
         # The seed jobs in this folder
-        return [j for j in self.jobs if j.subseed == None]
+        return [j for j in self.pickle[ "JOBS" ] if j.subseed == None]
 
     def subseed_jobs(self, seed):
         # The subseed jobs for a given seed
-        return [j for j in self.jobs if (j.subseed != None and j.seed.binary == seed.binary)]
+        return [j for j in self.pickle[ "JOBS" ] if (j.subseed != None and j.seed.binary == seed.binary)]
 
     @property
     def variables(self):
         # The variables used across all jobs
         variables = set()
-        for job in self.jobs:
+        for job in self.pickle[ "JOBS" ]:
             for var in job.seed.variables:
                 if not var in variables:
                     variables.add(var)
@@ -283,23 +292,23 @@ class JobFolder(object):
 
     def variable_jobs(self, var):
         # Get the jobs which contained a given variable
-        return [j for j in self.jobs if (var in j.seed.states)]
+        return [j for j in self.pickle[ "JOBS" ] if (var in j.seed.states)]
 
     @property
     def result_jobs(self):
         # The jobs which successfully computed a ROC-Integral
-        self.check([j for j in self.jobs if not j.has_result])
-        return [j for j in self.jobs if j.has_result]
+        self.check([j for j in self.pickle[ "JOBS" ] if not j.has_result])
+        return [j for j in self.pickle[ "JOBS" ] if j.has_result]
 
     @property
     def unstarted_jobs(self):
         # The jobs which do not yet have a .out file
-        return [j for j in self.jobs if not j.has_logfile]
+        return [j for j in self.pickle[ "JOBS" ] if not j.has_logfile]
 
     def get_resubmit_list(self):
         # Get the jobs which need to be resubmitted.
-        self.check([j for j in self.jobs if (not j.has_result)])
-        return [j for j in self.jobs if (j.finished and j.roc_integral == -1)]
+        self.check([j for j in self.pickle[ "JOBS" ] if (not j.has_result)])
+        return [j for j in self.pickle[ "JOBS" ] if (j.finished and j.roc_integral == -1)]
 
     def get_variable_counts(self):
         # Get a dict containing the number of times each variable was tested
