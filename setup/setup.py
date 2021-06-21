@@ -110,6 +110,7 @@ def brux_to_lpc( directoryBRUX, sample, step2Dir ):
     
   opt = 1
   while opt == 1:
+    # when you run this for the first time, you will get an error message so manually transfer something first then run this code
     opt = child.expect( [ varsList.bruxUserName + "@brux.hep.brown.edu's password: ",
       "Are you sure you want to continue connecting (yes/no)? " ] )
     if opt == 1:
@@ -185,7 +186,6 @@ def brux_to_eos( year, systematics, samples, split ):
       sys_call( "xrdcp {}{} {}nominal/".format(
         step2DirLPC + "nominal/",
         sample.replace( "hadd", split_tag ),
-        varsList.eosUserName,
         step2DirEOS
       ), shell = True )
       if args.remove and sample not in training_samples:
