@@ -217,7 +217,6 @@ def brux_to_eos( year, systematics, samples, split ):
             sys_call( "xrdcp {}{} {}/".format(
               step2DirLPC + syst + dir + "/",
               sample.replace( "hadd", split_tag ),
-              varsList.eosUserName,
               step2DirEOS + syst + dir 
             ), shell = True )
             if args.remove:
