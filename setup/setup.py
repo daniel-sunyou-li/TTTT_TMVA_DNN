@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 
 sys.path.insert(0,"../TTTT_TMVA_DNN")
 
-import varsList
+import config
 
 # set-up the working area
 home = os.path.expanduser( "~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" )
@@ -24,14 +24,18 @@ parser.add_argument( "-lpc", "--lpcOnly",     action = "store_true", help = "Onl
 parser.add_argument( "-eos", "--eos",         action = "store_true", help = "Transfer from BRUX to EOS" )
 args = parser.parse_args()
 
-all_samples      = varsList.all_samples[ "2017" ]  if args.year == "2017" else varsList.all_samples[ "2018" ]
-sig_training     = varsList.sig_training[ "2017" ] if args.year == "2017" else varsList.sig_training[ "2018" ]
-bkg_training     = varsList.bkg_training[ "2017" ] if args.year == "2017" else varsList.bkg_training[ "2018" ]
+if args.year not in ["2017","2018"]:
+  print( "[ERR] Invalid year option used.  Please choose from 2017, 2018.  Exiting program..." )
+  quit()
+
+all_samples      = config.all_samples[ args.year ]  
+sig_training     = config.sig_training[ args.year ] 
+bkg_training     = config.bkg_training[ args.year ] 
 training_samples = sig_training + bkg_training
-step2Sample      = varsList.step2Sample[ "2017" ]  if args.year == "2017" else varsList.step2Sample[ "2018" ]
-step2DirBRUX     = varsList.step2DirBRUX[ "2017" ] if args.year == "2017" else varsList.step2DirBRUX[ "2018" ]
-step2DirLPC      = varsList.step2DirLPC[ "2017" ]  if args.year == "2017" else varsList.step2DirLPC[ "2018" ]
-step2DirEOS      = varsList.step2DirEOS[ "2017" ]  if args.year == "2017" else varsList.step2DirEOS[ "2018" ]
+step2Sample      = config.step2Sample[ args.year ]  
+step2DirBRUX     = config.step2DirBRUX[ args.year ] 
+step2DirLPC      = config.step2DirLPC[ args.year ]  
+step2DirEOS      = config.step2DirEOS[ args.year ]  
 
 samples = [ all_samples[ sample_key ][0].replace("split0_step3","hadd") for sample_key in all_samples.keys() ]
 
@@ -75,7 +79,7 @@ def voms_init(): # run independently
 
 def brux_auth():
   global brux_pwd
-  print( ">> Password for {}@brux.hep.brown.edu".format( varsList.bruxUserName ) )
+  print( ">> Password for {}@brux.hep.brown.edu".format( config.bruxUserName ) )
   if brux_pwd == None:
     brux_pwd = getpass.getpass( ">> Password: " )
     
@@ -102,7 +106,7 @@ def split_root( sample, directory, splits ):
 
 def brux_to_lpc( directoryBRUX, sample, step2Dir ):
   child = pexpect.spawn( "scp -r {}@brux.hep.brown.edu:{}{} ./{}".format(
-    varsList.bruxUserName,
+    config.bruxUserName,
     directoryBRUX,
     sample,
     step2Dir
@@ -111,7 +115,7 @@ def brux_to_lpc( directoryBRUX, sample, step2Dir ):
   opt = 1
   while opt == 1:
     # when you run this for the first time, you will get an error message so manually transfer something first then run this code
-    opt = child.expect( [ varsList.bruxUserName + "@brux.hep.brown.edu's password: ",
+    opt = child.expect( [ config.bruxUserName + "@brux.hep.brown.edu's password: ",
       "Are you sure you want to continue connecting (yes/no)? " ] )
     if opt == 1:
       child.sendline( "yes" )
@@ -144,28 +148,28 @@ def brux_to_eos( year, systematics, samples, split ):
           os.system( "mkdir {}{}/{}{}".format( home, step2Sample, syst, dir ) )
   
 # create directories in EOS
-  eosContent = subprocess.check_output( "eos root://cmseos.fnal.gov ls /store/user/{}/".format( varsList.eosUserName ), shell=True )
+  eosContent = subprocess.check_output( "eos root://cmseos.fnal.gov ls /store/user/{}/".format( config.eosUserName ), shell=True )
   if step2Sample not in eosContent:
     print(">> Creating EOS directory for nominal samples")
-    sys_call( "eos root://cmseos.fnal.gov mkdir /store/user/{}/{}".format( varsList.eosUserName, step2Sample ), shell = True )
-  if "nominal" not in subprocess.check_output( "eos root://cmseos.fnal.gov ls /store/user/{}/{}".format ( varsList.eosUserName, step2Sample ), shell = True ):
-    sys_call( "eos root://cmseos.fnal.gov mkdir /store/user/{}/{}/nominal".format( varsList.eosUserName, step2Sample ), shell = True )
+    sys_call( "eos root://cmseos.fnal.gov mkdir /store/user/{}/{}".format( config.eosUserName, step2Sample ), shell = True )
+  if "nominal" not in subprocess.check_output( "eos root://cmseos.fnal.gov ls /store/user/{}/{}".format ( config.eosUserName, step2Sample ), shell = True ):
+    sys_call( "eos root://cmseos.fnal.gov mkdir /store/user/{}/{}/nominal".format( config.eosUserName, step2Sample ), shell = True )
   if args.systematics:
     for syst in [ "JEC", "JER" ]:
       for dir in [ "up", "down" ]:
-        if syst + dir not in subprocess.check_output( "eos root://cmseos.fnal.gov ls /store/user/{}/{}".format( varsList.eosUserName, step2Sample ), shell = True ):
+        if syst + dir not in subprocess.check_output( "eos root://cmseos.fnal.gov ls /store/user/{}/{}".format( config.eosUserName, step2Sample ), shell = True ):
           print( ">> Creating EOS directory for systematic: {}{}".format( syst, dir ) )
-          sys_call( "eos root://cmseos.fnal.gov mkdir /store/user/{}/{}/{}{}".format( varsList.eosUserName, step2Sample, syst, dir ), shell = True )
+          sys_call( "eos root://cmseos.fnal.gov mkdir /store/user/{}/{}/{}{}".format( config.eosUserName, step2Sample, syst, dir ), shell = True )
 
 
   eos_samples = {
-    "nominal": check_output( "eos root://cmseos.fnal.gov ls /store/user/{}/{}/nominal/".format( varsList.eosUserName, step2Sample ), shell = True )
+    "nominal": check_output( "eos root://cmseos.fnal.gov ls /store/user/{}/{}/nominal/".format( config.eosUserName, step2Sample ), shell = True )
   }
 
   if args.systematics:
     for syst in [ "JEC", "JER" ]:
       for dir in [ "up", "down" ]:
-        eos_samples[ syst + dir ] = check_output( "eos root://cmseos.fnal.gov ls /store/user/{}/{}/{}{}/".format( varsList.eosUserName, step2Sample, syst, dir ), shell = True )
+        eos_samples[ syst + dir ] = check_output( "eos root://cmseos.fnal.gov ls /store/user/{}/{}/{}{}/".format( config.eosUserName, step2Sample, syst, dir ), shell = True )
 
 # transfer samples from BRUX to EOS 
   for sample in samples:
@@ -217,7 +221,7 @@ def brux_to_eos( year, systematics, samples, split ):
             sys_call( "xrdcp {}{} {}/".format(
               step2DirLPC + syst + dir + "/",
               sample.replace( "hadd", split_tag ),
-              varsList.eosUserName,
+              config.eosUserName,
               step2DirEOS + syst + dir 
             ), shell = True )
             if args.remove:
@@ -277,7 +281,7 @@ def create_tar():
     "CMSSW_9_4_6_patch1/" 
   ) )
   print( ">> Transferring CMSSW946_4T.tgz to EOS" )
-  os.system( "xrdcp -f CMSSW946_4T.tgz root://cmseos.fnal.gov//store/user/{}".format( varsList.eosUserName ) )
+  os.system( "xrdcp -f CMSSW946_4T.tgz root://cmseos.fnal.gov//store/user/{}".format( config.eosUserName ) )
   print( "[OK ] Transfer complete!" )
  
 def main():

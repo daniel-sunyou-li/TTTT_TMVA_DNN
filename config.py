@@ -7,19 +7,20 @@ varList = {}
 bruxUserName = "dli50"
 lpcUserName = "dsunyou"
 eosUserName = "dali"
-date = "10072020" # production date
-#date = "02182021"
+#date = "10072020" # production date
+date = "02182021"
 
 step2Sample = {
-  "2017": "FWLJMET102X_1lep2017_Oct2019_4t_{}_step2".format( date ),
-  "2018": "FWLJMET102X_1lep2018_Oct2019_4t_{}_step2".format( date )
+  "2017": "FWLJMET102X_1lep2017_Oct2019_3t_{}_step2".format( date ),
+  "2018": "FWLJMET102X_1lep2018_Oct2019_3t_{}_step2".format( date )
 }
 
 step3Sample = { year: "FWLJMET102X_1lep{}_Oct2019_4t_{}_step3".format( str( year ), date ) for year in step2Sample.keys() }
 
 step2DirBRUX = { year: "/mnt/hadoop/store/group/bruxljm/{}/".format( step2Sample[ year ] ) for year in step2Sample.keys() }
 
-step2DirLPC = { year: "~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/{}/".format( step2Sample[ year ] ) for year in step2Sample.keys() }
+#step2DirLPC = { year: "~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/{}/".format( step2Sample[ year ] ) for year in step2Sample.keys() }
+step2DirLPC = { year: "~/nobackup/TTT-singleLep/CMSSW_9_4_6_patch1/src/TTT-singleLep/DNN/{}/".format( step2Sample[ year ] ) for year in step2Sample.keys() }
 
 step3DirLPC = { year: "~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/{}/".format( step3Sample[ year ] ) for year in step2Sample.keys() }
 

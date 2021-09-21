@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 from datetime import datetime
 
 import os
-import varsList
+import config
 
 condor_folders = []
 
@@ -74,7 +74,7 @@ for folder in condor_folders:
       print( ">> Folder skipped." )
       continue
     print( ">> Importing data from folder." )
-    jf.import_folder([v[0] for v in varsList.varList["DNN"]])
+    jf.import_folder([v[0] for v in config.varList["DNN"]])
   job_folders.append(jf)
   print(">> Loaded {}".format(folder))
 print( "[OK ] All data loaded." )
@@ -166,7 +166,7 @@ if not sort_increasing:
 # Variable Importance File
 with open(os.path.join(ds_folder, "VariableImportanceResults_" + str(num_vars) + "vars.txt"), "w") as f:
   f.write("Year:{}\n".format(years[0]))
-  f.write("Weight: {}\n".format(varsList.weightStr))
+  f.write("Weight: {}\n".format(config.weightStr))
   for variable in cut_variables: f.write( "{}:{}\n".format( variable, cuts[ variable ][0] ) )
   f.write("Folders: \n - " + "\n - ".join(condor_folders) + "\n")
   f.write("Number of Variables: {}\n".format(num_vars))
