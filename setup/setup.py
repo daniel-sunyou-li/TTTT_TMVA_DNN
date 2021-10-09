@@ -10,7 +10,7 @@ sys.path.insert(0,"../TTTT_TMVA_DNN")
 import config
 
 # set-up the working area
-home = os.path.expanduser( "~/nobackup/CMSSW_9_4_6_patch1/src/TTTT_TMVA_DNN/" )
+home = os.getcwd()
 brux_pwd = None
 
 parser = ArgumentParser()
@@ -135,17 +135,17 @@ def brux_to_eos( year, systematics, samples, split ):
 # create directories in lpc
   if step2Sample not in os.listdir( home ):
     print( ">> Creating LPC directory for Step2 samples" )
-    sys_call( "mkdir {}{}".format( home, step2Sample ), shell = True )
-  if "nominal" not in os.listdir( home + step2Sample ):
+    os.system( "mkdir {}".format( step2Sample ) )
+  if "nominal" not in os.listdir( step2Dir ):
     print( ">> Creating LPC directory for nominal samples" )
-    os.system( "mkdir {}{}/nominal".format( home, step2Sample ) )
+    os.system( "mkdir {}".format( os.path.join( step2Sample, "nominal" ) ) )
   if args.systematics:
     for syst in [ "JEC", "JER" ]:
       for dir in [ "up", "down" ]:
         if syst + dir not in os.listdir( home + step2Sample ):
           print( ">> Creating LPC directory for systematic: {}{}".format( syst, dir ) )
           print( home + step2Sample + "/" + syst + dir )
-          os.system( "mkdir {}{}/{}{}".format( home, step2Sample, syst, dir ) )
+          os.system( "mkdir {}/{}".format( os.path.join( home, step2Sample ), syst + dir ) )
   
 # create directories in EOS
   eosContent = subprocess.check_output( "eos root://cmseos.fnal.gov ls /store/user/{}/".format( config.eosUserName ), shell=True )
@@ -243,7 +243,9 @@ def lpc_only( year, systematics, samples, split ):
 
   if step2Sample not in os.listdir( home ):
     print( ">> Creating LPC directory for step2 samples" )
-    os.system( "mkdir {}{}/nominal".format( home, step2DirLPC ) )
+    os.system( "mkdir {}".format( step2DirLPC ) )
+  if "nominal" not in os.listdir( step2Sample ):
+    os.system( "mkdir {}".format( os.path.join( step2DirLPC, "nominal" ) ) )
   
   lpc_samples = check_output( "ls {}nominal/".format( step2DirLPC ), shell = True )
   for sample in samples:
